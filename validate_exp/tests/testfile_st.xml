@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<experiment>
+    <fileAuthor>Kyle E. Niemeyer</fileAuthor>
+    <fileVersion>
+        <major>1</major>
+        <minor>0</minor>
+    </fileVersion>
+    <ReSpecThVersion>
+        <major>1</major>
+        <minor>0</minor>
+    </ReSpecThVersion>
+    <experimentType>Ignition delay measurement</experimentType>
+    <bibliographyLink preferredKey="Chaumeix, N., Pichon, S., Lafosse, F., Paillard, C.-E., International Journal of Hydrogen Energy, 2007, (32) 2216-2226, Fig. 12., right, open diamond"/>
+    <apparatus>
+        <kind>shock tube</kind>
+    </apparatus>
+    <commonProperties>
+        <property description="" label="P" name="pressure" units="atm">
+            <value>2.18</value>
+        </property>
+        <property name="initial composition">
+            <component>
+                <speciesLink preferredKey="H2" InChI="1S/H2/h1H"/>
+                <amount units="mole fraction">0.00444</amount>
+            </component>
+            <component>
+                <speciesLink preferredKey="O2" InChI="1S/O2/c1-2"/>
+                <amount units="mole fraction">0.00566</amount>
+            </component>
+            <component>
+                <speciesLink preferredKey="Ar" InChI="1S/Ar"/>
+                <amount units="mole fraction">0.99</amount>
+            </component>
+        </property>
+    </commonProperties>
+    <dataGroup id="dg1" label="">
+        <dataGroupLink dataGroupID="" dataPointID=""/>
+        <property description="" id="x1" label="T" name="temperature" units="K"/>
+        <property description="" id="x2" label="tau" name="ignition delay" units="us"/>
+        <dataPoint>
+            <x1>1164.48</x1>
+            <x2>471.54</x2>
+        </dataPoint>
+        <dataPoint>
+            <x1>1164.97</x1>
+            <x2>448.03</x2>
+        </dataPoint>
+    </dataGroup>
+    <ignitionType target="P" type="d/dt max"/>
+</experiment>
