@@ -10,7 +10,8 @@
         <minor>0</minor>
     </ReSpecThVersion>
     <experimentType>Ignition delay measurement</experimentType>
-    <bibliographyLink preferredKey="Chaumeix, N., Pichon, S., Lafosse, F., Paillard, C.-E., International Journal of Hydrogen Energy, 2007, (32) 2216-2226, Fig. 12., right, open diamond"/>
+    <bibliographyLink preferredKey="Chaumeix, N., Pichon, S., Lafosse, F., Paillard, C.-E., International Journal of Hydrogen Energy, 2007, (32) 2216-2226, Fig. 12., right, open diamond"
+                      doi="10.1016/j.ijhydene.2007.04.008"/>
     <apparatus>
         <kind>shock tube</kind>
     </apparatus>
