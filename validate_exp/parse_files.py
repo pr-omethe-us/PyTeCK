@@ -268,7 +268,7 @@ def read_experiment(filename):
         raise NotImplementedError('Temperature units not recognized: ' +
                                   properties['temperature'].units
                                   )
-    if properties['pressure'].units.lower() not in ['atm', 'pa', 'kpa', 'mpa'
+    if properties['pressure'].units.lower() not in ['atm', 'pa', 'kpa', 'mpa',
                                                     'torr', 'bar', 'psi'
                                                     ]:
         raise NotImplementedError('Pressure units not recognized: ' +
