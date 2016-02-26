@@ -62,7 +62,7 @@ class TestCommonProperties:
         # Check initial composition
         assert properties['composition']['H2'] == '0.00444'
         assert properties['composition']['O2'] == '0.00566'
-        assert properties['composition']['Ar'] == '0.99'
+        assert properties['composition']['Ar'] == '0.9899'
 
         # Check pressure rise
         assert 'pressure rise' not in properties
@@ -91,7 +91,7 @@ class TestCommonProperties:
         # Check initial composition
         assert properties['composition']['H2'] == '0.00444'
         assert properties['composition']['O2'] == '0.00566'
-        assert properties['composition']['Ar'] == '0.99'
+        assert properties['composition']['Ar'] == '0.9899'
 
         # Check pressure rise
         assert properties['pressure rise'].value == 0.10
@@ -288,7 +288,7 @@ class TestCreateSimulations:
         # Now create list of Simulation objects
         simulations = parse_files.create_simulations(properties)
 
-        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.99'}
+        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.9899'}
 
         # Ensure correct number of simulations
         assert len(simulations) == 2
@@ -340,7 +340,7 @@ class TestCreateSimulations:
         assert sim.properties['pressure'] == Property(2.18, 'atm')
         assert sim.properties['ignition delay'] == Property(291.57, 'us')
         assert sim.properties['pressure rise'] == Property(0.10, 'ms')
-        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.99'}
+        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.9899'}
         assert sim.properties['composition'] == comp
         assert sim.ignition_target == 'OH'
         assert sim.ignition_type == 'max'

@@ -30,7 +30,7 @@
             </component>
             <component>
                 <speciesLink preferredKey="Ar" InChI="1S/Ar"/>
-                <amount units="mole fraction">0.99</amount>
+                <amount units="mole fraction">0.9899</amount>
             </component>
         </property>
         <property name="pressure rise" units="ms">
