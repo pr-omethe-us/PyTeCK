@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard libraries
+import os
 from collections import namedtuple
 import numpy as np
 
@@ -130,7 +131,7 @@ class VolumeProfile(object):
     Based on ``VolumeProfile`` implemented in Bryan W. Weber's
     `CanSen <http://bryanwweber.github.io/CanSen/>`
     """
-    
+
     def __init__(self, properties):
         """Set the initial values of the arrays from the input keywords.
 
@@ -348,10 +349,11 @@ class Simulation(object):
             min_time = np.min(np.diff(self.properties['time'].value))
             self.reac_net.set_max_time_step(min_time)
 
-    def run_case(self, id):
+    def run_case(self, id, path=None):
         """Run simulation case set up ``setup_case``.
 
         :param int id: Simulation case identifier
+        :param str path: Path for data file
         """
 
         # Save simulation results in hdf5 table format.
@@ -364,7 +366,8 @@ class Simulation(object):
                           ),
                      }
 
-        self.properties['save file'] = self.properties['id'] + '.h5'
+        file_path = os.path.join(path, self.properties['id'] + '.h5')
+        self.properties['save file'] = file_path
 
         with tables.open_file(self.properties['save file'], mode='w',
                               title=self.properties['id']
@@ -388,7 +391,7 @@ class Simulation(object):
             # Main time integration loop; continue integration while time of
             # the ``ReactorNet`` is less than specified end time.
             while self.reac_net.time < self.time_end:
-                self.reac_net.step(self.time_end)
+                self.reac_net.step()
 
                 # Save new timestep information
                 timestep['time'] = self.reac_net.time
