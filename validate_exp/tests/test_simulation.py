@@ -6,6 +6,7 @@ import os
 import pkg_resources
 import numpy as np
 import pytest
+import tables
 
 # Related modules
 try:
@@ -13,6 +14,29 @@ try:
 except ImportError:
     print("Error: Cantera must be installed.")
     raise
+
+# Taken from http://stackoverflow.com/a/22726782/1569494
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from contextlib import contextmanager
+    import shutil
+    import tempfile
+    import errno
+
+    @contextmanager
+    def TemporaryDirectory():
+        name = tempfile.mkdtemp()
+        try:
+            yield name
+        finally:
+            try:
+                shutil.rmtree(name)
+            except OSError as e:
+                # Reraise unless ENOENT: No such file or directory
+                # (ok if directory has already been deleted)
+                if e.errno != errno.ENOENT:
+                    raise
 
 from .. import simulation
 from .. import parse_files
@@ -400,3 +424,172 @@ class TestSimulation:
             velocities[i] = sim.reac.walls[0].vdot(time)
         np.testing.assert_allclose(dVdt, velocities)
         assert sim.n_vars == gas.n_species + 3
+
+    def test_shock_tube_run_cases(self):
+        """Test that shock tube cases run correctly.
+        """
+        # Read experiment XML file
+        file_path = os.path.join('testfile_st.xml')
+        filename = pkg_resources.resource_filename(__name__, file_path)
+        properties = parse_files.read_experiment(filename)
+
+        # Now create list of Simulation objects
+        simulations = parse_files.create_simulations(properties)
+
+        mechanism_filename = 'gri30.xml'
+        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+
+        # Setup and run each simulation
+        with TemporaryDirectory() as temp_dir:
+            sim = simulations[0]
+            sim.setup_case(mechanism_filename, spec_key)
+            sim.run_case(0, path=temp_dir)
+
+            # check for presence of data file
+            assert os.path.exists(sim.properties['save file'])
+            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+                # Load Table with Group name simulation
+                table = h5file.root.simulation
+
+                # Ensure exact columns present
+                assert set(['time', 'temperature', 'pressure',
+                            'volume', 'mass_fractions'
+                            ]) == set(table.colnames)
+
+                # Ensure final state matches expected
+                time_end = 0.0047154
+                temp = 1250.0258941407099
+                pres = 236591.52735657146
+                mass_fracs = np.array([
+                    3.44495340e-07, 2.31528391e-08, 1.89444161e-06,
+                    2.76818862e-03, 6.12440519e-06, 2.00643083e-03,
+                    3.08897501e-07, 1.67696225e-08, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    9.95216668e-01, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00
+                    ])
+                np.testing.assert_allclose(table.col('time')[-1], time_end)
+                np.testing.assert_allclose(table.col('temperature')[-1], temp)
+                np.testing.assert_allclose(table.col('pressure')[-1], pres)
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                                           mass_fracs, rtol=1e-5, atol=1e-9
+                                           )
+
+            sim = simulations[1]
+            sim.setup_case(mechanism_filename, spec_key)
+            sim.run_case(1, path=temp_dir)
+
+            assert os.path.exists(sim.properties['save file'])
+            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+                # Load Table with Group name simulation
+                table = h5file.root.simulation
+
+                # Ensure exact columns present
+                assert set(['time', 'temperature', 'pressure',
+                            'volume', 'mass_fractions'
+                            ]) == set(table.colnames)
+
+                # Ensure final state matches expected
+                time_end = 4.4803e-3
+                temp = 1250.4709612576476
+                pres = 236576.47081306292
+                mass_fracs = np.array([
+                    3.86863289e-07, 2.77061000e-08, 2.13865795e-06,
+                    2.76811342e-03, 6.51330722e-06, 2.00579722e-03,
+                    3.35881105e-07, 1.85548366e-08, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    9.95216668e-01, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00
+                    ])
+                np.testing.assert_allclose(table.col('time')[-1], time_end)
+                np.testing.assert_allclose(table.col('temperature')[-1], temp)
+                np.testing.assert_allclose(table.col('pressure')[-1], pres)
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                                           mass_fracs, rtol=1e-5, atol=1e-9
+                                           )
+
+    def test_shock_tube_pressure_rise_run_cases(self):
+        """Test that shock tube cases with pressure rise run correctly.
+        """
+        # Read experiment XML file
+        file_path = os.path.join('testfile_st2.xml')
+        filename = pkg_resources.resource_filename(__name__, file_path)
+        properties = parse_files.read_experiment(filename)
+
+        # Now create list of Simulation objects
+        simulations = parse_files.create_simulations(properties)
+
+        mechanism_filename = 'gri30.xml'
+        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+
+        # Setup and run each simulation
+        with TemporaryDirectory() as temp_dir:
+            sim = simulations[0]
+            sim.setup_case(mechanism_filename, spec_key)
+            sim.run_case(0, path=temp_dir)
+
+            # check for presence of data file
+            assert os.path.exists(sim.properties['save file'])
+            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+                # Load Table with Group name simulation
+                table = h5file.root.simulation
+
+                # Ensure exact columns present
+                assert set(['time', 'temperature', 'pressure',
+                            'volume', 'mass_fractions'
+                            ]) == set(table.colnames)
+
+                # Ensure final state matches expected
+                time_end = 2.9157e-3
+                temp = 1490.220379345426
+                pres = 303119.51497114776
+                mass_fracs = np.array([
+                    6.40297433e-07, 1.11734860e-07, 7.35503959e-06,
+                    2.75862560e-03, 2.13890462e-05, 1.99492404e-03,
+                    2.77327965e-07, 8.51989100e-09, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+                    9.95216668e-01, 0.00000000e+00, 0.00000000e+00,
+                    0.00000000e+00, 0.00000000e+00
+                    ])
+                np.testing.assert_allclose(table.col('time')[-1], time_end)
+                np.testing.assert_allclose(table.col('temperature')[-1], temp)
+                np.testing.assert_allclose(table.col('pressure')[-1], pres)
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                                           mass_fracs, rtol=1e-5, atol=1e-9
+                                           )
