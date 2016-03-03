@@ -247,6 +247,12 @@ def read_experiment(filename):
     # Now parse ignition delay datapoints
     properties = get_datapoints(properties, root)
 
+    # Get compression time for RCM, if volume history given
+    if 'volume' in properties and 'compression time' not in properties:
+        min_volume_idx = np.argmin(properties['volume'].value)
+        min_volume_time = properties['time'].value[min_volume_idx]
+        properties['compression time'] = min_volume_time
+
     # Check for missing required properties or conflicts
     for prop in ['composition', 'temperature', 'pressure', 'ignition delay']:
         if prop not in properties:

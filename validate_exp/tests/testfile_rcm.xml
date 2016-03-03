@@ -34,6 +34,9 @@
                 <amount units="mole fraction">0.63125</amount>
             </component>
         </property>
+        <property name="compression time" units="ms">
+            <value>38.0</value>
+        </property>
     </commonProperties>
     <dataGroup id="dg1" label="">
         <dataGroupLink dataGroupID="" dataPointID=""/>
