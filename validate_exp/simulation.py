@@ -393,14 +393,39 @@ class Simulation(object):
             while self.reac_net.time < self.time_end:
                 self.reac_net.step()
 
-                # Save new timestep information
-                timestep['time'] = self.reac_net.time
-                timestep['temperature'] = self.reac.T
-                timestep['pressure'] = self.reac.thermo.P
-                timestep['volume'] = self.reac.volume
-                timestep['mass_fractions'] = self.reac.Y
+                # Interpolate to end time if step took us beyond that point
+                if self.reac_net.time > self.time_end:
+                    xp = [prev_time, self.reac_net.time]
+
+                    timestep['time'] = self.time_end
+                    fp = [prev_temp, self.reac.T]
+                    timestep['temperature'] = np.interp(self.time_end, xp, fp)
+                    fp = [prev_pres, self.reac.thermo.P]
+                    timestep['pressure'] = np.interp(self.time_end, xp, fp)
+                    fp = [prev_vol, self.reac.volume]
+                    timestep['volume'] = np.interp(self.time_end, xp, fp)
+                    mass_fracs = np.zeros(self.reac.Y.size)
+                    for i in range(mass_fracs.size):
+                        fp = [prev_mass_frac[i], self.reac.Y[i]]
+                        mass_fracs[i] = np.interp(self.time_end, xp, fp)
+                    timestep['mass_fractions'] = mass_fracs
+                else:
+                    # Save new timestep information
+                    timestep['time'] = self.reac_net.time
+                    timestep['temperature'] = self.reac.T
+                    timestep['pressure'] = self.reac.thermo.P
+                    timestep['volume'] = self.reac.volume
+                    timestep['mass_fractions'] = self.reac.Y
+
                 # Add ``timestep`` to table
                 timestep.append()
+
+                # Save values for next step in case of interpolation needed
+                prev_time = self.reac_net.time
+                prev_temp = self.reac.T
+                prev_pres = self.reac.thermo.P
+                prev_vol = self.reac.volume
+                prev_mass_frac = self.reac.Y
 
             # Write ``table`` to disk
             table.flush()
