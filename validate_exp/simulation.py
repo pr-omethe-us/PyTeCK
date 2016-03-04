@@ -25,6 +25,8 @@ except ImportError:
     print('PyTables must be installed')
     raise
 
+from detect_peaks import detect_peaks
+
 # Tuple to store both values and units of various properties
 Property = namedtuple('Property', 'value, units')
 
@@ -436,6 +438,12 @@ class Simulation(object):
         """Process integration results to obtain ignition delay.
         """
 
+        # Convert ignition delay units to seconds
+        self.properties['ignition delay'] = (
+            self.properties['ignition delay'].value *
+            to_second[self.properties['ignition delay'].units]
+            )
+
         # Load saved integration results
         with tables.open_file(self.properties['save file'], 'r') as h5file:
             # Load Table with Group name simulation
@@ -484,20 +492,20 @@ class Simulation(object):
 
         # Will need to subtract compression time for RCM
         time_comp = 0.0
-        if 'time' in self.properties:
-            time_comp = self.properties['time'].value[-1]
+        if 'compression time' in self.properties:
+            time_comp = self.properties['compression time']
 
-        ign_delays = time[ind[np.where((time[ind[ind <= max_ind]]*1000 -
+        ign_delays = time[ind[np.where((time[ind[ind <= max_ind]] -
                                        time_comp) > 0
-                                       )]]*1000 - time_comp
+                                       )]] - time_comp
         # Overall ignition delay
         if len(ign_delays) > 0:
-            properties['simulated ignition delay'] = ign_delays[-1]
+            self.properties['simulated ignition delay'] = ign_delays[-1]
         else:
-            properties['simulated ignition delay'] = np.nan
+            self.properties['simulated ignition delay'] = np.nan
 
         # First-stage ignition delay
         if len(ign_delays) > 1:
-            properties['simulated first-stage delay'] = ign_delays[0]
+            self.properties['simulated first-stage delay'] = ign_delays[0]
         else:
-            properties['simulated first-stage delay'] = np.nan
+            self.properties['simulated first-stage delay'] = np.nan
