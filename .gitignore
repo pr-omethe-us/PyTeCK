@@ -67,3 +67,6 @@ target/
 
 # pyenv
 .python-version
+
+# project-specific data files
+*.h5
