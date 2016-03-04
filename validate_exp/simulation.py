@@ -469,17 +469,17 @@ class Simulation(object):
                 if sp.upper() != spec:
                     print('Warning: excited radical not in mechanism.')
 
-                target = table.col('mass_fractions')[ind]
+                target = table.col('mass_fractions')[:,ind]
 
         # Analysis for ignition depends on type specified
         if self.ignition_type == 'max':
-            ind = detect_peaks(target, mph=1E8, mpd=3E3)
+            ind = detect_peaks(target)
             max_ind = np.argmax(target)
         elif self.ignition_type == 'd/dt max':
             # Evaluate derivative
             deriv = first_derivative(time, target)
 
-            ind = detect_peaks(deriv, mph=1E8, mpd=3E3)
+            ind = detect_peaks(deriv)
             max_ind = np.argmax(deriv)
 
         # Will need to subtract compression time for RCM
