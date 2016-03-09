@@ -509,7 +509,7 @@ class Simulation(object):
         if len(ign_delays) > 0:
             self.properties['simulated ignition delay'] = ign_delays[-1]
         else:
-            self.properties['simulated ignition delay'] = np.nan
+            self.properties['simulated ignition delay'] = 0.0
 
         # First-stage ignition delay
         if len(ign_delays) > 1:
