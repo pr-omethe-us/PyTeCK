@@ -247,9 +247,9 @@ class Simulation(object):
 
         self.gas = ct.Solution(mechanism_filename)
 
-        # Set end time of simulation to 10 times the experimental ignition delay
+        # Set end time of simulation to 100 times the experimental ignition delay
         units = self.properties['ignition delay'].units
-        self.time_end = 10. * self.properties['ignition delay'].value
+        self.time_end = 100. * self.properties['ignition delay'].value
         try:
             self.time_end *= to_second[units]
         except KeyError:
@@ -350,6 +350,35 @@ class Simulation(object):
             # Minimum difference between volume profile times
             min_time = np.min(np.diff(self.properties['time'].value))
             self.reac_net.set_max_time_step(min_time)
+
+        # Check if species ignition target, that species is present.
+        if self.ignition_target not in ['P', 'T']:
+            # Other targets are species
+            spec = self.ignition_target
+
+            # Try finding species in upper- and lower-case
+            try_list = [spec, spec.lower()]
+
+            # If excited radical, may need to fall back to nonexcited species
+            if spec[-1] == '*':
+                try_list += [spec[:-1], spec[:-1].lower()]
+
+            ind = None
+            for sp in try_list:
+                try:
+                    ind = self.gas.species_index(sp)
+                    break
+                except ValueError:
+                    pass
+
+            if ind:
+                self.ignition_target = ind
+            else:
+                print('Warning: ' + spec + ' not found in model; '
+                      'falling back on pressure.'
+                      )
+                self.ignition_target = 'P'
+                self.ignition_type = 'd/dt max'
 
     def run_case(self, id, path=None):
         """Run simulation case set up ``setup_case``.
@@ -455,32 +484,7 @@ class Simulation(object):
             elif self.ignition_target == 'T':
                 target = table.col('temperature')
             else:
-                # Other targets are species
-                spec = self.ignition_target
-
-                # Try finding species in upper- and lower-case
-                try_list = [spec, spec.lower()]
-
-                # If excited radical, may need to fall back to nonexcited species
-                if spec[-1] == '*':
-                    try_list += [spec[:-1], spec[:-1].lower()]
-
-                ind = None
-                for sp in try_list:
-                    try:
-                        ind = self.gas.species_index(sp)
-                        break
-                    except ValueError:
-                        pass
-
-                if not ind:
-                    print('Warning: ' + spec + ' not found in mechanism')
-                    print('Falling back on pressure.')
-                    self.ignition_target = 'P'
-                    self.ignition_type = 'd/dt max'
-                    target = table.col('pressure')
-                else:
-                    target = table.col('mass_fractions')[:,ind]
+                target = table.col('mass_fractions')[:, self.ignition_target]
 
         # Analysis for ignition depends on type specified
         if self.ignition_type == 'max':
