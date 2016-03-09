@@ -472,12 +472,15 @@ class Simulation(object):
                         break
                     except ValueError:
                         pass
-                if not ind:
-                    raise ValueError(spec + ' not found in mechanism')
-                if sp.upper() != spec:
-                    print('Warning: excited radical not in mechanism.')
 
-                target = table.col('mass_fractions')[:,ind]
+                if not ind:
+                    print('Warning: ' + spec + ' not found in mechanism')
+                    print('Falling back on pressure.')
+                    self.ignition_target = 'P'
+                    self.ignition_type = 'd/dt max'
+                    target = table.col('pressure')
+                else:
+                    target = table.col('mass_fractions')[:,ind]
 
         # Analysis for ignition depends on type specified
         if self.ignition_type == 'max':
