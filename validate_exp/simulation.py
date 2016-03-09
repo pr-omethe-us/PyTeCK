@@ -25,7 +25,7 @@ except ImportError:
     print('PyTables must be installed')
     raise
 
-from detect_peaks import detect_peaks
+from .detect_peaks import detect_peaks
 
 # Tuple to store both values and units of various properties
 Property = namedtuple('Property', 'value, units')
