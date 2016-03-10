@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-with open('validate_exp/_version.py') as version_file:
+with open('test_kinetic_models/_version.py') as version_file:
     exec(version_file.read())
 
 here = path.abspath(path.dirname(__file__))
@@ -20,18 +20,18 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='ReSpecTh_proc',
+    name='test_kinetic_models',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     version=__version__,
 
-    description='ReSpecTh_proc',
+    description='test-kinetic-models',
     long_description=long_description,
 
     # The project's main homepage.
-    url='',
+    url='https://github.com/kyleniemeyer/test_kinetic_models',
 
     # Author details
     author='Kyle E. Niemeyer',
@@ -87,7 +87,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
-     package_data={'ReSpecTh_proc': ['tests/*.xml']},
+     package_data={'test_kinetic_models': ['tests/*.xml']},
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
@@ -100,7 +100,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'ReSpecTh_proc=ReSpecTh_proc.__main__:main',
+            'test_kinetic_models=test_kinetic_models.__main__:main',
         ],
     },
 )
