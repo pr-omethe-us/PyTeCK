@@ -380,10 +380,10 @@ class Simulation(object):
                 self.ignition_target = 'P'
                 self.ignition_type = 'd/dt max'
 
-    def run_case(self, id, path=None):
+    def run_case(self, idx, path=None):
         """Run simulation case set up ``setup_case``.
 
-        :param int id: Simulation case identifier
+        :param int idx: Simulation case identifier
         :param str path: Path for data file
         """
 
@@ -461,7 +461,7 @@ class Simulation(object):
             # Write ``table`` to disk
             table.flush()
 
-        print('Done with case', id)
+        print('Done with case', idx)
 
     def process_results(self):
         """Process integration results to obtain ignition delay.
