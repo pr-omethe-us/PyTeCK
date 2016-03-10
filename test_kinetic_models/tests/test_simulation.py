@@ -593,3 +593,64 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
+
+    def test_rcm_run_cases(self):
+        """Test that RCM case runs correctly.
+        """
+        # Read experiment XML file
+        file_path = os.path.join('testfile_rcm.xml')
+        filename = pkg_resources.resource_filename(__name__, file_path)
+        properties = parse_files.read_experiment(filename)
+
+        # Now create list of Simulation objects
+        simulations = parse_files.create_simulations(properties)
+
+        mechanism_filename = 'gri30.xml'
+        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+
+        # Setup and run each simulation
+        with TemporaryDirectory() as temp_dir:
+            sim = simulations[0]
+            sim.setup_case(mechanism_filename, spec_key)
+            sim.run_case(0, path=temp_dir)
+
+            # check for presence of data file
+            assert os.path.exists(sim.properties['save file'])
+            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+                # Load Table with Group name simulation
+                table = h5file.root.simulation
+
+                # Ensure exact columns present
+                assert set(['time', 'temperature', 'pressure',
+                           'volume', 'mass_fractions'
+                           ]) == set(table.colnames)
+                # Ensure final state matches expected
+                time_end = 1.0e-1
+                temp = 2385.3726323703772
+                pres = 7785285.8278809367
+                mass_fracs = np.array([
+                    1.20958615e-04,   2.24531080e-06,   1.00369658e-05,
+                    5.22702215e-04,   4.28382645e-04,   6.78623215e-02,
+                    4.00114115e-07,   1.46545238e-07,   9.03565489e-33,
+                    -4.98085661e-33,  -2.00640539e-32,  -1.33597716e-33,
+                    -3.04848398e-31,  -4.40131922e-31,   2.47286479e-26,
+                    4.16711916e-25,   2.18055357e-32,  -4.62411023e-31,
+                    -2.90078362e-33,  -1.07638344e-33,  -1.46170363e-31,
+                    5.34684816e-48,   4.38684601e-45,   4.72083994e-48,
+                    2.06554207e-46,   6.03644694e-48,   2.45192004e-47,
+                    3.36624638e-48,   1.03587434e-46,   4.28317040e-46,
+                    2.05477576e-09,   1.59876813e-09,   2.45609295e-09,
+                    2.06959136e-08,   2.82124725e-09,   4.55685660e-04,
+                    3.22226789e-07,   1.49833465e-07,   5.93538501e-08,
+                    -1.94981536e-33,  -1.01336287e-30,  -3.62213458e-36,
+                    -8.14771075e-35,  -8.42668642e-32,  -6.92057323e-32,
+                    -1.02341892e-30,  -1.72028467e-32,   1.55792721e-01,
+                    7.74803838e-01,   5.75139926e-65,   5.12987507e-66,
+                    5.90342874e-51,   5.77725654e-49
+                    ])
+                np.testing.assert_allclose(table.col('time')[-1], time_end)
+                np.testing.assert_allclose(table.col('temperature')[-1], temp)
+                np.testing.assert_allclose(table.col('pressure')[-1], pres)
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                                           mass_fracs, rtol=1e-5, atol=1e-9
+                                           )
