@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-with open('test_kinetic_models/_version.py') as version_file:
+with open('eval_kinetic_models/_version.py') as version_file:
     exec(version_file.read())
 
 here = path.abspath(path.dirname(__file__))
@@ -20,7 +20,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='test_kinetic_models',
+    name='eval_kinetic_models',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -31,7 +31,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/kyleniemeyer/test_kinetic_models',
+    url='https://github.com/kyleniemeyer/eval_kinetic_models',
 
     # Author details
     author='Kyle E. Niemeyer',
@@ -87,7 +87,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
-     package_data={'test_kinetic_models': ['tests/*.xml']},
+     package_data={'eval_kinetic_models': ['tests/*.xml']},
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
@@ -100,7 +100,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'test_kinetic_models=test_kinetic_models.__main__:main',
+            'eval_kinetic_models=eval_kinetic_models.__main__:main',
         ],
     },
 )

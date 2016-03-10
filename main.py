@@ -13,11 +13,16 @@ from scipy.interpolate import UnivariateSpline
 import cantera as ct
 
 # Local imports
-from test_kinetic_models import parse_files
-from test_kinetic_models.simulation import Property, Simulation
+from eval_kinetic_models import parse_files
+from eval_kinetic_models.simulation import Property, Simulation
 
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
+
+    :param tuple sim_tuple: Contains Simulation object and other parameters needed
+    to setup and run case.
+    :return: Simulation case with calculated ignition delay.
+    :rtype: Simulation object
     """
     sim, idx, model_file, model_spec_key, path = sim_tuple
 
@@ -209,7 +214,7 @@ for idx_set, dataset in enumerate(dataset_list):
     for idx, sim in enumerate(simulations):
         # special treatment based on pressure for Princeton model
         if mech_filename == 'Princeton-2009':
-            from test_kinetic_models.simulation import to_pascal
+            from eval_kinetic_models.simulation import to_pascal
             pres = np.mean(sim.properties['pressure'].value)
             # to Pascal
             pres *= to_pascal[sim.properties['pressure'].units]
