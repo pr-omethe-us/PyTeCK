@@ -38,19 +38,21 @@ def simulation_worker(sim_tuple):
     return sim
 
 
-def evaluate_model(model_file, dataset_file, data_path='data',
-                   model_path='models', results_path='results'
+def evaluate_model(model_file, spec_keys_file, dataset_file,
+                   data_path='data', model_path='models',
+                   results_path='results', model_variant_file=None
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
     """
 
     # Dict to translate species names into those used by models
-    with open('model_species_keys.json', 'r') as f:
+    with open(spec_keys_file, 'r') as f:
         model_spec_key = json.load(f)
 
     # Keys for models with variants depending on pressure or bath gas
-    with open('model_variant.json', 'r') as f:
-        model_variant = json.load(f)
+    if model_variant_file:
+        with open(model_variant_file, 'r') as f:
+            model_variant = json.load(f)
 
     # Read dataset list
     with open(dataset_file, 'r') as f:
@@ -236,6 +238,12 @@ if __name__ == "__main__":
                         required=True,
                         help='Input model filename (e.g., mech.cti).'
                         )
+    parser.add_argument('-k', '--model-keys',
+                        type=str,
+                        dest='model_keys_file',
+                        required=True,
+                        help='JSON file with keys for species in models.'
+                        )
     parser.add_argument('-d', '--dataset',
                         type=str,
                         required=True,
@@ -262,9 +270,17 @@ if __name__ == "__main__":
                         default='results',
                         help='Local directory holding result HDF5 files.'
                         )
+    parser.add_argument('-v', '--model-variant',
+                        type=str,
+                        dest='model_variant_file',
+                        required=False,
+                        help='JSON with variants for models for, e.g., bath '
+                             'gases and pressures.'
+                        )
 
     args = parser.parse_args()
 
-    evaluate_model(args.model_file, args.dataset_file, args.data_path,
-                   args.model_path, args.results_path
+    evaluate_model(args.model_file, args.model_keys_file, args.dataset_file,
+                   args.data_path, args.model_path, args.results_path,
+                   args.model_variant_file
                    )
