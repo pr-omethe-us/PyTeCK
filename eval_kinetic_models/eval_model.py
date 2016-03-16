@@ -40,7 +40,8 @@ def simulation_worker(sim_tuple):
 
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
-                   results_path='results', model_variant_file=None
+                   results_path='results', model_variant_file=None,
+                   num_threads=multiprocessing.cpu_count()-1 or 1
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
     """
@@ -122,7 +123,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
         # Use available number of processors minus one,
         # or one process if single core.
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()-1 or 1)
+        pool = multiprocessing.Pool(processes=num_threads)
 
         # setup all cases
         jobs = []
@@ -226,61 +227,3 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     # Write data to JSON file
     with open(splitext(basename(model_name))[0] + '-results.json', 'w') as f:
         json.dump(output, f)
-
-
-if __name__ == "__main__":
-    parser = ArgumentParser(description='eval_kinetic_models: Evaluate '
-                                        'performance of kinetic models using '
-                                        'experimental ignition delay data.'
-                            )
-    parser.add_argument('-m', '--model',
-                        type=str,
-                        required=True,
-                        help='Input model filename (e.g., mech.cti).'
-                        )
-    parser.add_argument('-k', '--model-keys',
-                        type=str,
-                        dest='model_keys_file',
-                        required=True,
-                        help='JSON file with keys for species in models.'
-                        )
-    parser.add_argument('-d', '--dataset',
-                        type=str,
-                        required=True,
-                        help='Filename for list of datasets.'
-                        )
-    parser.add_argument('-dp', '--data-path',
-                        type=str,
-                        dest='data_path',
-                        required=False,
-                        default='data',
-                        help='Local directory holding dataset files.'
-                        )
-    parser.add_argument('-mp', '--model-path',
-                        type=str,
-                        dest='model_path',
-                        required=False,
-                        default='models',
-                        help='Local directory holding model files.'
-                        )
-    parser.add_argument('-rp', '--results-path',
-                        type=str,
-                        dest='results_path',
-                        required=False,
-                        default='results',
-                        help='Local directory holding result HDF5 files.'
-                        )
-    parser.add_argument('-v', '--model-variant',
-                        type=str,
-                        dest='model_variant_file',
-                        required=False,
-                        help='JSON with variants for models for, e.g., bath '
-                             'gases and pressures.'
-                        )
-
-    args = parser.parse_args()
-
-    evaluate_model(args.model, args.model_keys_file, args.dataset,
-                   args.data_path, args.model_path, args.results_path,
-                   args.model_variant_file
-                   )

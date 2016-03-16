@@ -50,9 +50,17 @@ parser.add_argument('-v', '--model-variant',
                     help='JSON with variants for models for, e.g., bath '
                          'gases and pressures.'
                     )
+parser.add_argument('-nt', '--num-threads',
+                    type=int,
+                    dest='num_threads',
+                    default=multiprocessing.cpu_count()-1 or 1,
+                    required=False,
+                    help='The number of threads to use to run simulations in
+                         'parallel.'
+                    )
 args = parser.parse_args()
 
 evaluate_model(args.model, args.model_keys_file, args.dataset,
                args.data_path, args.model_path, args.results_path,
-               args.model_variant_file
+               args.model_variant_file, args.num_threads
                )
