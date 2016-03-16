@@ -38,7 +38,7 @@ def simulation_worker(sim_tuple):
     return sim
 
 
-def evaluate_model(model_file, spec_keys_file, dataset_file,
+def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None
                    ):
@@ -62,7 +62,7 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
     dev_func_sets = np.zeros(len(dataset_list))
 
     # Dictionary with all output data
-    output = {'model': model_file, 'datasets': []}
+    output = {'model': model_name, 'datasets': []}
 
     # Loop through all datasets
     for idx_set, dataset in enumerate(dataset_list):
@@ -112,9 +112,9 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
         # Need to check if Ar or He in reactants,
         # and if so skip this dataset (for now).
         if ('Ar' in properties['composition'] and
-            'Ar' not in model_spec_key[model_file]
+            'Ar' not in model_spec_key[model_name]
             ) or ('N2' in properties['composition'] and
-                  'N2' not in model_spec_key[model_file]
+                  'N2' not in model_spec_key[model_name]
                   ):
             print('Warning: Ar or N2 in dataset, but not in model. Skipping.')
             error_func_sets[idx_set] = np.nan
@@ -129,11 +129,11 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
         for idx, sim in enumerate(simulations):
             # special treatment based on pressure for Princeton model
 
-            if model_file in model_variant:
+            if model_name in model_variant:
                 model_mod = ''
-                if 'bath gases' in model_variant[model_file]:
+                if 'bath gases' in model_variant[model_name]:
                     # find any bath gases requiring special treatment
-                    bath_gases = set(model_variant[model_file]['bath gases'])
+                    bath_gases = set(model_variant[model_name]['bath gases'])
                     gases = bath_gases.intersection(set(sim.properties['composition']))
 
                     # If only one bath gas present, use that. If multiple, use the
@@ -146,9 +146,9 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
                                 sp = g
                     else:
                         sp = gases.pop()
-                    model_mod += model_variant[model_file]['bath gases'][sp]
+                    model_mod += model_variant[model_name]['bath gases'][sp]
 
-                if 'pressures' in model_variant[model_file]:
+                if 'pressures' in model_variant[model_name]:
                     pres = sim.properties['pressure'].value
                     # to Pascal
                     pres *= to_pascal[sim.properties['pressure'].units]
@@ -159,17 +159,17 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
                     # better way to do this?
                     i = np.argmin(np.abs(np.array(
                         [float(n)
-                        for n in list(model_variant[model_file]['pressures'])]
+                        for n in list(model_variant[model_name]['pressures'])]
                         ) - pres))
-                    pres = list(model_variant[model_file]['pressures'])[i]
-                    model_mod += model_variant[model_file]['pressures'][pres]
+                    pres = list(model_variant[model_name]['pressures'])[i]
+                    model_mod += model_variant[model_name]['pressures'][pres]
 
-                model_file = os.path.join(model_path, model_file + model_mod)
+                model_file = os.path.join(model_path, model_name + model_mod)
             else:
-                model_file = os.path.join(model_path, model_file)
+                model_file = os.path.join(model_path, model_name)
 
             jobs.append([sim, idx, model_file,
-                         model_spec_key[model_file], results_path
+                         model_spec_key[model_name], results_path
                          ])
 
         # run all cases
@@ -224,7 +224,7 @@ def evaluate_model(model_file, spec_keys_file, dataset_file,
     output['average deviation function'] = abs_dev_func
 
     # Write data to JSON file
-    with open(splitext(basename(model_file))[0] + '-results.json', 'w') as f:
+    with open(splitext(basename(model_name))[0] + '-results.json', 'w') as f:
         json.dump(output, f)
 
 
