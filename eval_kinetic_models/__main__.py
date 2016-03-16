@@ -52,7 +52,7 @@ parser.add_argument('-v', '--model-variant',
                     )
 args = parser.parse_args()
 
-evaluate_model(args.model_file, args.model_keys_file, args.dataset_file,
+evaluate_model(args.model, args.model_keys_file, args.dataset,
                args.data_path, args.model_path, args.results_path,
                args.model_variant_file
                )
