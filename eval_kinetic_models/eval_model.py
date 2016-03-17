@@ -120,10 +120,10 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         # and if so skip this dataset (for now).
         if ('Ar' in properties['composition'] and
             'Ar' not in model_spec_key[model_name]
-            ) or ('N2' in properties['composition'] and
-                  'N2' not in model_spec_key[model_name]
+            ) or ('He' in properties['composition'] and
+                  'He' not in model_spec_key[model_name]
                   ):
-            print('Warning: Ar or N2 in dataset, but not in model. Skipping.')
+            print('Warning: Ar or He in dataset, but not in model. Skipping.')
             error_func_sets[idx_set] = np.nan
             continue
 
