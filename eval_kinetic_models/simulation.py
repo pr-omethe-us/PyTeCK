@@ -25,41 +25,12 @@ except ImportError:
     print('PyTables must be installed')
     raise
 
+# Local imports
+from .utils import to_pascal, to_kelvin, to_second
 from .detect_peaks import detect_peaks
 
 # Tuple to store both values and units of various properties
 Property = namedtuple('Property', 'value, units')
-
-# Dict for converting to seconds (Cantera time unit)
-to_second = dict(s=1.0, ms=1.0e-3, us=1.0e-6, ns=1.0e-9, min=60.0)
-
-# Dict for convering to Pascals (Cantera pressure unit)
-to_pascal = dict(pa=1.0, kpa=1.0e3, mpa=1.0e6, atm=ct.one_atm,
-                 torr=133.3224, Torr=133.3224, bar=1.0e5, psi=6.8948e3
-                 )
-
-def to_kelvin(temp, units):
-    """Simple utility to convert temperature to units of Kelvin.
-
-    :param float temp: Initial temperature in `units`
-    :param str units: Units of `temp`
-    :return: Converted temperature in Kelvin
-    :rtype: float
-    """
-    if units == 'K':
-        temp = temp
-    elif units == 'C':
-        temp = (temp + 273.15)
-    elif units == 'F':
-        temp = ((temp + 459.67) * (5.0 / 9.0))
-    else:
-        raise KeyError('Temperature units not recognized: ' + units)
-
-    if temp < 0:
-        raise ValueError('Temperature in Kelvin < zero: ' + str(temp))
-    else:
-        return temp
-
 
 def first_derivative(x, y):
     """Evaluates first derivative using second-order finite differences.
@@ -251,7 +222,7 @@ class Simulation(object):
         units = self.properties['ignition delay'].units
         self.time_end = 100. * self.properties['ignition delay'].value
         try:
-            self.time_end *= to_second[units]
+            self.time_end = to_second(self.time_end, units)
         except KeyError:
             raise NotImplementedError('Ignition delay units '
                                       'not recognized: ' + units
@@ -266,9 +237,9 @@ class Simulation(object):
 
         # Initial pressure needed in Pa for Cantera
         initial_pres = self.properties['pressure'].value
-        units = self.properties['pressure'].units.lower()
+        units = self.properties['pressure'].units
         try:
-            initial_pres *= to_pascal[units]
+            initial_pres = to_pascal(initial_pres, units)
         except KeyError:
             raise KeyError('Pressure units not recognized: ' + units)
 
@@ -299,7 +270,7 @@ class Simulation(object):
             units = self.properties['pressure rise'].units
             vals = self.properties['pressure rise'].value
             try:
-                vals /= to_second[units]
+                vals /= to_second(1.0, units)
                 self.properties['pressure rise'] = Property(vals, 's')
             except KeyError:
                 raise NotImplementedError('Pressure rise units '
@@ -328,7 +299,7 @@ class Simulation(object):
             units = self.properties['time'].units
             vals = self.properties['time'].value
             try:
-                self.properties['time'] = Property(vals * to_second[units], 's')
+                self.properties['time'] = Property(to_second(vals, units), 's')
             except KeyError:
                 raise NotImplementedError('Time units not recognized: ' +
                                           units
@@ -469,8 +440,9 @@ class Simulation(object):
 
         # Convert ignition delay units to seconds
         self.properties['ignition delay'] = (
-            self.properties['ignition delay'].value *
-            to_second[self.properties['ignition delay'].units]
+            to_second(self.properties['ignition delay'].value,
+                      self.properties['ignition delay'].units
+                      )
             )
 
         # Load saved integration results

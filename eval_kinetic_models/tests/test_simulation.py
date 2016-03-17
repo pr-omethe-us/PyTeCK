@@ -41,29 +41,6 @@ except ImportError:
 from .. import simulation
 from .. import parse_files
 
-class TestToKelvin:
-    """Class of tests for function that converts temperature to Kelvin.
-    """
-    def test_kelvin_to_kelvin(self):
-        temp = simulation.to_kelvin(300., 'K')
-        np.testing.assert_allclose(temp, 300.)
-
-    def test_celsius_to_kelvin(self):
-        temp = simulation.to_kelvin(1000., 'C')
-        np.testing.assert_allclose(temp, 1273.15)
-
-    def test_farenheit_to_kelvin(self):
-        temp = simulation.to_kelvin(32., 'F')
-        np.testing.assert_allclose(temp, 273.15)
-
-    def test_negative_kelvin(self):
-        with pytest.raises(ValueError):
-            temp = simulation.to_kelvin(-1., 'K')
-
-    def test_units_error(self):
-        with pytest.raises(KeyError):
-            temp = simulation.to_kelvin(300., 'R')
-
 
 class TestFirstDerivative:
     """
@@ -627,26 +604,26 @@ class TestSimulation:
                 # Ensure final state matches expected
                 time_end = 1.0e-1
                 temp = 2385.3726323703772
-                pres = 7785285.8278809367
+                pres = 7785283.273098443
                 mass_fracs = np.array([
-                    1.20958615e-04,   2.24531080e-06,   1.00369658e-05,
-                    5.22702215e-04,   4.28382645e-04,   6.78623215e-02,
-                    4.00114115e-07,   1.46545238e-07,   9.03565489e-33,
-                    -4.98085661e-33,  -2.00640539e-32,  -1.33597716e-33,
-                    -3.04848398e-31,  -4.40131922e-31,   2.47286479e-26,
-                    4.16711916e-25,   2.18055357e-32,  -4.62411023e-31,
-                    -2.90078362e-33,  -1.07638344e-33,  -1.46170363e-31,
-                    5.34684816e-48,   4.38684601e-45,   4.72083994e-48,
-                    2.06554207e-46,   6.03644694e-48,   2.45192004e-47,
-                    3.36624638e-48,   1.03587434e-46,   4.28317040e-46,
-                    2.05477576e-09,   1.59876813e-09,   2.45609295e-09,
-                    2.06959136e-08,   2.82124725e-09,   4.55685660e-04,
-                    3.22226789e-07,   1.49833465e-07,   5.93538501e-08,
-                    -1.94981536e-33,  -1.01336287e-30,  -3.62213458e-36,
-                    -8.14771075e-35,  -8.42668642e-32,  -6.92057323e-32,
-                    -1.02341892e-30,  -1.72028467e-32,   1.55792721e-01,
-                    7.74803838e-01,   5.75139926e-65,   5.12987507e-66,
-                    5.90342874e-51,   5.77725654e-49
+                    1.20958787e-04,   2.24531172e-06,   1.00369447e-05,
+                    5.22700388e-04,   4.28382158e-04,   6.78623202e-02,
+                    4.00112919e-07,   1.46544920e-07,   1.20831350e-32,
+                    3.89605241e-34,  -3.39400724e-33,  -2.46590209e-34,
+                    -1.74786488e-31,  -5.36410698e-31,   4.72585636e-27,
+                    7.94725956e-26,   5.20640355e-33,   2.16633481e-32,
+                    2.74982659e-34,   5.20547210e-35,   5.96795929e-33,
+                    -2.98353670e-48,  -1.16084981e-45,  -2.33518734e-48,
+                    -6.38881605e-47,  -3.09502377e-48,  -8.14011410e-48,
+                    -6.95137295e-47,  -8.71647858e-47,  -3.34677877e-46,
+                    2.05479180e-09,   1.59879068e-09,   2.45613053e-09,
+                    2.06962550e-08,   2.82124731e-09,   4.55692132e-04,
+                    3.22230699e-07,   1.49833621e-07,   5.93547268e-08,
+                    -2.74353105e-33,  -1.17993222e-30,  -5.51437143e-36,
+                    -9.13974801e-37,  -1.97028722e-31,  -9.69084296e-32,
+                    -1.31976752e-30,  -2.12060990e-32,   1.55792718e-01,
+                    7.74803838e-01,   2.72630502e-66,   2.88273784e-67,
+                    -2.18774836e-50,  -1.47465442e-48
                     ])
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)

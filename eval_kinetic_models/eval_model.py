@@ -15,8 +15,9 @@ from scipy.interpolate import UnivariateSpline
 import cantera as ct
 
 # Local imports
+from eval_kinetic_models.utils import to_pascal, to_kelvin
 from eval_kinetic_models import parse_files
-from eval_kinetic_models.simulation import Property, Simulation, to_pascal
+from eval_kinetic_models.simulation import Property, Simulation
 
 
 def simulation_worker(sim_tuple):
@@ -150,11 +151,10 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                     model_mod += model_variant[model_name]['bath gases'][sp]
 
                 if 'pressures' in model_variant[model_name]:
-                    pres = sim.properties['pressure'].value
-                    # to Pascal
-                    pres *= to_pascal[sim.properties['pressure'].units]
-                    # to atm
-                    pres /= ct.one_atm
+                    # pressure to atm
+                    pres = to_atm(sim.properties['pressure'].value,
+                                  sim.properties['pressure'].units
+                                  )
 
                     # choose closest pressure
                     # better way to do this?
@@ -189,9 +189,16 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             ignition_delays_exp[idx] = sim.properties['ignition delay']
             ignition_delays_sim[idx] = sim.properties['simulated ignition delay']
 
+            temp = to_kelvin(sim.properties['temperature'].value,
+                             sim.properties['temperature'].units
+                             )
+            pres = to_atm(sim.properties['pressure'].value,
+                          sim.properties['pressure'].units
+                          )
+
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': ignition_delays_exp[idx],
-                 'simulated ignition delay': ignition_delays_sim[idx],
+                 'simulated ignition delay': ignition_delays_sim[idx]
                  })
 
         # calculate error function for this dataset
