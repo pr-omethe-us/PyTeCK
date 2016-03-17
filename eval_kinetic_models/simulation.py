@@ -459,16 +459,20 @@ class Simulation(object):
                 target = table.col('mass_fractions')[:, self.ignition_target]
 
         # Analysis for ignition depends on type specified
-        if self.ignition_type == 'max':
-            ind = detect_peaks(target)
-            max_ind = np.argmax(target)
-        elif self.ignition_type == 'd/dt max':
+        if self.ignition_type == 'd/dt max':
             # Evaluate derivative
-            deriv = first_derivative(time, target)
+            target = first_derivative(time, target)
 
-            # Get indices of peaks, and index of largest peak
-            ind = detect_peaks(deriv)
-            max_ind = ind[np.argmax(deriv[ind])]
+        # Get indices of peaks
+        ind = detect_peaks(target)
+
+        # Fall back on derivative if max value doesn't work.
+        if len(ind) == 0 and self.ignition_type == 'max':
+            target = first_derivative(time, target)
+            ind = detect_peaks(target)
+
+        # Get index of largest peak (overall ignition delay)
+        max_ind = ind[np.argmax(target[ind])]
 
         # Will need to subtract compression time for RCM
         time_comp = 0.0
