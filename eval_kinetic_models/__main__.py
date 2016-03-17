@@ -55,7 +55,7 @@ parser.add_argument('-nt', '--num-threads',
                     dest='num_threads',
                     default=multiprocessing.cpu_count()-1 or 1,
                     required=False,
-                    help='The number of threads to use to run simulations in
+                    help='The number of threads to use to run simulations in '
                          'parallel.'
                     )
 args = parser.parse_args()
