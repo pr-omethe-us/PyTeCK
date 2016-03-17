@@ -144,15 +144,19 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                     gases = bath_gases.intersection(set(sim.properties['composition']))
 
                     # If only one bath gas present, use that. If multiple, use the
-                    # predominant species.
+                    # predominant species. If none of the designated bath gases
+                    # are present, just use the first one (shouldn't matter.)
                     if len(gases) > 1:
                         max_mole = 0.
                         sp = ''
                         for g in gases:
                             if float(sim.properties['composition'][g]) > max_mole:
                                 sp = g
-                    else:
+                    elif len(gases) == 1:
                         sp = gases.pop()
+                    else:
+                        # If no designated bath gas present, use any.
+                        sp = bath_gases.pop()
                     model_mod += model_variant[model_name]['bath gases'][sp]
 
                 if 'pressures' in model_variant[model_name]:
