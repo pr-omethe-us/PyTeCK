@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import multiprocessing
 
 from .eval_model import evaluate_model
 
