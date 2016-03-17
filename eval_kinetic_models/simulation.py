@@ -494,8 +494,9 @@ class Simulation(object):
             # Evaluate derivative
             deriv = first_derivative(time, target)
 
+            # Get indices of peaks, and index of largest peak
             ind = detect_peaks(deriv)
-            max_ind = np.argmax(deriv)
+            max_ind = ind[np.argmax(deriv[ind])]
 
         # Will need to subtract compression time for RCM
         time_comp = 0.0
