@@ -42,7 +42,7 @@ def simulation_worker(sim_tuple):
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
-                   num_threads=multiprocessing.cpu_count()-1 or 1
+                   num_threads=None
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
     """
@@ -65,6 +65,11 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
     # Dictionary with all output data
     output = {'model': model_name, 'datasets': []}
+
+    # If number of threads not specified, use either max number of available
+    # cores minus 1, or use 1 if multiple cores not available.
+    if not num_threads:
+        num_threads = multiprocessing.cpu_count()-1 or 1
 
     # Loop through all datasets
     for idx_set, dataset in enumerate(dataset_list):
