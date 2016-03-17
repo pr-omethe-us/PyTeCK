@@ -15,7 +15,7 @@ from scipy.interpolate import UnivariateSpline
 import cantera as ct
 
 # Local imports
-from eval_kinetic_models.utils import to_pascal, to_kelvin
+from eval_kinetic_models.utils import to_pascal, to_kelvin, to_atm
 from eval_kinetic_models import parse_files
 from eval_kinetic_models.simulation import Property, Simulation
 
