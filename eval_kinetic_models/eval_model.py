@@ -198,7 +198,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': ignition_delays_exp[idx],
-                 'simulated ignition delay': ignition_delays_sim[idx]
+                 'simulated ignition delay': ignition_delays_sim[idx],
+                 'temperature': temp, 'pressure': pres,
+                 'composition': properties['composition']
                  })
 
         # calculate error function for this dataset
