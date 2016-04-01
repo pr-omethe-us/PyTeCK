@@ -41,12 +41,11 @@ install:
 
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables
     - source activate test-environment
-    - python setup.py install
 
-    - sudo apt-get update -qq
-    - sudo apt-get install -y g++ python-dev scons cython libsundials-serial-dev liblapack-dev libblas-dev libboost-thread-dev
-    - git clone https://github.com/Cantera/cantera.git
-    - cd cantera && git checkout 2.2 && scons build -j4 blas_lapack_libs=lapack,blas
+    - git clone https://github.com/bryanwweber/conda-recipes.git
+    - cd conda-recipes
+    - conda build --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable
+    - conda install --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable --use-local
     #- sudo apt-add-repository ppa:speth/cantera -y
     #- sudo aptitude update
     #- sudo aptitude install cantera-python cantera-python3 cantera-dev -y
