@@ -3,7 +3,7 @@ import multiprocessing
 
 from .eval_model import evaluate_model
 
-parser = ArgumentParser(description='eval_kinetic_models: Evaluate '
+parser = ArgumentParser(description='PyTeCK: Evaluate '
                                     'performance of kinetic models using '
                                     'experimental ignition delay data.'
                         )
