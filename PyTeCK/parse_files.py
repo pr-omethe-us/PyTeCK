@@ -13,9 +13,9 @@ from os.path import splitext, basename
 import numpy as np
 
 try:
-    import xml.etree.cElementTree as ET
-except ImportError:
     import xml.etree.ElementTree as ET
+except ImportError:
+    import xml.etree.cElementTree as ET
 
 # Local imports
 from .exceptions import (KeywordError, UndefinedElementError,
