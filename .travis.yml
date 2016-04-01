@@ -1,0 +1,27 @@
+language: python
+python:
+  - 2.6
+  - 2.7
+  - 3.3
+  - 3.4
+  - 3.5
+
+sudo: required
+
+addons:
+    apt_package:
+        - libbz2-dev
+        - libhdf5-serial-dev
+        - liblzo2-dev
+
+before_script:
+    - sudo aptitude install python-software-properties
+    - sudo apt-add-repository ppa:speth/cantera
+    - sudo aptitude update
+    - sudo aptitude install cantera-python cantera-python3 cantera-dev
+
+# command to install dependencies
+install: "pip install -r requirements.txt"
+
+# command to run tests
+script: py.test
