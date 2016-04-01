@@ -20,7 +20,7 @@ virtualenv:
     system_site_packages: true
 
 before_script:
-    - sudo apt-add-repository ppa:speth/cantera
+    - sudo apt-add-repository ppa:speth/cantera -y
     - sudo aptitude update
     - sudo aptitude install cantera-python cantera-python3 cantera-dev
 
