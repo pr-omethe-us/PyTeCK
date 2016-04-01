@@ -22,7 +22,7 @@ virtualenv:
 before_script:
     - sudo apt-add-repository ppa:speth/cantera -y
     - sudo aptitude update
-    - sudo aptitude install cantera-python cantera-python3 cantera-dev
+    - sudo aptitude install cantera-python cantera-python3 cantera-dev -y
 
 # command to install dependencies
 install: pip install -r requirements.txt
