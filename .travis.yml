@@ -14,8 +14,8 @@ addons:
             - liblapack-dev
             - python-software-properties
 
-virtualenv:
-    system_site_packages: true
+#virtualenv:
+#    system_site_packages: true
 
 # Install packages
 install:
