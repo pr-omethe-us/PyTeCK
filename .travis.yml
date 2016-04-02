@@ -1,7 +1,7 @@
 language: python
 python:
  # - 2.7
- - 3.5
+ - 3.4
 
 sudo: required
 
@@ -48,8 +48,8 @@ install:
     - conda install -n root conda-build
     #- conda build --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable
     #- conda install --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable --use-local
-    - conda build --python=3.5 cantera-stable
-    - conda install --python=3.5 cantera-stable --use-local
+    - conda build --python=3.4 cantera-stable
+    - conda install --python=3.4 cantera-stable --use-local
     #- sudo apt-add-repository ppa:speth/cantera -y
     #- sudo aptitude update
     #- sudo aptitude install cantera-python cantera-python3 cantera-dev -y
