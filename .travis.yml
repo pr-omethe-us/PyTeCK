@@ -39,8 +39,9 @@ install:
     - sudo rm -rf /dev/shm
     - sudo ln -s /run/shm /dev/shm
 
-    - conda create -q -n test-environment -c bryanwweber python=$TRAVIS_PYTHON_VERSION numpy scipy pytables pytest cantera
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables pytest
     - source activate test-environment
+    - conda install -c bryanwweber cantera
     #- python setup.py install
 
     #- git clone https://github.com/bryanwweber/conda-recipes.git
