@@ -1,7 +1,6 @@
-[![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
-
 PyTeCK
 ======
+[![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
 
 This software package automatically evaluates the performance of a chemical reaction mechanism using experimental data given in [ReSpecTh][1] XML format.
 
