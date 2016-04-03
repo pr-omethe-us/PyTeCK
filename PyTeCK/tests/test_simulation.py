@@ -626,8 +626,10 @@ class TestSimulation:
                     -2.18774836e-50,  -1.47465442e-48
                     ])
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
-                np.testing.assert_allclose(table.col('temperature')[-1], temp)
-                np.testing.assert_allclose(table.col('pressure')[-1], pres)
+                np.testing.assert_allclose(table.col('temperature')[-1], temp,
+                                           rtol=1e-5, atol=1e-9)
+                np.testing.assert_allclose(table.col('pressure')[-1], pres,
+                                           rtol=1e-5, atol=1e-9)
                 np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
