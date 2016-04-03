@@ -42,19 +42,6 @@ install:
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables pytest
     - source activate test-environment
     - conda install -c bryanwweber cantera
-    #- python setup.py install
-
-    #- git clone https://github.com/bryanwweber/conda-recipes.git
-    #- cd conda-recipes
-    #- git checkout fix-3to2-cantera
-    #- conda install -n root conda-build
-    #- conda build --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable
-    #- conda install --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable --use-local
-    #- conda build -c bryanwweber --python=3.4 cantera-stable
-    #- conda install -c bryanwweber cantera
-    #- cd ..
-    #- rm -rf conda-recipes
-    #- conda install -c https://conda.anaconda.org/anaconda pytest
 
 # command to run tests
 script: py.test
