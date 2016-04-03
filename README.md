@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
+
 PyTeCK
 ======
 
@@ -9,7 +11,9 @@ Usage
 
 License
 -------
+`PyTeCK` is released under the MIT license; see LICENSE for details.
 
+If you use this package as part of a scholarly publication, please cite this resource directly.
 
 Citation
 --------
