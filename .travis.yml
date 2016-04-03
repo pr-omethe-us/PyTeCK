@@ -44,13 +44,14 @@ install:
     - python setup.py install
 
     - git clone https://github.com/bryanwweber/conda-recipes.git
+    - git checkout fix-3to2-cantera
     - cd conda-recipes
     - conda install -n root conda-build
     #- conda build --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable
     #- conda install --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable --use-local
     #- conda build --python=3.4 3to2
     #- conda install 3to2
-    - conda build --python=3.4 cantera-stable
+    - conda build -c bryanwweber --python=3.4 cantera-stable
     - conda install cantera-stable
     #- sudo apt-add-repository ppa:speth/cantera -y
     #- sudo aptitude update
