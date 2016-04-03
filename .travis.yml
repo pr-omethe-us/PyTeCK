@@ -53,6 +53,7 @@ install:
     #- conda install 3to2
     #- conda build -c bryanwweber --python=3.4 cantera-stable
     - conda install -c bryanwweber cantera
+    - conda install -c https://conda.anaconda.org/anaconda pytest
     #- sudo apt-add-repository ppa:speth/cantera -y
     #- sudo aptitude update
     #- sudo aptitude install cantera-python cantera-python3 cantera-dev -y
