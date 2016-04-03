@@ -49,15 +49,11 @@ install:
     - conda install -n root conda-build
     #- conda build --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable
     #- conda install --python=2.7 --python=3.3 --python=3.4 --python=3.5 cantera-stable --use-local
-    #- conda build --python=3.4 3to2
-    #- conda install 3to2
     #- conda build -c bryanwweber --python=3.4 cantera-stable
     - conda install -c bryanwweber cantera
+    - cd ..
+    - rm -rf conda-recipes
     - conda install -c https://conda.anaconda.org/anaconda pytest
-    #- sudo apt-add-repository ppa:speth/cantera -y
-    #- sudo aptitude update
-    #- sudo aptitude install cantera-python cantera-python3 cantera-dev -y
-    #- pip install -r requirements.txt
 
 # command to run tests
 script: py.test
