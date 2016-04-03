@@ -6,16 +6,14 @@ This software package automatically evaluates the performance of a chemical reac
 
 Usage
 -----
-
+The full list of options can be seen using `PyTeCK -h` or `PyTeCK --help`.
 
 License
 -------
 `PyTeCK` is released under the MIT license; see LICENSE for details.
 
-If you use this package as part of a scholarly publication, please cite this resource directly.
-
 Citation
 --------
-TBD
+If you use this package as part of a scholarly publication, please cite this resource directly.
 
 [1]: http://respecth.hu/ "ReSpecTh"
