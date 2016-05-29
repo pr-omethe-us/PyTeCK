@@ -296,7 +296,7 @@ class Simulation(object):
             self.reac_net.set_max_time_step(min_time)
 
         # Check if species ignition target, that species is present.
-        if self.ignition_target not in ['P', 'T']:
+        if self.ignition_target not in ['pressure', 'temperature']:
             # Other targets are species
             spec = self.ignition_target
 

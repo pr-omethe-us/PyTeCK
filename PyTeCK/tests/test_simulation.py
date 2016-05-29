@@ -248,10 +248,14 @@ class TestSimulation:
         sim = simulations[0]
         sim.setup_case(mechanism_filename, spec_key)
 
+        init_pressure = 220. * units.kilopascal
+
         assert sim.kind == 'ST'
         np.testing.assert_allclose(sim.time_end, 4.7154e-2)
         np.testing.assert_allclose(sim.gas.T, 1164.48)
-        np.testing.assert_allclose(sim.gas.P, 2.18 * ct.one_atm)
+        np.testing.assert_allclose(sim.gas.P,
+                                   init_pressure.to('pascal').magnitude
+                                   )
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.00444
         mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.00566
@@ -262,6 +266,9 @@ class TestSimulation:
         for time in times:
             np.testing.assert_allclose(sim.reac.walls[0].vdot(time), 0.0)
         assert sim.n_vars == gas.n_species + 3
+
+        assert sim.ignition_target == 'pressure'
+        assert sim.ignition_type == 'd/dt max'
 
         sim = simulations[1]
         sim.setup_case(mechanism_filename, spec_key)
@@ -269,7 +276,9 @@ class TestSimulation:
         assert sim.kind == 'ST'
         np.testing.assert_allclose(sim.time_end, 4.4803e-2)
         np.testing.assert_allclose(sim.gas.T, 1164.97)
-        np.testing.assert_allclose(sim.gas.P, 2.18 * ct.one_atm)
+        np.testing.assert_allclose(sim.gas.P,
+                                   init_pressure.to('pascal').magnitude
+                                   )
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.00444
         mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.00566
@@ -280,6 +289,37 @@ class TestSimulation:
         for time in times:
             np.testing.assert_allclose(sim.reac.walls[0].vdot(time), 0.0)
         assert sim.n_vars == gas.n_species + 3
+
+        assert sim.ignition_target == 'pressure'
+        assert sim.ignition_type == 'd/dt max'
+
+    def test_shock_tube_temperature_target_setup_case(self):
+        """Test that shock tube case with temperature target set up properly.
+        """
+        file_path = os.path.join('testfile_st.yaml')
+        filename = pkg_resources.resource_filename(__name__, file_path)
+        properties = parse_files.read_experiment(filename)
+
+        properties['cases'][0]['ignition']['target'] = 'temperature'
+        properties['cases'][1]['ignition']['target'] = 'temperature'
+
+        # Now create list of Simulation objects
+        simulations = parse_files.create_simulations(properties)
+
+        mechanism_filename = 'gri30.xml'
+        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+
+        sim = simulations[0]
+        sim.setup_case(mechanism_filename, spec_key)
+
+        # Only thing different from last test: ignition target is temperature
+        assert sim.ignition_target == 'temperature'
+
+        sim = simulations[1]
+        sim.setup_case(mechanism_filename, spec_key)
+
+        # Only thing different from last test: ignition target is temperature
+        assert sim.ignition_target == 'temperature'
 
     def test_shock_tube_pressure_rise_setup_case(self):
         """Test that shock tube case with pressure rise is set up properly.
@@ -436,8 +476,8 @@ class TestSimulation:
 
                 # Ensure final state matches expected
                 time_end = 4.7154e-2
-                temp = 1250.4304206484826
-                pres = 236665.8873819185
+                temp = 1250.4302692265724
+                pres = 235713.89675269192
                 mass_fracs = np.array([
                     3.61079842e-09,   6.21171871e-11,   3.82779336e-08,
                     2.76983686e-03,   9.07644300e-07,   2.01253750e-03,
