@@ -336,7 +336,7 @@ class Simulation(object):
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
-                     'mass-fractions': tables.Float64Col(
+                     'mass_fractions': tables.Float64Col(
                           shape=(self.reac.thermo.n_species), pos=4
                           ),
                      }
@@ -359,7 +359,7 @@ class Simulation(object):
             timestep['temperature'] = self.reac.T
             timestep['pressure'] = self.reac.thermo.P
             timestep['volume'] = self.reac.volume
-            timestep['mass-fractions'] = self.reac.Y
+            timestep['mass_fractions'] = self.reac.Y
             # Add ``timestep`` to table
             timestep.append()
 
@@ -383,14 +383,14 @@ class Simulation(object):
                     for i in range(mass_fracs.size):
                         fp = [prev_mass_frac[i], self.reac.Y[i]]
                         mass_fracs[i] = np.interp(self.time_end, xp, fp)
-                    timestep['mass-fractions'] = mass_fracs
+                    timestep['mass_fractions'] = mass_fracs
                 else:
                     # Save new timestep information
                     timestep['time'] = self.reac_net.time
                     timestep['temperature'] = self.reac.T
                     timestep['pressure'] = self.reac.thermo.P
                     timestep['volume'] = self.reac.volume
-                    timestep['mass-fractions'] = self.reac.Y
+                    timestep['mass_fractions'] = self.reac.Y
 
                 # Add ``timestep`` to table
                 timestep.append()
@@ -422,7 +422,7 @@ class Simulation(object):
             elif self.ignition_target == 'temperature':
                 target = table.col('temperature')
             else:
-                target = table.col('mass-fractions')[:, self.ignition_target]
+                target = table.col('mass_fractions')[:, self.ignition_target]
 
         # Analysis for ignition depends on type specified
         if self.ignition_type == 'd/dt max':

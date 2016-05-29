@@ -104,7 +104,7 @@ class TestDatapoints:
         case = properties['cases'][0]
 
         # Ensure correct pressure, temperature, and ignition delay values/units
-        assert case['pressure'] == 2.18 * units.atm
+        assert case['pressure'] == 220 * units.kilopascal
         assert case['temperature'] == 1164.48 * units.kelvin
         assert case['ignition-delay'] == 471.54 * units.us
 
@@ -120,7 +120,7 @@ class TestDatapoints:
 
         case = properties['cases'][1]
 
-        assert case['pressure'] == 2.18 * units.atm
+        assert case['pressure'] == 220 * units.kilopascal
         assert case['temperature'] == 1164.97 * units.kelvin
         assert case['ignition-delay'] == 448.03 * units.us
 
@@ -259,7 +259,7 @@ class TestCreateSimulations:
         assert sim1.properties['data-file'] == 'testfile_st.yaml'
         assert sim1.kind == 'ST'
         assert sim1.properties['temperature'] == 1164.48 * units.kelvin
-        assert sim1.properties['pressure'] == 2.18 * units.atm
+        assert sim1.properties['pressure'] == 220 * units.kilopascal
         assert sim1.properties['ignition-delay'] == 471.54 * units.us
         assert sim1.properties['composition'] == comp
         assert sim1.ignition_target == 'pressure'
@@ -272,7 +272,7 @@ class TestCreateSimulations:
         assert sim2.properties['data-file'] == 'testfile_st.yaml'
         assert sim2.kind == 'ST'
         assert sim2.properties['temperature'] == 1164.97 * units.kelvin
-        assert sim1.properties['pressure'] == 2.18 * units.atm
+        assert sim1.properties['pressure'] == 220 * units.kilopascal
         assert sim2.properties['ignition-delay'] == 448.03 * units.us
         assert sim2.properties['composition'] == comp
         assert sim1.ignition_target == 'pressure'

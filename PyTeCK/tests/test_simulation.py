@@ -471,7 +471,7 @@ class TestSimulation:
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass-fractions'
+                            'volume', 'mass_fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
@@ -479,9 +479,9 @@ class TestSimulation:
                 temp = 1250.4302692265724
                 pres = 235713.89675269192
                 mass_fracs = np.array([
-                    3.61079842e-09,   6.21171871e-11,   3.82779336e-08,
-                    2.76983686e-03,   9.07644300e-07,   2.01253750e-03,
-                    7.20591621e-09,   4.44181561e-10,   0.00000000e+00,
+                    3.64552619e-09,   6.29878862e-11,   3.86203527e-08,
+                    2.76983487e-03,   9.11687374e-07,   2.01253503e-03,
+                    7.24907234e-09,   4.46269923e-10,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -501,7 +501,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass-fractions')[-1],
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -516,17 +516,17 @@ class TestSimulation:
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass-fractions'
+                            'volume', 'mass_fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
                 time_end = 4.4803e-2
-                temp = 1250.9191449466296
-                pres = 236658.80970331622
+                temp = 1250.9189833285129
+                pres = 235706.84568464456
                 mass_fracs = np.array([
-                    3.90863744e-09,   6.88033146e-11,   4.09674276e-08,
-                    2.76982083e-03,   9.40324314e-07,   2.01251732e-03,
-                    7.72163162e-09,   4.72245966e-10,   0.00000000e+00,
+                    3.94722613e-09,   6.97944529e-11,   4.13427490e-08,
+                    2.76981872e-03,   9.44595276e-07,   2.01251469e-03,
+                    7.76952198e-09,   4.74561071e-10,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -546,7 +546,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass-fractions')[-1],
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -578,7 +578,7 @@ class TestSimulation:
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass-fractions'
+                            'volume', 'mass_fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
@@ -608,7 +608,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass-fractions')[-1],
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -640,7 +640,7 @@ class TestSimulation:
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                           'volume', 'mass-fractions'
+                           'volume', 'mass_fractions'
                            ]) == set(table.colnames)
                 # Ensure final state matches expected
                 time_end = 1.0e-1
@@ -671,6 +671,6 @@ class TestSimulation:
                                            rtol=1e-5, atol=1e-9)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres,
                                            rtol=1e-5, atol=1e-9)
-                np.testing.assert_allclose(table.col('mass-fractions')[-1],
+                np.testing.assert_allclose(table.col('mass_fractions')[-1],
                                            mass_fracs, rtol=1e-4, atol=1e-8
                                            )

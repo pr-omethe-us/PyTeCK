@@ -13,7 +13,7 @@ reference:
         - name: F. Lafosse
           ORCID:
         - name: C.-E. Paillard
-          ORCID: 
+          ORCID:
     journal: International Journal of Hydrogen Energy
     year: 2007
     volume: 32
@@ -26,8 +26,8 @@ apparatus:
     facility: stainless steel shock tube
 common-properties:
     pressure: &pres
-        value: 2.18
-        units: atm
+        value: 220
+        units: kilopascal
     initial-composition: &comp
         - species: H2
           InChI: 1S/H2/h1H
