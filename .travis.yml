@@ -39,8 +39,7 @@ install:
     - sudo rm -rf /dev/shm
     - sudo ln -s /run/shm /dev/shm
 
-    - conda install yaml
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables pytest yaml
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy pytables pytest pyaml
     - source activate test-environment
     - conda install -c bryanwweber cantera
     - conda install -c unidata pint
