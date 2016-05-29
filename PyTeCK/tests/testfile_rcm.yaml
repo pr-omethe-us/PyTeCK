@@ -32,7 +32,7 @@ datapoints:
       pressure:
           value: 958.
           units: torr
-      initial-composition:
+      composition:
           - species: H2
             InChI: 1S/H2/h1H
             mole-fraction: 0.12500

@@ -195,11 +195,11 @@ def get_datapoints(properties, raw_properties):
                                )
 
         # Initial composition of species
-        if not datapoint.get('initial-composition', None):
-            raise MissingElementError('initial-composition')
+        if not datapoint.get('composition', None):
+            raise MissingElementError('composition')
         else:
             initial_comp = {}
-            for component in datapoint['initial-composition']:
+            for component in datapoint['composition']:
                 # Try to identify specied based on InChI id, otherwise
                 # fall back on given name
                 spec_id = component.get('InChI', None)
@@ -207,7 +207,7 @@ def get_datapoints(properties, raw_properties):
                     spec_name = component.get('species', None)
                     if not spec_name:
                         raise MissingAttributeError('species',
-                                                    'initial-composition'
+                                                    'composition'
                                                     )
                 else:
                     spec_name = spec_key[spec_id]
@@ -215,7 +215,7 @@ def get_datapoints(properties, raw_properties):
                 spec_amount = component.get('mole-fraction', None)
                 if not spec_amount:
                     raise MissingAttributeError('mole-fraction',
-                                                'initial-composition'
+                                                'composition'
                                                 )
                 initial_comp[spec_name] = spec_amount
 

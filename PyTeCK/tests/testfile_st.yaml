@@ -28,7 +28,7 @@ common-properties:
     pressure: &pres
         value: 220
         units: kilopascal
-    initial-composition: &comp
+    composition: &comp
         - species: H2
           InChI: 1S/H2/h1H
           mole-fraction: 0.00444
@@ -49,7 +49,7 @@ datapoints:
           value: 471.54
           units: us
       pressure: *pres
-      initial-composition: *comp
+      composition: *comp
       ignition-type: *ign
     - temperature:
         value: 1164.97
@@ -58,6 +58,6 @@ datapoints:
           value: 448.03
           units: us
       pressure: *pres
-      initial-composition: *comp
+      composition: *comp
       ignition-type: *ign
 ...

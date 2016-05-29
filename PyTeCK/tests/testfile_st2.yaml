@@ -28,7 +28,7 @@ common-properties:
     pressure: &pres
         value: 2.18
         units: atm
-    initial-composition: &comp
+    composition: &comp
         - species: H2
           InChI: 1S/H2/h1H
           mole-fraction: 0.00444
@@ -52,7 +52,7 @@ datapoints:
           value: 291.57
           units: us
       pressure: *pres
-      initial-composition: *comp
+      composition: *comp
       pressure-rise: *pres-rise
       ignition-type: *ign
 ...
