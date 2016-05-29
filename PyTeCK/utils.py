@@ -5,99 +5,40 @@
 
 import cantera as ct
 
-def to_second(time, units):
-    """Convert time to units of seconds.
+import pint
 
-    :param float time: Initial time in `units`
-    :param str units: Units of `time`
-    :return: Converted time in sec
-    :rtype: float
-    """
-    units = units.lower()
-    if units == 's':
-        return time
-    elif units == 'ms':
-        return time / 1.0e3
-    elif units == 'us':
-        return time / 1.0e6
-    elif units == 'ns':
-        return time / 1.0e9
-    elif units == 'min':
-        return time * 60.
-    else:
-        raise KeyError('Time units not recognized: ' + units)
+units = pint.UnitRegistry()
 
-def to_pascal(pres, units):
-    """Convert pressure to units of pascal (Cantera pressure unit).
+units.define('cm3 = centimeter**3')
 
-    :param float pres: Initial pressure in `units`
-    :param str units: Units of `pres`
-    :return: Converted pressure in Pa
-    :rtype: float
-    """
-    units = units.lower()
-    if units == 'pa':
-        return pres
-    elif units == 'kpa':
-        return pres * 1.0e3
-    elif units == 'mpa':
-        return pres * 1.0e6
-    elif units == 'atm':
-        return pres * ct.one_atm
-    elif units == 'torr':
-        return pres * 133.3224
-    elif units == 'bar':
-        return pres * 1.e5
-    elif units == 'psi':
-        return pres * 6894.757293168
-    else:
-        raise KeyError('Pressure units not recognized: ' + units)
-
-def to_atm(pres, units):
-    """Convert pressure to units of atm.
-
-    :param float pres: Initial pressure in `units`
-    :param str units: Units of `pres`
-    :return: Converted pressure in atm
-    :rtype: float
-    """
-    units = units.lower()
-    if units == 'atm':
-        return pres
-    elif units == 'pa':
-        return pres / ct.one_atm
-    elif units == 'kpa':
-        return pres * 1000. / ct.one_atm
-    elif units == 'mpa':
-        return pres * 1.e6 / ct.one_atm
-    elif units == 'torr':
-        return pres / 760.
-    elif units == 'bar':
-        return pres * 1.e5 / ct.one_atm
-    elif units == 'psi':
-        return pres * (6894.757293168 / ct.one_atm)
-    else:
-        raise KeyError('Pressure units not recognized: ' + units)
+get_temp_unit = {'K': 'kelvin',
+                 'C': 'degC',
+                 'F': 'degF',
+                 'R': 'degR'
+                 }
 
 
-def to_kelvin(temp, units):
-    """Convert temperature to units of Kelvin.
+# Unique InChI identifier for species
+spec_key = {'1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3': 'nC7H16',
+            '1S/C8H18/c1-7(2)6-8(3,4)5/h7H,6H2,1-5H3': 'iC8H18',
+            '1S/C7H8/c1-7-5-3-2-4-6-7/h2-6H,1H3': 'C6H5CH3',
+            '1S/C2H6O/c1-2-3/h3H,2H2,1H3': 'C2H5OH',
+            '1S/O2/c1-2': 'O2',
+            '1S/N2/c1-2': 'N2',
+            '1S/Ar': 'Ar',
+            '1S/He': 'He',
+            '1S/CO2/c2-1-3': 'CO2',
+            '1S/H2/h1H': 'H2',
+            }
 
-    :param float temp: Initial temperature in `units`
-    :param str units: Units of `temp`
-    :return: Converted temperature in Kelvin
-    :rtype: float
-    """
-    if units == 'K':
-        temp = temp
-    elif units == 'C':
-        temp = (temp + 273.15)
-    elif units == 'F':
-        temp = ((temp + 459.67) * (5.0 / 9.0))
-    else:
-        raise KeyError('Temperature units not recognized: ' + units)
-
-    if temp < 0:
-        raise ValueError('Temperature in Kelvin < zero: ' + str(temp))
-    else:
-        return temp
+spec_key_rev = {'nC7H16': '1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3',
+                'iC8H18': '1S/C8H18/c1-7(2)6-8(3,4)5/h7H,6H2,1-5H3',
+                'C6H5CH3': '1S/C7H8/c1-7-5-3-2-4-6-7/h2-6H,1H3',
+                'C2H5OH': '1S/C2H6O/c1-2-3/h3H,2H2,1H3',
+                'O2': '1S/O2/c1-2',
+                'N2': '1S/N2/c1-2',
+                'Ar': '1S/Ar',
+                'He': '1S/He',
+                'CO2': '1S/CO2/c2-1-3',
+                'H2': '1S/H2/h1H',
+                }

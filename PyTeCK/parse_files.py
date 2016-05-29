@@ -17,137 +17,91 @@ try:
 except ImportError:
     import xml.etree.cElementTree as ET
 
+try:
+    import yaml
+except ImportError:
+    print('Warning: YAML must be installed to read input file.')
+
 # Local imports
+from .utils import units, spec_key, get_temp_unit
 from .exceptions import (KeywordError, UndefinedElementError,
                          MissingElementError, MissingAttributeError,
                          UndefinedKeywordError
                          )
-from .simulation import Property, Simulation
+from .simulation import Simulation
+from . import validation
 
 
-# Unique InChI identifier for species
-spec_key = {'1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3': 'nC7H16',
-            '1S/C8H18/c1-7(2)6-8(3,4)5/h7H,6H2,1-5H3': 'iC8H18',
-            '1S/C7H8/c1-7-5-3-2-4-6-7/h2-6H,1H3': 'C6H5CH3',
-            '1S/C2H6O/c1-2-3/h3H,2H2,1H3': 'C2H5OH',
-            '1S/O2/c1-2': 'O2',
-            '1S/N2/c1-2': 'N2',
-            '1S/Ar': 'Ar',
-            '1S/He': 'He',
-            '1S/CO2/c2-1-3': 'CO2',
-            '1S/H2/h1H': 'H2'
-            }
+def get_experiment_kind(raw_properties):
+    """Read experiment properties from file.
 
+    Parameters
+    ----------
+    raw_properties : dict
+        Raw properties dict read from file
 
-def get_experiment_kind(root):
-    """Read common properties from root of ReSpecTh XML file.
+    Returns
+    -------
+    kind : str
+        Type of experiment ('ST' or 'RCM')
 
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Type of experiment ('ST' or 'RCM')
-    :rtype: str
     """
-    if root.find('experimentType').text != 'Ignition delay measurement':
-        raise KeywordError('experimentType not ignition delay measurement')
-    try:
-        kind = root.find('apparatus/kind').text
-        if kind == 'shock tube':
-            return 'ST'
-        elif kind == 'rapid compression machine':
-            return 'RCM'
-        else:
-            raise NotImplementedError(kind + ' experiment not supported')
-    except:
+    if not raw_properties.get('experiment-type', None):
+        raise MissingElementError('experiment-type')
+
+    if raw_properties['experiment-type'] != 'Ignition delay measurement':
+        raise NotImplementedError('experimentType not '
+                                  'ignition delay measurement'
+                                  )
+
+    apparatus = raw_properties.get('apparatus', None)
+    if not apparatus:
+        raise MissingElementError('apparatus')
+
+    kind = apparatus.get('kind',  None)
+    if not kind:
         raise MissingElementError('apparatus/kind')
+    elif kind == 'shock tube':
+        return 'ST'
+    elif kind == 'rapid compression machine':
+        return 'RCM'
+    else:
+        raise NotImplementedError(kind + ' experiment not supported')
 
 
-def get_common_properties(properties, root):
-    """Read common properties from root of ReSpecTh XML file.
+def get_ignition_type(ignition_type):
+    """Gets (and validates) ignition type and target.
 
-    :param dict properties: Dictionary with initial properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with common properties added
-    :rtype: dict
+    Parameters
+    ----------
+    ignition_type : dict
+        Dictionary with ignition type information
+
+    Returns
+    -------
+    ignition : dict
+        Dictionary with ignition type/target added
+
     """
-    for elem in root.iterfind('commonProperties/property'):
-        name = elem.attrib['name']
-        if name == 'initial composition':
-            #initial_comp = []
-            initial_comp = {}
-            units = None
-            for child in elem.iter('component'):
-                # use InChI for unique species identifier (if possible)
-                try:
-                    spec_id = child.find('speciesLink').attrib['InChI']
-                    spec = spec_key[spec_id]
-                except KeyError:
-                    spec = child.find('speciesLink').attrib['preferredKey']
+    ignition = {}
+    # only supports one ignition target
+    if isinstance(ignition_type, list):
+        raise NotImplementedError('Multiple ignition targets '
+                                  'not implemented.'
+                                  )
 
-                # amount of that species
-                #initial_comp.append(spec + ':' + child.find('amount').text)
-                initial_comp[spec] = child.find('amount').text
-
-                # check consistency of units
-                if not units:
-                    units = child.find('amount').attrib['units']
-                elif units != child.find('amount').attrib['units']:
-                    raise KeywordError('inconsistent initial composition units')
-
-            # Convert initial conditions to mole fraction if other.
-            if units != 'mole fraction':
-                raise NotImplementedError('Non-molar composition unsupported.')
-
-            properties['composition'] = initial_comp
-        elif name == 'temperature':
-            # Common initial temperature
-            properties['temperature'] = Property(float(elem.find('value').text),
-                                                 elem.attrib['units']
-                                                 )
-        elif name == 'pressure':
-            # Common initial pressure
-            properties['pressure'] = Property(float(elem.find('value').text),
-                                              elem.attrib['units']
-                                              )
-        elif name == 'pressure rise':
-            # Constant pressure rise, given in % of initial pressure
-            # per unit of time
-            if properties['kind'] == 'RCM':
-                raise KeywordError('Pressure rise cannot be defined for RCM.')
-
-            properties['pressure rise'] = Property(float(elem.find('value').text),
-                                                   elem.attrib['units']
-                                                   )
-    return properties
-
-
-def get_ignition_type(properties, root):
-    """Gets ignition type and target.
-
-    :param dict properties: Dictionary with initial properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with ignition type/target added
-    :rtype: dict
-    """
-    elem = root.find('ignitionType')
-
-    if elem is None:
-        raise MissingElementError('ignitionType')
-
-    try:
-        ign_target = elem.attrib['target'].rstrip(';').upper()
-    except KeyError:
-        raise MissingAttributeError('ignitionType target')
-    try:
-        ign_type = elem.attrib['type']
-    except KeyError:
-        raise MissingAttributeError('ignitionType type')
-
-    # ReSpecTh allows multiple ignition targets
-    if len(ign_target.split(';')) > 1:
-        raise NotImplementedError('Multiple ignition targets not implemented.')
+    ign_target = ignition_type.get('target', None)
+    if not ign_target:
+        raise MissingAttributeError('target', 'ignition-type')
+    ign_type = ignition_type.get('type', None)
+    if not ign_type:
+        raise MissingAttributeError('type', 'ignition-type')
 
     # Acceptable ignition targets include pressure, temperature, and species
     # concentrations
-    if ign_target not in ['P', 'T', 'OH', 'OH*', 'CH*', 'CH']:
+    if ign_target not in ['pressure', 'temperature',
+                          'OH', 'OH*', 'CH*', 'CH'
+                          ]:
         raise UndefinedKeywordError(ign_target)
 
     if ign_type not in ['max', 'd/dt max',
@@ -162,177 +116,281 @@ def get_ignition_type(properties, root):
                     ]:
         raise NotImplementedError(ign_type + ' not supported')
 
-    properties['ignition type'] = ign_type
-    properties['ignition target'] = ign_target
+    ignition['type'] = ign_type
+    ignition['target'] = ign_target
 
-    amt = None
-    amt_units = None
+    ignition['target-value'] = None
+    ignition['target-units'] = None
     if ign_type in ['concentration', 'relative concentration']:
         try:
-            amt = elem.attrib['amount']
+            ignition['target-value'] = float(ignition_type['amount'])
         except KeyError:
-            raise MissingAttributeError('ignitionType amount')
+            raise MissingAttributeError('amount', 'ignition-type')
         try:
-            amt_units = elem.attrib['units']
+            ignition['target-units'] = ignition_type['units']
         except KeyError:
-            raise MissingAttributeError('ignitionType units')
+            raise MissingAttributeError('units', 'ignition-type')
 
-        properties['ignition target value'] = Property(amt, amt_units)
+        # Check value of target
+        validation.validate_gt('target-value', ignition['target-value'], 0.0)
 
+        ### THIS ISN'T SUPPORTED NOW
         raise NotImplementedError('concentration ignition delay type '
-                                  ' not supported'
+                                  'not supported'
                                   )
-    else:
-        properties['ignition target value'] = None
 
-    return properties
+    return ignition
 
 
-def get_datapoints(properties, root):
+def get_datapoints(properties, raw_properties):
     """Parse datapoints with ignition delay from file.
 
-    :param dict properties: Dictionary with experimental properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with ignition delay data
-    :rtype: dict
+    Parameters
+    ----------
+    properties : dict
+        Dictionary with experimental properties
+    raw_properties : dict
+        Dictionary with raw properties read from file
+
+    Returns
+    -------
+    properties : dict
+        Dictionary updated with ignition delay datapoints
+
     """
-    # Shock tube experiment will have one data group, while RCM may have one
-    # or two (one for ignition delay, one for volume-history)
-    property_id = {}
-    for dataGroup in root.findall('dataGroup'):
+    # Each datapoint should have all necessary information associated with it,
+    # regardless of experiment type
+    if not raw_properties.get('datapoints', None):
+        raise MissingElementError('datapoints')
 
-        # get properties of dataGroup
-        num = len(dataGroup.findall('dataPoint'))
-        for prop in dataGroup.findall('property'):
-            property_id[prop.attrib['id']] = prop.attrib['name']
-            properties[prop.attrib['name']] = Property(np.zeros([num]),
-                                                       prop.attrib['units']
-                                                       )
+    properties['cases'] = []
 
-        # now get data points
-        for idx, dp in enumerate(dataGroup.findall('dataPoint')):
-            for val in dp:
-                prop = property_id[val.tag]
-                properties[prop].value[idx] = float(val.text)
+    # get properties of datapoints
+    for datapoint in raw_properties['datapoints']:
+        case = {}
+
+        # Read mandatory initial conditions and properties
+        for prop in ['ignition-delay', 'temperature', 'pressure']:
+            if not datapoint.get(prop, None):
+                raise MissingElementError(prop)
+            else:
+                temp_units = datapoint[prop].get('units', None)
+                if not temp_units:
+                    raise MissingAttributeError('units', prop)
+                temp_value = datapoint[prop].get('value', None)
+                if not temp_value:
+                    raise MissingAttributeError('value', prop)
+
+            case[prop] = float(temp_value) * units(temp_units)
+
+        # Check for proper units and values
+        validation.validate_gt('ignition delay', case['ignition-delay'],
+                               0. * units.second
+                               )
+        validation.validate_gt('temperature', case['temperature'],
+                               0. * units.kelvin
+                               )
+        validation.validate_gt('pressure', case['pressure'],
+                               0. * units.pascal
+                               )
+
+        # Initial composition of species
+        if not datapoint.get('initial-composition', None):
+            raise MissingElementError('initial-composition')
+        else:
+            initial_comp = {}
+            for component in datapoint['initial-composition']:
+                # Try to identify specied based on InChI id, otherwise
+                # fall back on given name
+                spec_id = component.get('InChI', None)
+                if not spec_id:
+                    spec_name = component.get('species', None)
+                    if not spec_name:
+                        raise MissingAttributeError('species',
+                                                    'initial-composition'
+                                                    )
+                else:
+                    spec_name = spec_key[spec_id]
+
+                spec_amount = component.get('mole-fraction', None)
+                if not spec_amount:
+                    raise MissingAttributeError('mole-fraction',
+                                                'initial-composition'
+                                                )
+                initial_comp[spec_name] = spec_amount
+
+            case['composition'] = initial_comp
+
+        # Check ignition type
+        if not datapoint.get('ignition-type', None):
+            raise MissingElementError('ignition-type')
+        else:
+            case['ignition'] = get_ignition_type(datapoint['ignition-type'])
+
+        # optional properties
+
+        if datapoint.get('pressure-rise', None):
+            temp_units = datapoint['pressure-rise'].get('units', None)
+            if not temp_units:
+                raise MissingAttributeError('units', 'pressure-rise')
+            temp_value = datapoint['pressure-rise'].get('value', None)
+            if not temp_value:
+                raise MissingAttributeError('value', 'pressure-rise')
+
+            case['pressure-rise'] = float(temp_value) / units(temp_units)
+            validation.validate_geq('pressure rise', case['pressure-rise'],
+                                    0. / units.second
+                                    )
+
+        if datapoint.get('compression-time', None):
+            temp_units = datapoint['compression-time'].get('units', None)
+            if not temp_units:
+                raise MissingAttributeError('units', 'compression-time')
+            temp_value = datapoint['compression-time'].get('value', None)
+            if not temp_value:
+                raise MissingAttributeError('value', 'compression-time')
+
+            case['compression-time'] = float(temp_value) * units(temp_units)
+            validation.validate_geq('compression time',
+                                    case['compression-time'],
+                                    0. * units.second
+                                    )
+
+        if datapoint.get('volume-history', None):
+            # get information about time and volume
+            time_info = datapoint['volume-history'].get('time', None)
+            if not time_info:
+                raise MissingAttributeError('time', 'volume-history')
+            time_units = time_info.get('units', None)
+            if not time_units:
+                raise MissingAttributeError('units', 'time')
+            time_col = time_info.get('column', 0)
+
+            volume_info = datapoint['volume-history'].get('volume', None)
+            if not volume_info:
+                raise MissingAttributeError('volume', 'volume-history')
+            volume_units = volume_info.get('units', None)
+            if not volume_units:
+                raise MissingAttributeError('units', 'volume')
+            volume_col = volume_info.get('column', 1)
+
+            if time_col == volume_col:
+                raise KeywordError('time and volume columns are the same in '
+                                   'volume-history property.'
+                                   )
+            if not datapoint['volume-history'].get('values', None):
+                raise MissingAttributeError('values', 'volume-history')
+            else:
+                values = np.array(datapoint['volume-history']['values'])
+
+            case['time'] = values[:, time_col] * units(time_units)
+            case['volume'] = values[:, volume_col] * units(volume_units)
+
+            # Check units
+            for val in case['time']:
+                validation.validate_geq('time', val, 0. * units.second)
+            for val in case['volume']:
+                validation.validate_geq('volume', val, 0. * units.meter**3)
+
+        properties['cases'].append(case)
 
     return properties
 
 
 def read_experiment(filename):
-    """Reads experiment data from ReSpecTh XML file.
+    """Reads experiment data from YAML file.
 
-    :param str filename: XML filename in ReSpecTh format with experimental data
-    :return: Dictionary with group of experimental properties
-    :rtype: dict
+    Parameters
+    ----------
+    filename : str
+        Name of YAML file in specified format with experimental data
+
+    Returns
+    -------
+    properties : dict
+        Dictionary with group of experimental properties
+
     """
 
-    tree = ET.parse(filename)
-    root = tree.getroot()
+    with open(filename, 'r') as f:
+        raw_properties = yaml.load(f)
 
     properties = {}
 
     # Save name of original data filename
     properties['id'] = splitext(basename(filename))[0]
-    properties['data file'] = basename(filename)
+    properties['data-file'] = basename(filename)
 
     # Ensure ignition delay, and get which kind of experiment
-    properties['kind'] = get_experiment_kind(root)
-
-    # Get properties shared across the file
-    properties = get_common_properties(properties, root)
-
-    # Determine definition of ignition delay
-    properties = get_ignition_type(properties, root)
+    properties['kind'] = get_experiment_kind(raw_properties)
 
     # Now parse ignition delay datapoints
-    properties = get_datapoints(properties, root)
+    properties = get_datapoints(properties, raw_properties)
 
     # Get compression time for RCM, if volume history given
     if 'volume' in properties and 'compression time' not in properties:
-        min_volume_idx = np.argmin(properties['volume'].value)
-        min_volume_time = properties['time'].value[min_volume_idx]
+        min_volume_idx = np.argmin(properties['volume'])
+        min_volume_time = properties['time'][min_volume_idx]
         properties['compression time'] = min_volume_time
 
-    # Check for missing required properties or conflicts
-    for prop in ['composition', 'temperature', 'pressure', 'ignition delay']:
-        if prop not in properties:
-            raise MissingElementError(prop)
+    # Check for missing required properties or conflicts in each case
+    for case in properties['cases']:
+        for prop in ['composition', 'temperature',
+                     'pressure', 'ignition-delay'
+                     ]:
+            if prop not in case:
+                raise MissingElementError(prop)
 
-    if 'volume' in properties and 'time' not in properties:
-        raise KeywordError('Time values needed for volume history')
-    if 'volume' in properties and 'pressure rise' in properties:
-        raise KeywordError('Both volume history and pressure rise '
-                           'cannot be specified'
-                           )
+        if 'volume' in case and 'time' not in case:
+            raise KeywordError('Time values needed for volume history')
+        if 'volume' in case and 'pressure-rise' in case:
+            raise KeywordError('Both volume history and pressure rise '
+                               'cannot be specified'
+                               )
 
-    # Check units
-    if properties['ignition delay'].units not in ['s', 'ms', 'us', 'ns', 'min']:
-        raise NotImplementedError('Ignition delay units not recognized: ' +
-                                  properties['ignition delay'].units
-                                  )
-    if properties['temperature'].units not in ['K', 'C', 'F']:
-        raise NotImplementedError('Temperature units not recognized: ' +
-                                  properties['temperature'].units
-                                  )
-    if properties['pressure'].units.lower() not in ['atm', 'pa', 'kpa', 'mpa',
-                                                    'torr', 'bar', 'psi'
-                                                    ]:
-        raise NotImplementedError('Pressure units not recognized: ' +
-                                  properties['pressure'].units
-                                  )
-    if ('pressure rise' in properties and
-        properties['pressure rise'].units not in ['s', 'ms', 'us', 'ns', 'min']
-        ):
-        raise NotImplementedError('Pressure rise units not recognized: ' +
-                                  properties['pressure rise'].units
-                                  )
-    if ('time' in properties and
-        properties['time'].units not in ['s', 'ms', 'us', 'ns', 'min']
-        ):
-        raise NotImplementedError('Time units not recognized: ' +
-                                  properties['time'].units
-                                  )
     return properties
 
 
 def create_simulations(properties):
     """Set up individual simulations for each ignition delay value.
 
-    :param dict properties: Dictionary with group of experimental properties
-    :return: List of :class:`Simulation` objects for each simulation
-    :rtype: list
+    Parameters
+    ----------
+    properties : dict
+        Dictionary with group of experimental properties
+
+    Returns
+    -------
+    simulations : list
+        List of :class:`Simulation` objects for each simulation
+
     """
 
     simulations = []
-    for idx in range(len(properties['ignition delay'].value)):
+    for idx, case in enumerate(properties['cases']):
         sim_properties = {}
         # Common properties
-        sim_properties['composition'] = properties['composition']
-        sim_properties['data file'] = properties['data file']
+        sim_properties['data-file'] = properties['data-file']
         sim_properties['id'] = properties['id'] + '_' + str(idx)
 
-        for prop in ['temperature', 'pressure', 'ignition delay']:
-            if isinstance(properties[prop].value, np.ndarray):
-                sim_properties[prop] = Property(properties[prop].value[idx],
-                                                properties[prop].units
-                                                )
-            else:
-                # This is a common property, this a scalar
-                sim_properties[prop] = Property(properties[prop].value,
-                                                properties[prop].units
-                                                )
+        for prop in ['temperature', 'pressure', 'ignition-delay',
+                     'composition'
+                     ]:
+            sim_properties[prop] = case[prop]
 
-            # Copy pressure rise or volume history if present
-            if 'pressure rise' in properties:
-                sim_properties['pressure rise'] = properties['pressure rise']
+        # Copy pressure rise or volume history if present
+        if 'pressure-rise' in case:
+            sim_properties['pressure-rise'] = case['pressure-rise']
 
-            if 'volume' in properties:
-                sim_properties['volume'] = properties['volume']
-                sim_properties['time'] = properties['time']
+        if 'volume' in case:
+            sim_properties['volume'] = case['volume']
+            sim_properties['time'] = case['time']
 
         simulations.append(Simulation(properties['kind'], sim_properties,
-                                      properties['ignition target'],
-                                      properties['ignition type'],
-                                      properties['ignition target value']
-                                      ))
+                                      case['ignition']['target'],
+                                      case['ignition']['type'],
+                                      case['ignition']['target-value'],
+                                      case['ignition']['target-units']
+                                      )
+                           )
     return simulations

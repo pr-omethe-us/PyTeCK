@@ -40,6 +40,7 @@ except ImportError:
 
 from .. import simulation
 from .. import parse_files
+from ..utils import units
 
 
 class TestFirstDerivative:
@@ -164,8 +165,8 @@ class TestVolumeProfile:
         volumes = np.cos(times)
 
         properties = {}
-        properties['time'] = simulation.Property(times, 's')
-        properties['volume'] = simulation.Property(volumes, 'cm^3')
+        properties['time'] = times * units.second
+        properties['volume'] = volumes * units.cm3
         volume_profile = simulation.VolumeProfile(properties)
 
         assert volume_profile(tmax + 1.) == 0.
@@ -178,8 +179,8 @@ class TestVolumeProfile:
         volumes = np.cos(times)
 
         properties = {}
-        properties['time'] = simulation.Property(times, 's')
-        properties['volume'] = simulation.Property(volumes, 'cm^3')
+        properties['time'] = times * units.second
+        properties['volume'] = volumes * units.cm3
         velocity_profile = simulation.VolumeProfile(properties)
 
         np.testing.assert_allclose(velocity_profile(np.pi), -np.sin(np.pi),
@@ -230,7 +231,7 @@ class TestSimulation:
     def test_shock_tube_setup_case(self):
         """Test that shock tube cases are set up properly.
         """
-        file_path = os.path.join('testfile_st.xml')
+        file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -283,7 +284,7 @@ class TestSimulation:
     def test_shock_tube_pressure_rise_setup_case(self):
         """Test that shock tube case with pressure rise is set up properly.
         """
-        file_path = os.path.join('testfile_st2.xml')
+        file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -330,7 +331,7 @@ class TestSimulation:
     def test_rcm_setup_case(self):
         """Test that RCM case is set up properly.
         """
-        file_path = os.path.join('testfile_rcm.xml')
+        file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -350,7 +351,7 @@ class TestSimulation:
         assert sim.kind == 'RCM'
         np.testing.assert_allclose(sim.time_end, 0.1)
         np.testing.assert_allclose(sim.gas.T, 297.4)
-        np.testing.assert_allclose(sim.gas.P, 127722.8592)
+        np.testing.assert_allclose(sim.gas.P, 127722.83)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.12500
         mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.06250
@@ -406,7 +407,7 @@ class TestSimulation:
         """Test that shock tube cases run correctly.
         """
         # Read experiment XML file
-        file_path = os.path.join('testfile_st.xml')
+        file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -423,14 +424,14 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save file'])
-            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+            assert os.path.exists(sim.properties['save-file'])
+            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass_fractions'
+                            'volume', 'mass-fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
@@ -460,7 +461,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                np.testing.assert_allclose(table.col('mass-fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -468,14 +469,14 @@ class TestSimulation:
             sim.setup_case(mechanism_filename, spec_key)
             sim.run_case(1, path=temp_dir)
 
-            assert os.path.exists(sim.properties['save file'])
-            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+            assert os.path.exists(sim.properties['save-file'])
+            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass_fractions'
+                            'volume', 'mass-fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
@@ -505,7 +506,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                np.testing.assert_allclose(table.col('mass-fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -513,7 +514,7 @@ class TestSimulation:
         """Test that shock tube cases with pressure rise run correctly.
         """
         # Read experiment XML file
-        file_path = os.path.join('testfile_st2.xml')
+        file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -530,14 +531,14 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save file'])
-            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+            assert os.path.exists(sim.properties['save-file'])
+            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                            'volume', 'mass_fractions'
+                            'volume', 'mass-fractions'
                             ]) == set(table.colnames)
 
                 # Ensure final state matches expected
@@ -567,7 +568,7 @@ class TestSimulation:
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
                 np.testing.assert_allclose(table.col('temperature')[-1], temp)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
+                np.testing.assert_allclose(table.col('mass-fractions')[-1],
                                            mass_fracs, rtol=1e-5, atol=1e-9
                                            )
 
@@ -575,7 +576,7 @@ class TestSimulation:
         """Test that RCM case runs correctly.
         """
         # Read experiment XML file
-        file_path = os.path.join('testfile_rcm.xml')
+        file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -592,14 +593,14 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save file'])
-            with tables.open_file(sim.properties['save file'], 'r') as h5file:
+            assert os.path.exists(sim.properties['save-file'])
+            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
                 # Ensure exact columns present
                 assert set(['time', 'temperature', 'pressure',
-                           'volume', 'mass_fractions'
+                           'volume', 'mass-fractions'
                            ]) == set(table.colnames)
                 # Ensure final state matches expected
                 time_end = 1.0e-1
@@ -630,6 +631,6 @@ class TestSimulation:
                                            rtol=1e-5, atol=1e-9)
                 np.testing.assert_allclose(table.col('pressure')[-1], pres,
                                            rtol=1e-5, atol=1e-9)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
-                                           mass_fracs, rtol=1e-5, atol=1e-9
+                np.testing.assert_allclose(table.col('mass-fractions')[-1],
+                                           mass_fracs, rtol=1e-4, atol=1e-8
                                            )

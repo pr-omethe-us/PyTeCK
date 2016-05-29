@@ -3,16 +3,15 @@ from __future__ import print_function
 from __future__ import division
 
 from .. import parse_files
-from ..simulation import Property, Simulation
+from ..simulation import Simulation
+from ..utils import units
+from ..exceptions import UndefinedKeywordError
 
 import os
 import pkg_resources
 import numpy as np
-
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
+import yaml
+import pytest
 
 class TestExperimentType:
     """
@@ -20,220 +19,181 @@ class TestExperimentType:
     def test_shock_tube_experiment(self):
         """Ensure shock tube experiment can be detected.
         """
-        file_path = os.path.join('testfile_st.xml')
+        file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
 
-        kind = parse_files.get_experiment_kind(root)
+        with open(filename, 'r') as f:
+            raw_properties = yaml.load(f)
+
+        kind = parse_files.get_experiment_kind(raw_properties)
         assert kind == 'ST'
 
     def test_RCM_experiment(self):
         """Ensure rapid compression machine experiment can be detected.
         """
-        file_path = os.path.join('testfile_rcm.xml')
+        file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
 
-        kind = parse_files.get_experiment_kind(root)
+        with open(filename, 'r') as f:
+            raw_properties = yaml.load(f)
+
+        kind = parse_files.get_experiment_kind(raw_properties)
         assert kind == 'RCM'
-
-
-class TestCommonProperties:
-    """
-    """
-    def test_shock_tube_common_properties(self):
-        """Ensure basic common properties parsed for shock tube.
-        """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
-
-        properties = {}
-        properties['kind'] = parse_files.get_experiment_kind(root)
-        properties = parse_files.get_common_properties(properties, root)
-
-        # Check pressure
-        assert properties['pressure'].value == 2.18
-        assert properties['pressure'].units == 'atm'
-
-        # Check initial composition
-        assert properties['composition']['H2'] == '0.00444'
-        assert properties['composition']['O2'] == '0.00566'
-        assert properties['composition']['Ar'] == '0.9899'
-
-        # Check pressure rise
-        assert 'pressure rise' not in properties
-
-        # Make sure no other properties present
-        assert (set(properties.keys()) ==
-                set(['kind', 'pressure', 'composition'])
-                )
-
-    def test_shock_tube_common_properties_pressure_rise(self):
-        """Ensure basic common properties parsed for shock tube.
-        """
-        file_path = os.path.join('testfile_st2.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
-
-        properties = {}
-        properties['kind'] = parse_files.get_experiment_kind(root)
-        properties = parse_files.get_common_properties(properties, root)
-
-        # Check pressure
-        assert properties['pressure'].value == 2.18
-        assert properties['pressure'].units == 'atm'
-
-        # Check initial composition
-        assert properties['composition']['H2'] == '0.00444'
-        assert properties['composition']['O2'] == '0.00566'
-        assert properties['composition']['Ar'] == '0.9899'
-
-        # Check pressure rise
-        assert properties['pressure rise'].value == 0.10
-        assert properties['pressure rise'].units == 'ms'
-
-        # Make sure no other properties present
-        assert (set(properties.keys()) ==
-                set(['kind', 'pressure', 'pressure rise', 'composition'])
-                )
-
-    def test_rcm_common_properties(self):
-        """Ensure basic common properties parsed for RCM.
-        """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
-
-        properties = {}
-        properties['kind'] = parse_files.get_experiment_kind(root)
-        properties = parse_files.get_common_properties(properties, root)
-
-        # Check initial composition
-        assert properties['composition']['H2'] == '0.12500'
-        assert properties['composition']['O2'] == '0.06250'
-        assert properties['composition']['N2'] == '0.18125'
-        assert properties['composition']['Ar'] == '0.63125'
-
-        assert set(properties.keys()) == set(['kind', 'composition'])
 
 
 class TestIgnitionType:
     """
     """
-    def test_pressure_ignition_target(self):
-        """Test pressure max derivative as target for RCM.
+    def test_ignition_type_pressure(self):
+        """Ensure basic ignition type correctly determined.
         """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
+        ignition = parse_files.get_ignition_type({'target': 'pressure',
+                                                  'type': 'd/dt max'
+                                                  })
+        assert ignition['target'] == 'pressure'
+        assert ignition['type'] == 'd/dt max'
 
-        properties = {}
-        properties = parse_files.get_ignition_type(properties, root)
-
-        assert properties['ignition target'] == 'P'
-        assert properties['ignition type'] == 'd/dt max'
-
-    def test_pressure_species_target(self):
-        """Test pressure max derivative as target for shock tube.
+    def test_ignition_type_wrong_target(self):
+        """Ensure exception raised for wrong target.
         """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
+        with pytest.raises(UndefinedKeywordError):
+            ignition = parse_files.get_ignition_type({'target': 'volume',
+                                                      'type': 'max'
+                                                      })
 
-        properties = {}
-        properties = parse_files.get_ignition_type(properties, root)
-
-        assert properties['ignition target'] == 'P'
-        assert properties['ignition type'] == 'd/dt max'
+    def test_ignition_type_wrong_type(self):
+        """Ensure exception raised for wrong type.
+        """
+        with pytest.raises(UndefinedKeywordError):
+            ignition = parse_files.get_ignition_type({'target': 'pressure',
+                                                      'type': 'min'
+                                                      })
 
     def test_pressure_species_target_OH(self):
         """Test species max value as target.
         """
-        file_path = os.path.join('testfile_st2.xml')
+        file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
 
-        properties = {}
-        properties = parse_files.get_ignition_type(properties, root)
+        with open(filename, 'r') as f:
+            properties = yaml.load(f)
 
-        assert properties['ignition target'] == 'OH'
-        assert properties['ignition type'] == 'max'
+        ignition_type = properties['datapoints'][0]['ignition-type']
+
+        ignition = parse_files.get_ignition_type(ignition_type)
+
+        assert ignition['target'] == 'OH'
+        assert ignition['type'] == 'max'
 
 
-class TestDataGroups:
+class TestDatapoints:
     """
     """
     def test_shock_tube_data_points(self):
         """Test parsing of ignition delay data points for shock tube file.
         """
-        file_path = os.path.join('testfile_st.xml')
+        file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
+
+        with open(filename, 'r') as f:
+            raw_properties = yaml.load(f)
 
         properties = {}
-        properties = parse_files.get_datapoints(properties, root)
+        properties = parse_files.get_datapoints(properties, raw_properties)
 
-        # Ensure correct temperature and ignition delay values and units
-        np.testing.assert_array_equal(properties['temperature'].value,
-                                      [1164.48, 1164.97]
-                                      )
-        assert properties['temperature'].units == 'K'
-        np.testing.assert_array_equal(properties['ignition delay'].value,
-                                      [471.54, 448.03]
-                                      )
-        assert properties['ignition delay'].units == 'us'
+        case = properties['cases'][0]
+
+        # Ensure correct pressure, temperature, and ignition delay values/units
+        assert case['pressure'] == 2.18 * units.atm
+        assert case['temperature'] == 1164.48 * units.kelvin
+        assert case['ignition-delay'] == 471.54 * units.us
+
+        # Check initial composition
+        assert case['composition']['H2'] == 0.00444
+        assert case['composition']['O2'] == 0.00566
+        assert case['composition']['Ar'] == 0.9899
+
+        # Check pressure rise, volume, time
+        assert 'pressure-rise' not in case
+        assert 'time' not in case
+        assert 'volume' not in case
+
+        case = properties['cases'][1]
+
+        assert case['pressure'] == 2.18 * units.atm
+        assert case['temperature'] == 1164.97 * units.kelvin
+        assert case['ignition-delay'] == 448.03 * units.us
+
+        # Check initial composition
+        assert case['composition']['H2'] == 0.00444
+        assert case['composition']['O2'] == 0.00566
+        assert case['composition']['Ar'] == 0.9899
+
+        # Check pressure rise, volume, time
+        assert 'pressure-rise' not in case
+        assert 'time' not in case
+        assert 'volume' not in case
 
     def test_shock_tube_data_points_pressure_rise(self):
         """Test parsing of ignition delay data points for shock tube file.
         """
-        file_path = os.path.join('testfile_st2.xml')
+        file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
+
+        with open(filename, 'r') as f:
+            raw_properties = yaml.load(f)
 
         properties = {}
-        properties = parse_files.get_datapoints(properties, root)
+        properties = parse_files.get_datapoints(properties, raw_properties)
 
-        # Ensure correct temperature and ignition delay values and units
-        np.testing.assert_allclose(properties['temperature'].value, 1264.2)
-        assert properties['temperature'].units == 'K'
-        np.testing.assert_allclose(properties['ignition delay'].value, 291.57)
-        assert properties['ignition delay'].units == 'us'
+        case = properties['cases'][0]
+
+        # Ensure correct pressure, temperature, and ignition delay values/units
+        assert case['pressure'] == 2.18 * units.atm
+        assert case['temperature'] == 1264.2 * units.kelvin
+        assert case['ignition-delay'] == 291.57 * units.us
+
+        # Check initial composition
+        assert case['composition']['H2'] == 0.00444
+        assert case['composition']['O2'] == 0.00566
+        assert case['composition']['Ar'] == 0.9899
+
+        # Check pressure rise
+        assert case['pressure-rise'] == 0.10 / units.ms
+
+        # Check volume, time
+        assert 'time' not in case
+        assert 'volume' not in case
+
 
     def test_rcm_data_points(self):
         """Test parsing of ignition delay data points for RCM file.
         """
-        file_path = os.path.join('testfile_rcm.xml')
+        file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
-        root = tree.getroot()
+
+        with open(filename, 'r') as f:
+            raw_properties = yaml.load(f)
 
         properties = {}
-        properties = parse_files.get_datapoints(properties, root)
+        properties = parse_files.get_datapoints(properties, raw_properties)
+
+        case = properties['cases'][0]
 
         # Ensure correct temperature, pressure, and ignition delay values and units
-        assert properties['temperature'].value == 297.4
-        assert properties['temperature'].units == 'K'
-        assert properties['pressure'].value == 958.
-        assert properties['pressure'].units == 'Torr'
-        assert properties['ignition delay'].value == 1.
-        assert properties['ignition delay'].units == 'ms'
+        assert case['temperature'] == 297.4 * units.kelvin
+        assert case['pressure'] == 958. * units.torr
+        assert case['ignition-delay'] == 1. * units.ms
+
+        assert case['composition']['H2'] == 0.12500
+        assert case['composition']['O2'] == 0.06250
+        assert case['composition']['N2'] == 0.18125
+        assert case['composition']['Ar'] == 0.63125
 
         # Check other data group with volume history
-        np.testing.assert_allclose(properties['time'].value,
-                                   np.arange(0, 9.7e-2, 1.e-3)
+        np.testing.assert_allclose(case['time'],
+                                   np.arange(0, 9.7e-2, 1.e-3) * units.second
                                    )
-        assert properties['time'].units == 's'
 
         volumes = np.array([
             5.47669375000E+002, 5.46608789894E+002, 5.43427034574E+002,
@@ -269,9 +229,8 @@ class TestDataGroups:
             5.78058719368E+001, 5.80849611077E+001, 5.85928651155E+001,
             5.94734357453E+001, 6.09310671165E+001, 6.32487551103E+001,
             6.68100309742E+001
-            ])
-        np.testing.assert_allclose(properties['volume'].value, volumes)
-        assert properties['volume'].units == 'cm3'
+            ]) * units.cm3
+        np.testing.assert_allclose(case['volume'], volumes)
 
 
 class TestCreateSimulations:
@@ -281,14 +240,15 @@ class TestCreateSimulations:
         """Ensure appropriate simulations created from shock tube file.
         """
         # Rely on previously tested functions to parse file
-        file_path = os.path.join('testfile_st.xml')
+        file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
+
         properties = parse_files.read_experiment(filename)
 
         # Now create list of Simulation objects
         simulations = parse_files.create_simulations(properties)
 
-        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.9899'}
+        comp = {'H2': 0.00444, 'O2': 0.00566, 'Ar': 0.9899}
 
         # Ensure correct number of simulations
         assert len(simulations) == 2
@@ -296,33 +256,35 @@ class TestCreateSimulations:
         # Ensure correct information
         sim1 = simulations[0]
         assert sim1.properties['id'] == 'testfile_st_0'
-        assert sim1.properties['data file'] == 'testfile_st.xml'
+        assert sim1.properties['data-file'] == 'testfile_st.yaml'
         assert sim1.kind == 'ST'
-        assert sim1.properties['temperature'] == Property(1164.48, 'K')
-        assert sim1.properties['pressure'] == Property(2.18, 'atm')
-        assert sim1.properties['ignition delay'] == Property(471.54, 'us')
+        assert sim1.properties['temperature'] == 1164.48 * units.kelvin
+        assert sim1.properties['pressure'] == 2.18 * units.atm
+        assert sim1.properties['ignition-delay'] == 471.54 * units.us
         assert sim1.properties['composition'] == comp
-        assert sim1.ignition_target == 'P'
+        assert sim1.ignition_target == 'pressure'
         assert sim1.ignition_type == 'd/dt max'
         assert sim1.ignition_target_value == None
+        assert sim1.ignition_target_unit == None
 
         sim2 = simulations[1]
         assert sim2.properties['id'] == 'testfile_st_1'
-        assert sim2.properties['data file'] == 'testfile_st.xml'
+        assert sim2.properties['data-file'] == 'testfile_st.yaml'
         assert sim2.kind == 'ST'
-        assert sim2.properties['temperature'] == Property(1164.97, 'K')
-        assert sim1.properties['pressure'] == Property(2.18, 'atm')
-        assert sim2.properties['ignition delay'] == Property(448.03, 'us')
+        assert sim2.properties['temperature'] == 1164.97 * units.kelvin
+        assert sim1.properties['pressure'] == 2.18 * units.atm
+        assert sim2.properties['ignition-delay'] == 448.03 * units.us
         assert sim2.properties['composition'] == comp
-        assert sim1.ignition_target == 'P'
+        assert sim1.ignition_target == 'pressure'
         assert sim1.ignition_type == 'd/dt max'
         assert sim2.ignition_target_value == None
+        assert sim1.ignition_target_unit == None
 
     def test_create_st_simulations_pressure_rise(self):
         """Ensure appropriate simulations created from shock tube file.
         """
         # Rely on previously tested functions to parse file
-        file_path = os.path.join('testfile_st2.xml')
+        file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -334,23 +296,24 @@ class TestCreateSimulations:
 
         sim = simulations[0]
         assert sim.properties['id'] == 'testfile_st2_0'
-        assert sim.properties['data file'] == 'testfile_st2.xml'
+        assert sim.properties['data-file'] == 'testfile_st2.yaml'
         assert sim.kind == 'ST'
-        assert sim.properties['temperature'] == Property(1264.2, 'K')
-        assert sim.properties['pressure'] == Property(2.18, 'atm')
-        assert sim.properties['ignition delay'] == Property(291.57, 'us')
-        assert sim.properties['pressure rise'] == Property(0.10, 'ms')
-        comp = {'H2': '0.00444', 'O2': '0.00566', 'Ar': '0.9899'}
+        assert sim.properties['temperature'] == 1264.2 * units.kelvin
+        assert sim.properties['pressure'] == 2.18 * units.atm
+        assert sim.properties['ignition-delay'] == 291.57 * units.us
+        assert sim.properties['pressure-rise'] == 0.10 / units.ms
+        comp = {'H2': 0.00444, 'O2': 0.00566, 'Ar': 0.9899}
         assert sim.properties['composition'] == comp
         assert sim.ignition_target == 'OH'
         assert sim.ignition_type == 'max'
         assert sim.ignition_target_value == None
+        assert sim.ignition_target_unit == None
 
     def test_create_rcm_simulations(self):
         """Ensure appropriate simulations created from RCM file.
         """
         # Rely on previously tested functions to parse file
-        file_path = os.path.join('testfile_rcm.xml')
+        file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
         properties = parse_files.read_experiment(filename)
 
@@ -363,23 +326,21 @@ class TestCreateSimulations:
         # Ensure correct information
         sim1 = simulations[0]
         assert sim1.properties['id'] == 'testfile_rcm_0'
-        assert sim1.properties['data file'] == 'testfile_rcm.xml'
+        assert sim1.properties['data-file'] == 'testfile_rcm.yaml'
         assert sim1.kind == 'RCM'
-        assert sim1.properties['temperature'] == Property(297.4, 'K')
-        assert sim1.properties['pressure'] == Property(958., 'Torr')
-        assert sim1.properties['ignition delay'] == Property(1., 'ms')
-        comp = {'H2': '0.12500', 'O2': '0.06250',
-                'N2': '0.18125', 'Ar': '0.63125'
-                }
+        assert sim1.properties['temperature'] == 297.4 * units.kelvin
+        assert sim1.properties['pressure'] == 958. * units.torr
+        assert sim1.properties['ignition-delay'] == 1. * units.ms
+        comp = {'H2': 0.12500, 'O2': 0.06250, 'N2': 0.18125, 'Ar': 0.63125}
         assert sim1.properties['composition'] == comp
-        assert sim1.ignition_target == 'P'
+        assert sim1.ignition_target == 'pressure'
         assert sim1.ignition_type == 'd/dt max'
         assert sim1.ignition_target_value == None
+        assert sim1.ignition_target_unit == None
 
-        np.testing.assert_allclose(sim1.properties['time'].value,
-                                   np.arange(0, 9.7e-2, 1.e-3)
+        np.testing.assert_allclose(sim1.properties['time'],
+                                   np.arange(0, 9.7e-2, 1.e-3) * units.second
                                    )
-        assert sim1.properties['time'].units == 's'
 
         volumes = np.array([
             5.47669375000E+002, 5.46608789894E+002, 5.43427034574E+002,
@@ -415,6 +376,5 @@ class TestCreateSimulations:
             5.78058719368E+001, 5.80849611077E+001, 5.85928651155E+001,
             5.94734357453E+001, 6.09310671165E+001, 6.32487551103E+001,
             6.68100309742E+001
-            ])
-        np.testing.assert_allclose(sim1.properties['volume'].value, volumes)
-        assert sim1.properties['volume'].units == 'cm3'
+            ]) * units.cm3
+        np.testing.assert_allclose(sim1.properties['volume'], volumes)

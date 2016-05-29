@@ -26,11 +26,8 @@ except ImportError:
     raise
 
 # Local imports
-from .utils import to_pascal, to_kelvin, to_second
+from .utils import units
 from .detect_peaks import detect_peaks
-
-# Tuple to store both values and units of various properties
-Property = namedtuple('Property', 'value, units')
 
 def first_derivative(x, y):
     """Evaluates first derivative using second-order finite differences.
@@ -120,8 +117,10 @@ class VolumeProfile(object):
         # The time and volume are each stored as a ``numpy.array`` in the
         # properties dictionary. The volume is normalized by the first volume
         # element so that a unit area can be used to calculate the velocity.
-        self.times = properties['time'].value
-        volumes = (properties['volume'].value / properties['volume'].value[0])
+        self.times = properties['time'].magnitude
+        volumes = (properties['volume'].magnitude /
+                   properties['volume'].magnitude[0]
+                   )
 
         # The velocity is calculated by the second-order central differences.
         self.velocity = first_derivative(self.times, volumes)
@@ -190,7 +189,7 @@ class Simulation(object):
     """Class for ignition delay simulations."""
 
     def __init__(self, kind, properties, ign_target, ign_type,
-                 ign_target_val=None):
+                 ign_target_val=None, ign_target_unit=None):
         """Initialize simulation case.
 
         :param kind: Kind of experiment
@@ -201,13 +200,14 @@ class Simulation(object):
         :type ign_target: str
         :param ign_type: feature of measured physical property for ignition
         :type ign_type: str
-        :param Property ign_target_val: Value and units of ignition target
+        :param pint.Quantity ign_target_val: Ignition target
         """
         self.kind = kind
         self.properties = properties
         self.ignition_target = ign_target
         self.ignition_type = ign_type
         self.ignition_target_value = ign_target_val
+        self.ignition_target_unit = ign_target_unit
 
     def setup_case(self, mechanism_filename, species_key):
         """Sets up the simulation case to be run.
@@ -218,37 +218,24 @@ class Simulation(object):
 
         self.gas = ct.Solution(mechanism_filename)
 
+        # Convert ignition delay to seconds
+        self.properties['ignition-delay'] = self.properties['ignition-delay'].to('second')
+
         # Set end time of simulation to 100 times the experimental ignition delay
-        units = self.properties['ignition delay'].units
-        self.time_end = 100. * self.properties['ignition delay'].value
-        try:
-            self.time_end = to_second(self.time_end, units)
-        except KeyError:
-            raise NotImplementedError('Ignition delay units '
-                                      'not recognized: ' + units
-                                      )
+        self.time_end = 100 * self.properties['ignition-delay'].magnitude
 
         # Initial temperature needed in Kelvin for Cantera
-        units = self.properties['temperature'].units
-        try:
-            initial_temp = to_kelvin(self.properties['temperature'].value, units)
-        except KeyError:
-            raise NotImplementedError('Temperature units not recognized: ' + units)
+        initial_temp = self.properties['temperature'].to('kelvin').magnitude
 
         # Initial pressure needed in Pa for Cantera
-        initial_pres = self.properties['pressure'].value
-        units = self.properties['pressure'].units
-        try:
-            initial_pres = to_pascal(initial_pres, units)
-        except KeyError:
-            raise KeyError('Pressure units not recognized: ' + units)
+        initial_pres = self.properties['pressure'].to('pascal').magnitude
 
         # Initial composition stored in ``properties`` dictionary as dictionary
         # with internal species names as keys and amounts as values.
         # Need to convert to mechanism-specific species name, then format into
         # string with `spec:val` items joined by commas for Cantera
         #reactants = ','.join(self.properties['composition'])
-        reactants = [species_key[k] + ':' + v
+        reactants = [species_key[k] + ':' + str(v)
                      for k, v in self.properties['composition'].items()
                      ]
         reactants = ','.join(reactants)
@@ -259,33 +246,26 @@ class Simulation(object):
 
         # All reactors are ``IdealGasReactor`` objects
         self.reac = ct.IdealGasReactor(self.gas)
-        if self.kind == 'ST' and 'pressure rise' not in self.properties:
+        if self.kind == 'ST' and 'pressure-rise' not in self.properties:
             # Shock tube modeled by constant UV
             self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
 
-        elif self.kind == 'ST' and 'pressure rise' in self.properties:
+        elif self.kind == 'ST' and 'pressure-rise' in self.properties:
             # Shock tube modeled by constant UV with isentropic compression
 
             # Need to convert pressure rise units to seconds
-            units = self.properties['pressure rise'].units
-            vals = self.properties['pressure rise'].value
-            try:
-                vals /= to_second(1.0, units)
-                self.properties['pressure rise'] = Property(vals, 's')
-            except KeyError:
-                raise NotImplementedError('Pressure rise units '
-                                          'not recognized: ' + units
-                                          )
+            pres_rise = self.properties['pressure-rise']
+            self.properties['pressure-rise'] = pres_rise.to('1 / second')
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=PressureRiseProfile(
                                     mechanism_filename,
-                                     initial_temp,
-                                     initial_pres,
-                                     reactants,
-                                     self.properties['pressure rise'].value,
-                                     self.time_end
-                                     )
+                                    initial_temp,
+                                    initial_pres,
+                                    reactants,
+                                    self.properties['pressure-rise'].magnitude,
+                                    self.time_end
+                                    )
                                 )
 
         elif self.kind == 'RCM' and 'volume' not in self.properties:
@@ -296,14 +276,7 @@ class Simulation(object):
             # Rapid compression machine modeled with volume-time history
 
             # First convert time units if necessary
-            units = self.properties['time'].units
-            vals = self.properties['time'].value
-            try:
-                self.properties['time'] = Property(to_second(vals, units), 's')
-            except KeyError:
-                raise NotImplementedError('Time units not recognized: ' +
-                                          units
-                                          )
+            self.properties['time'] = self.properties['time'].to('second')
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=VolumeProfile(self.properties)
@@ -319,7 +292,7 @@ class Simulation(object):
         # Set maximum time step based on volume-time history, if present
         if 'time' in self.properties:
             # Minimum difference between volume profile times
-            min_time = np.min(np.diff(self.properties['time'].value))
+            min_time = np.min(np.diff(self.properties['time'].magnitude))
             self.reac_net.set_max_time_step(min_time)
 
         # Check if species ignition target, that species is present.
@@ -348,7 +321,7 @@ class Simulation(object):
                 print('Warning: ' + spec + ' not found in model; '
                       'falling back on pressure.'
                       )
-                self.ignition_target = 'P'
+                self.ignition_target = 'pressure'
                 self.ignition_type = 'd/dt max'
 
     def run_case(self, idx, path=None):
@@ -363,15 +336,15 @@ class Simulation(object):
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
-                     'mass_fractions': tables.Float64Col(
+                     'mass-fractions': tables.Float64Col(
                           shape=(self.reac.thermo.n_species), pos=4
                           ),
                      }
 
         file_path = os.path.join(path, self.properties['id'] + '.h5')
-        self.properties['save file'] = file_path
+        self.properties['save-file'] = file_path
 
-        with tables.open_file(self.properties['save file'], mode='w',
+        with tables.open_file(self.properties['save-file'], mode='w',
                               title=self.properties['id']
                               ) as h5file:
 
@@ -386,7 +359,7 @@ class Simulation(object):
             timestep['temperature'] = self.reac.T
             timestep['pressure'] = self.reac.thermo.P
             timestep['volume'] = self.reac.volume
-            timestep['mass_fractions'] = self.reac.Y
+            timestep['mass-fractions'] = self.reac.Y
             # Add ``timestep`` to table
             timestep.append()
 
@@ -410,14 +383,14 @@ class Simulation(object):
                     for i in range(mass_fracs.size):
                         fp = [prev_mass_frac[i], self.reac.Y[i]]
                         mass_fracs[i] = np.interp(self.time_end, xp, fp)
-                    timestep['mass_fractions'] = mass_fracs
+                    timestep['mass-fractions'] = mass_fracs
                 else:
                     # Save new timestep information
                     timestep['time'] = self.reac_net.time
                     timestep['temperature'] = self.reac.T
                     timestep['pressure'] = self.reac.thermo.P
                     timestep['volume'] = self.reac.volume
-                    timestep['mass_fractions'] = self.reac.Y
+                    timestep['mass-fractions'] = self.reac.Y
 
                 # Add ``timestep`` to table
                 timestep.append()
@@ -438,25 +411,18 @@ class Simulation(object):
         """Process integration results to obtain ignition delay.
         """
 
-        # Convert ignition delay units to seconds
-        self.properties['ignition delay'] = (
-            to_second(self.properties['ignition delay'].value,
-                      self.properties['ignition delay'].units
-                      )
-            )
-
         # Load saved integration results
-        with tables.open_file(self.properties['save file'], 'r') as h5file:
+        with tables.open_file(self.properties['save-file'], 'r') as h5file:
             # Load Table with Group name simulation
             table = h5file.root.simulation
 
             time = table.col('time')
-            if self.ignition_target == 'P':
+            if self.ignition_target == 'pressure':
                 target = table.col('pressure')
-            elif self.ignition_target == 'T':
+            elif self.ignition_target == 'temperature':
                 target = table.col('temperature')
             else:
-                target = table.col('mass_fractions')[:, self.ignition_target]
+                target = table.col('mass-fractions')[:, self.ignition_target]
 
         # Analysis for ignition depends on type specified
         if self.ignition_type == 'd/dt max':
@@ -474,10 +440,13 @@ class Simulation(object):
         # Get index of largest peak (overall ignition delay)
         max_ind = ind[np.argmax(target[ind])]
 
+        # add units to time
+        time *= units.second
+
         # Will need to subtract compression time for RCM
         time_comp = 0.0
-        if 'compression time' in self.properties:
-            time_comp = self.properties['compression time']
+        if 'compression-time' in self.properties:
+            time_comp = self.properties['compression-time']
 
         ign_delays = time[ind[np.where((time[ind[ind <= max_ind]] -
                                        time_comp) > 0
@@ -486,10 +455,10 @@ class Simulation(object):
         if len(ign_delays) > 0:
             self.properties['simulated ignition delay'] = ign_delays[-1]
         else:
-            self.properties['simulated ignition delay'] = 0.0
+            self.properties['simulated ignition delay'] = 0.0 * units.second
 
         # First-stage ignition delay
         if len(ign_delays) > 1:
             self.properties['simulated first-stage delay'] = ign_delays[0]
         else:
-            self.properties['simulated first-stage delay'] = np.nan
+            self.properties['simulated first-stage delay'] = np.nan * units.second
