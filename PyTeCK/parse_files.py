@@ -328,10 +328,10 @@ def read_experiment(filename):
     properties = get_datapoints(properties, raw_properties)
 
     # Get compression time for RCM, if volume history given
-    if 'volume' in properties and 'compression time' not in properties:
+    if 'volume' in properties and 'compression-time' not in properties:
         min_volume_idx = np.argmin(properties['volume'])
         min_volume_time = properties['time'][min_volume_idx]
-        properties['compression time'] = min_volume_time
+        properties['compression-time'] = min_volume_time
 
     # Check for missing required properties or conflicts in each case
     for case in properties['cases']:
@@ -347,6 +347,19 @@ def read_experiment(filename):
             raise KeywordError('Both volume history and pressure rise '
                                'cannot be specified'
                                )
+
+        # Check that incorrect elements aren't present
+        if properties['kind'] == 'ST':
+            if 'volume' in case or 'time' in case:
+                raise KeywordError('Volume and/or time history not compatible '
+                                   'with shock tube experiment.')
+            if 'compression-time' in case:
+                raise KeywordError('Compression time not compatible '
+                                   'with shock tube experiment.')
+        elif properties['kind'] == 'RCM':
+            if 'pressure-rise' in case:
+                raise KeywordError('Pressure rise not compatible '
+                                   'with shock tube experiment.')
 
     return properties
 
