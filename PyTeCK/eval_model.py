@@ -45,6 +45,31 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                    num_threads=None
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
+
+    Parameters
+    ----------
+    model_name : str
+        Chemical kinetic model filename
+    spec_keys_file : str
+        Name of JSON file identifying important species
+    dataset_file : str
+        Name of file with list of data files
+    model_path : str
+        Local path for model file. Optional; default = 'models'
+    results_path : str
+        Local path for creating results files. Optional; default = 'results'
+    model_variant_file : str
+        Name of JSON file identifying ranges of conditions for variants of the
+        kinetic model. Optional; default = ``None``
+    num_threads : int
+        Number of CPU threads to use for performing simulations in parallel.
+        Optional; default = ``None``, in which case the available number of
+        cores minus one is used.
+
+    Returns
+    -------
+    None
+
     """
 
     # Dict to translate species names into those used by models
