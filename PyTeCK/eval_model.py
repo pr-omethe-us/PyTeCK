@@ -15,10 +15,9 @@ from scipy.interpolate import UnivariateSpline
 import cantera as ct
 
 # Local imports
-from .utils import to_pascal, to_kelvin, to_atm
+from .utils import units
 from . import parse_files
-from .simulation import Property, Simulation
-
+from .simulation import Simulation
 
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
@@ -54,6 +53,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         Name of JSON file identifying important species
     dataset_file : str
         Name of file with list of data files
+    data_path : str
+        Local path for data files. Optional; default = 'data'
     model_path : str
         Local path for model file. Optional; default = 'models'
     results_path : str
@@ -186,9 +187,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
                 if 'pressures' in model_variant[model_name]:
                     # pressure to atm
-                    pres = to_atm(sim.properties['pressure'].value,
-                                  sim.properties['pressure'].units
-                                  )
+                    pres = sim.properties['pressure'].to('atm').magnitude
 
                     # choose closest pressure
                     # better way to do this?
@@ -223,12 +222,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             ignition_delays_exp[idx] = sim.properties['ignition delay']
             ignition_delays_sim[idx] = sim.properties['simulated ignition delay']
 
-            temp = to_kelvin(sim.properties['temperature'].value,
-                             sim.properties['temperature'].units
-                             )
-            pres = to_atm(sim.properties['pressure'].value,
-                          sim.properties['pressure'].units
-                          )
+            temp = sim.properties.to('kelvin').magnitude
+            pres = sim.properties.to('atm').magnitude
 
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': ignition_delays_exp[idx],
