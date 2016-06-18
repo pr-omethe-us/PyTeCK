@@ -51,7 +51,7 @@ class TestEstimateStandardDeviation:
     def test_normal_dist_noise(self):
         """Check expected standard deviation for normally distributed noise.
         """
-        num = 100000
+        num = 1000000
         changing_variable = numpy.arange(1, num + 1)
         dependent_variable = numpy.arange(1, num + 1)
         # add normally distributed noise, standard deviation of 1.0

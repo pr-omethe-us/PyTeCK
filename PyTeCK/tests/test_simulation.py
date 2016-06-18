@@ -238,7 +238,7 @@ class TestSimulation:
         # Now create list of Simulation objects
         simulations = parse_files.create_simulations(properties)
 
-        assert len(simulations) == 2
+        assert len(simulations) == 5
 
         mechanism_filename = 'gri30.xml'
         spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}

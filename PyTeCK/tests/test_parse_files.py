@@ -9,7 +9,7 @@ from ..exceptions import UndefinedKeywordError
 
 import os
 import pkg_resources
-import numpy as np
+import numpy
 import yaml
 import pytest
 
@@ -101,38 +101,32 @@ class TestDatapoints:
         properties = {}
         properties = parse_files.get_datapoints(properties, raw_properties)
 
-        case = properties['cases'][0]
+        assert len(properties['cases']) == 5
 
-        # Ensure correct pressure, temperature, and ignition delay values/units
-        assert case['pressure'] == 220 * units.kilopascal
-        assert case['temperature'] == 1164.48 * units.kelvin
-        assert case['ignition-delay'] == 471.54 * units.us
+        pressures = numpy.ones(5) * 220. * units.kilopascal
+        temperatures = [1164.48, 1164.97, 1264.2,
+                              1332.57, 1519.18
+                              ] * units.kelvin
+        ignition_delays = [471.54, 448.03, 291.57,
+                                 205.93, 88.11
+                                 ] * units.us
 
-        # Check initial composition
-        assert case['composition']['H2'] == 0.00444
-        assert case['composition']['O2'] == 0.00566
-        assert case['composition']['Ar'] == 0.9899
+        for idx, case in enumerate(properties['cases']):
+            # Ensure correct pressure, temperature, and
+            # ignition delay values/units
+            assert case['pressure'] == pressures[idx]
+            assert case['temperature'] == temperatures[idx]
+            assert case['ignition-delay'] == ignition_delays[idx]
 
-        # Check pressure rise, volume, time
-        assert 'pressure-rise' not in case
-        assert 'time' not in case
-        assert 'volume' not in case
+            # Check initial composition
+            assert case['composition']['H2'] == 0.00444
+            assert case['composition']['O2'] == 0.00566
+            assert case['composition']['Ar'] == 0.9899
 
-        case = properties['cases'][1]
-
-        assert case['pressure'] == 220 * units.kilopascal
-        assert case['temperature'] == 1164.97 * units.kelvin
-        assert case['ignition-delay'] == 448.03 * units.us
-
-        # Check initial composition
-        assert case['composition']['H2'] == 0.00444
-        assert case['composition']['O2'] == 0.00566
-        assert case['composition']['Ar'] == 0.9899
-
-        # Check pressure rise, volume, time
-        assert 'pressure-rise' not in case
-        assert 'time' not in case
-        assert 'volume' not in case
+            # Check pressure rise, volume, time
+            assert 'pressure-rise' not in case
+            assert 'time' not in case
+            assert 'volume' not in case
 
     def test_shock_tube_data_points_pressure_rise(self):
         """Test parsing of ignition delay data points for shock tube file.
@@ -165,7 +159,6 @@ class TestDatapoints:
         assert 'time' not in case
         assert 'volume' not in case
 
-
     def test_rcm_data_points(self):
         """Test parsing of ignition delay data points for RCM file.
         """
@@ -191,11 +184,12 @@ class TestDatapoints:
         assert case['composition']['Ar'] == 0.63125
 
         # Check other data group with volume history
-        np.testing.assert_allclose(case['time'],
-                                   np.arange(0, 9.7e-2, 1.e-3) * units.second
-                                   )
+        numpy.testing.assert_allclose(case['time'],
+                                      numpy.arange(0, 9.7e-2, 1.e-3) *
+                                      units.second
+                                      )
 
-        volumes = np.array([
+        volumes = numpy.array([
             5.47669375000E+002, 5.46608789894E+002, 5.43427034574E+002,
             5.38124109043E+002, 5.30700013298E+002, 5.21154747340E+002,
             5.09488311170E+002, 4.95700704787E+002, 4.79791928191E+002,
@@ -230,7 +224,7 @@ class TestDatapoints:
             5.94734357453E+001, 6.09310671165E+001, 6.32487551103E+001,
             6.68100309742E+001
             ]) * units.cm3
-        np.testing.assert_allclose(case['volume'], volumes)
+        numpy.testing.assert_allclose(case['volume'], volumes)
 
 
 class TestCreateSimulations:
@@ -251,34 +245,29 @@ class TestCreateSimulations:
         comp = {'H2': 0.00444, 'O2': 0.00566, 'Ar': 0.9899}
 
         # Ensure correct number of simulations
-        assert len(simulations) == 2
+        assert len(simulations) == 5
 
-        # Ensure correct information
-        sim1 = simulations[0]
-        assert sim1.properties['id'] == 'testfile_st_0'
-        assert sim1.properties['data-file'] == 'testfile_st.yaml'
-        assert sim1.kind == 'ST'
-        assert sim1.properties['temperature'] == 1164.48 * units.kelvin
-        assert sim1.properties['pressure'] == 220 * units.kilopascal
-        assert sim1.properties['ignition-delay'] == 471.54 * units.us
-        assert sim1.properties['composition'] == comp
-        assert sim1.ignition_target == 'pressure'
-        assert sim1.ignition_type == 'd/dt max'
-        assert sim1.ignition_target_value == None
-        assert sim1.ignition_target_unit == None
+        pressures = numpy.ones(5) * 220. * units.kilopascal
+        temperatures = [1164.48, 1164.97, 1264.2,
+                        1332.57, 1519.18
+                        ] * units.kelvin
+        ignition_delays = [471.54, 448.03, 291.57,
+                           205.93, 88.11
+                           ] * units.us
 
-        sim2 = simulations[1]
-        assert sim2.properties['id'] == 'testfile_st_1'
-        assert sim2.properties['data-file'] == 'testfile_st.yaml'
-        assert sim2.kind == 'ST'
-        assert sim2.properties['temperature'] == 1164.97 * units.kelvin
-        assert sim1.properties['pressure'] == 220 * units.kilopascal
-        assert sim2.properties['ignition-delay'] == 448.03 * units.us
-        assert sim2.properties['composition'] == comp
-        assert sim1.ignition_target == 'pressure'
-        assert sim1.ignition_type == 'd/dt max'
-        assert sim2.ignition_target_value == None
-        assert sim1.ignition_target_unit == None
+        for idx, sim in enumerate(simulations):
+            # Ensure correct information
+            assert sim.properties['id'] == 'testfile_st_{}'.format(idx)
+            assert sim.properties['data-file'] == 'testfile_st.yaml'
+            assert sim.kind == 'ST'
+            assert sim.properties['temperature'] == temperatures[idx]
+            assert sim.properties['pressure'] == pressures[idx]
+            assert sim.properties['ignition-delay'] == ignition_delays[idx]
+            assert sim.properties['composition'] == comp
+            assert sim.ignition_target == 'pressure'
+            assert sim.ignition_type == 'd/dt max'
+            assert sim.ignition_target_value == None
+            assert sim.ignition_target_unit == None
 
     def test_create_st_simulations_pressure_rise(self):
         """Ensure appropriate simulations created from shock tube file.
@@ -338,11 +327,11 @@ class TestCreateSimulations:
         assert sim1.ignition_target_value == None
         assert sim1.ignition_target_unit == None
 
-        np.testing.assert_allclose(sim1.properties['time'],
-                                   np.arange(0, 9.7e-2, 1.e-3) * units.second
+        numpy.testing.assert_allclose(sim1.properties['time'],
+                                   numpy.arange(0, 9.7e-2, 1.e-3) * units.second
                                    )
 
-        volumes = np.array([
+        volumes = numpy.array([
             5.47669375000E+002, 5.46608789894E+002, 5.43427034574E+002,
             5.38124109043E+002, 5.30700013298E+002, 5.21154747340E+002,
             5.09488311170E+002, 4.95700704787E+002, 4.79791928191E+002,
@@ -377,4 +366,4 @@ class TestCreateSimulations:
             5.94734357453E+001, 6.09310671165E+001, 6.32487551103E+001,
             6.68100309742E+001
             ]) * units.cm3
-        np.testing.assert_allclose(sim1.properties['volume'], volumes)
+        numpy.testing.assert_allclose(sim1.properties['volume'], volumes)

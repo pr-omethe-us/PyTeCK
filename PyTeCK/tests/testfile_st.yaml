@@ -60,4 +60,31 @@ datapoints:
       pressure: *pres
       composition: *comp
       ignition-type: *ign
+    - temperature:
+        value: 1264.2
+        units: kelvin
+      ignition-delay:
+          value: 291.57
+          units: us
+      pressure: *pres
+      composition: *comp
+      ignition-type: *ign
+    - temperature:
+        value: 1332.57
+        units: kelvin
+      ignition-delay:
+          value: 205.93
+          units: us
+      pressure: *pres
+      composition: *comp
+      ignition-type: *ign
+    - temperature:
+        value: 1519.18
+        units: kelvin
+      ignition-delay:
+          value: 88.11
+          units: us
+      pressure: *pres
+      composition: *comp
+      ignition-type: *ign
 ...
