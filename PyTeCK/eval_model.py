@@ -113,23 +113,32 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         if len(simulations) == 1:
             standard_dev = 0.10
         else:
-            ign_delay = properties['ignition delay'].value
+            ign_delay = [case['ignition-delay'].to('second').magnitude
+                         for case in properties['cases']
+                         ]
 
             # get variable that is changing across datapoints
-            var = [var for var in ['temperature', 'pressure', 'composition']
-                   if isinstance(properties[var], Property) and
-                   isinstance(properties[var].value, np.ndarray)
-                   ]
-            if len(var) > 1:
-                print('Warning: multiple changing variables')
-                print('Using ' + var[0])
-            var = var[0]
-            variable = properties[var].value
+            variable = None
+            for var_name in ['temperature', 'pressure']:
+                var = [case[var_name] for case in properties['cases']]
+                if not all([x == var[0] for x in var]):
+                    if not variable:
+                        variable = [v.magnitude for v in var]
+                    else:
+                        print('Warning: multiple changing variables. '
+                              'Using temperature'
+                              )
+            if not variable:
+                raise NotImplementedError('Only temperature and pressure '
+                                          'supported as changing variables.'
+                                          )
 
             # spline fit of the data
             if len(variable) == 3:
                 sp1 = UnivariateSpline(variable, np.log(ign_delay), k=2)
             elif len(variable) == 2:
+                # Is this even necessary? I don't think the resulting standard
+                # deviation will be anything but 0.0
                 sp1 = UnivariateSpline(variable, np.log(ign_delay), k=1)
             else:
                 sp1 = UnivariateSpline(variable, np.log(ign_delay))
@@ -219,8 +228,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
-            ignition_delays_exp[idx] = sim.properties['ignition delay']
-            ignition_delays_sim[idx] = sim.properties['simulated ignition delay']
+            ignition_delays_exp[idx] = sim.properties['ignition delay'].magnitude
+            ignition_delays_sim[idx] = sim.properties['simulated ignition delay'].magnitude
 
             temp = sim.properties.to('kelvin').magnitude
             pres = sim.properties.to('atm').magnitude
