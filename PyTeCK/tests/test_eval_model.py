@@ -60,4 +60,4 @@ class TestEstimateStandardDeviation:
         standard_dev = eval_model.estimate_std_dev(changing_variable,
                                                    dependent_variable + noise
                                                    )
-        numpy.testing.assert_allclose(1.0, standard_dev, rtol=1.e-3)
+        numpy.testing.assert_allclose(1.0, standard_dev, rtol=1.e-2)
