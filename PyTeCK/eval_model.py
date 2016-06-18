@@ -19,13 +19,23 @@ from .utils import units
 from . import parse_files
 from .simulation import Simulation
 
+min_deviation = 0.10
+"""float: minimum allowable standard deviation for experimental data"""
+
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
 
-    :param tuple sim_tuple: Contains Simulation object and other parameters needed
-    to setup and run case.
-    :return: Simulation case with calculated ignition delay.
-    :rtype: Simulation object
+    Parameters
+    ----------
+    sim_tuple : tuple
+        Contains Simulation object and other parameters needed to setup
+        and run case.
+
+    Returns
+    -------
+    sim : ``Simulation``
+        Simulation case with calculated ignition delay.
+
     """
     sim, idx, model_file, model_spec_key, path = sim_tuple
 
@@ -36,6 +46,45 @@ def simulation_worker(sim_tuple):
                      sim.ignition_type, sim.ignition_target_value
                      )
     return sim
+
+
+def estimate_std_dev(indep_variable, dep_variable):
+    """
+
+    Parameters
+    ----------
+    indep_variable : ndarray, list(float)
+        Independent variable (e.g., temperature, pressure)
+    dep_variable : ndarray, list(float)
+        Dependent variable (e.g., ignition delay)
+
+    Returns
+    -------
+    standard_dev : float
+        Standard deviation of difference between data and best-fit line
+
+    """
+
+    assert len(indep_variable) == len(dep_variable), \
+        'independent and dependent variables not the same length'
+
+    # spline fit of the data
+    if len(indep_variable) == 1 or len(indep_variable) == 2:
+        # Fit of data will be perfect
+        return min_deviation
+    elif len(indep_variable) == 3:
+        spline = UnivariateSpline(indep_variable, dep_variable, k=2)
+    else:
+        spline = UnivariateSpline(indep_variable, dep_variable)
+
+    standard_dev = np.std(dep_variable - spline(indep_variable))
+
+    if standard_dev < min_deviation:
+        print('Standard deviation of {:.2f} too low, '
+              'using {:.2f}'.format(standard_dev, min_deviation))
+        standard_dev = min_deviation
+
+    return standard_dev
 
 
 def evaluate_model(model_name, spec_keys_file, dataset_file,
@@ -109,48 +158,33 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         ignition_delays_exp = np.zeros(len(simulations))
         ignition_delays_sim = np.zeros(len(simulations))
 
+        #############################################
         # Determine standard deviation of the dataset
-        if len(simulations) == 1:
-            standard_dev = 0.10
-        else:
-            ign_delay = [case['ignition-delay'].to('second').magnitude
-                         for case in properties['cases']
-                         ]
+        #############################################
+        ign_delay = [case['ignition-delay'].to('second').magnitude
+                     for case in properties['cases']
+                     ]
 
-            # get variable that is changing across datapoints
-            variable = None
-            for var_name in ['temperature', 'pressure']:
-                var = [case[var_name] for case in properties['cases']]
-                if not all([x == var[0] for x in var]):
-                    if not variable:
-                        variable = [v.magnitude for v in var]
-                    else:
-                        print('Warning: multiple changing variables. '
-                              'Using temperature'
-                              )
-            if not variable:
-                raise NotImplementedError('Only temperature and pressure '
-                                          'supported as changing variables.'
-                                          )
-
-            # spline fit of the data
-            if len(variable) == 3:
-                sp1 = UnivariateSpline(variable, np.log(ign_delay), k=2)
-            elif len(variable) == 2:
-                # Is this even necessary? I don't think the resulting standard
-                # deviation will be anything but 0.0
-                sp1 = UnivariateSpline(variable, np.log(ign_delay), k=1)
-            else:
-                sp1 = UnivariateSpline(variable, np.log(ign_delay))
-            diff = np.log(ign_delay) - sp1(variable)
-            standard_dev = np.std(diff)
-
-            if standard_dev < 0.10:
-                print('Standard deviation too low, using 0.10')
-                standard_dev = 0.10
-
+        # get variable that is changing across datapoints
+        variable = None
+        for var_name in ['temperature', 'pressure']:
+            var = [case[var_name] for case in properties['cases']]
+            if not all([x == var[0] for x in var]):
+                if not variable:
+                    variable = [v.magnitude for v in var]
+                else:
+                    print('Warning: multiple changing variables. '
+                          'Using temperature'
+                          )
+        if not variable:
+            raise NotImplementedError('Only temperature and pressure '
+                                      'supported as changing variables.'
+                                      )
+        # for ignition delay, use logarithm of values
+        standard_dev = estimate_std_dev(variable, np.log(ign_delay))
         dataset_meta['standard deviation'] = standard_dev
 
+        #########################################
         # Need to check if Ar or He in reactants,
         # and if so skip this dataset (for now).
         if ('Ar' in properties['composition'] and
@@ -202,7 +236,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                     # better way to do this?
                     i = np.argmin(np.abs(np.array(
                         [float(n)
-                        for n in list(model_variant[model_name]['pressures'])]
+                         for n in list(model_variant[model_name]['pressures'])
+                         ]
                         ) - pres))
                     pres = list(model_variant[model_name]['pressures'])[i]
                     model_mod += model_variant[model_name]['pressures'][pres]
