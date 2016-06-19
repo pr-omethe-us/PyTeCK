@@ -187,11 +187,14 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         #########################################
         # Need to check if Ar or He in reactants,
         # and if so skip this dataset (for now).
-        if ('Ar' in properties['composition'] and
-            'Ar' not in model_spec_key[model_name]
-            ) or ('He' in properties['composition'] and
-                  'He' not in model_spec_key[model_name]
-                  ):
+        #########################################
+        if ((any(['Ar' in case['composition'] for case in properties['cases']])
+            and 'Ar' not in model_spec_key[model_name]
+            ) or
+            (any(['He' in case['composition'] for case in properties['cases']])
+             and 'He' not in model_spec_key[model_name]
+             )
+            ):
             print('Warning: Ar or He in dataset, but not in model. Skipping.')
             error_func_sets[idx_set] = np.nan
             continue
@@ -263,7 +266,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
-            ignition_delays_exp[idx] = sim.properties['ignition delay'].magnitude
+            ignition_delays_exp[idx] = sim.properties['ignition-delay'].magnitude
             ignition_delays_sim[idx] = sim.properties['simulated ignition delay'].magnitude
 
             temp = sim.properties.to('kelvin').magnitude
