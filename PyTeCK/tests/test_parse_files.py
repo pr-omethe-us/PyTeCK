@@ -2,16 +2,19 @@
 from __future__ import print_function
 from __future__ import division
 
+# Standard libraries
+import os
+import pkg_resources
+
+import numpy
+import yaml
+import pytest
+
+# Local imports
 from .. import parse_files
 from ..simulation import Simulation
 from ..utils import units
 from ..exceptions import UndefinedKeywordError
-
-import os
-import pkg_resources
-import numpy
-import yaml
-import pytest
 
 class TestExperimentType:
     """

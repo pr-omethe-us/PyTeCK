@@ -12,9 +12,12 @@ import numpy as np
 import pytest
 
 try:
-    import xml.etree.cElementTree as ET
+    import lxml.etree as ET
 except ImportError:
-    import xml.etree.ElementTree as ET
+    try:
+        import xml.etree.cElementTree as ET
+    except ImportError:
+        import xml.etree.ElementTree as ET
 
 pytestmark = pytest.mark.skip(reason="XML converter not completed")
 
