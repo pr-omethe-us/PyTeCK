@@ -73,5 +73,6 @@ class TestEvalModel:
         eval_model.evaluate_model('h2o2.cti', 'PyTeCK/tests/spec_keys.json',
                                   'PyTeCK/tests/dataset_file.txt',
                                   data_path='PyTeCK/tests/',
-                                  model_path=''
+                                  model_path='',
+                                  num_threads=1
                                   )
