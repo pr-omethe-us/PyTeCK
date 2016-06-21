@@ -2,12 +2,10 @@
 from __future__ import print_function
 from __future__ import division
 
-from .. import parse_files
-from ..simulation import Simulation
-from ..utils import units
-
+# Standard libraries
 import os
 import pkg_resources
+
 import numpy as np
 import pytest
 
@@ -18,6 +16,11 @@ except ImportError:
         import xml.etree.cElementTree as ET
     except ImportError:
         import xml.etree.ElementTree as ET
+
+# Local imports
+from .. import parse_files
+from ..simulation import Simulation
+from ..utils import units
 
 pytestmark = pytest.mark.skip(reason="XML converter not completed")
 

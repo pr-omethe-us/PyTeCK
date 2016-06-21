@@ -366,7 +366,7 @@ class Simulation(object):
             # Main time integration loop; continue integration while time of
             # the ``ReactorNet`` is less than specified end time.
             while self.reac_net.time < self.time_end:
-                self.reac_net.step()
+                self.reac_net.step(self.time_end)
 
                 # Interpolate to end time if step took us beyond that point
                 if self.reac_net.time > self.time_end:
