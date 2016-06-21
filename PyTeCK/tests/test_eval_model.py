@@ -61,3 +61,17 @@ class TestEstimateStandardDeviation:
                                                    dependent_variable + noise
                                                    )
         numpy.testing.assert_allclose(1.0, standard_dev, rtol=1.e-2)
+
+
+class TestEvalModel:
+    """
+    """
+    def test(self):
+        """
+        """
+
+        eval_model.evaluate_model('h2o2.cti', 'PyTeCK/tests/spec_keys.json',
+                                  'PyTeCK/tests/dataset_file.txt',
+                                  data_path='PyTeCK/tests/',
+                                  model_path=''
+                                  )

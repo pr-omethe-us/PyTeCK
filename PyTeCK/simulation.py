@@ -451,7 +451,7 @@ class Simulation(object):
         max_ind = ind[np.argmax(target[ind])]
 
         # add units to time
-        time *= units.second
+        time = time * units.second
 
         # Will need to subtract compression time for RCM
         time_comp = 0.0
@@ -459,16 +459,16 @@ class Simulation(object):
             time_comp = self.properties['compression-time']
 
         ign_delays = time[ind[np.where((time[ind[ind <= max_ind]] -
-                                       time_comp) > 0
+                                       time_comp) > 0. * units.second
                                        )]] - time_comp
         # Overall ignition delay
         if len(ign_delays) > 0:
-            self.properties['simulated ignition delay'] = ign_delays[-1]
+            self.properties['simulated-ignition-delay'] = ign_delays[-1]
         else:
-            self.properties['simulated ignition delay'] = 0.0 * units.second
+            self.properties['simulated-ignition-delay'] = 0.0 * units.second
 
         # First-stage ignition delay
         if len(ign_delays) > 1:
-            self.properties['simulated first-stage delay'] = ign_delays[0]
+            self.properties['simulated-first-stage-delay'] = ign_delays[0]
         else:
-            self.properties['simulated first-stage delay'] = np.nan * units.second
+            self.properties['simulated-first-stage-delay'] = np.nan * units.second

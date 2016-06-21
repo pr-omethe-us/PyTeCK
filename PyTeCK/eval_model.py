@@ -9,7 +9,7 @@ import json
 import multiprocessing
 from argparse import ArgumentParser
 
-import numpy as np
+import numpy
 from scipy.interpolate import UnivariateSpline
 
 import cantera as ct
@@ -77,7 +77,7 @@ def estimate_std_dev(indep_variable, dep_variable):
     else:
         spline = UnivariateSpline(indep_variable, dep_variable)
 
-    standard_dev = np.std(dep_variable - spline(indep_variable))
+    standard_dev = numpy.std(dep_variable - spline(indep_variable))
 
     if standard_dev < min_deviation:
         print('Standard deviation of {:.2f} too low, '
@@ -127,6 +127,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         model_spec_key = json.load(f)
 
     # Keys for models with variants depending on pressure or bath gas
+    model_variant = None
     if model_variant_file:
         with open(model_variant_file, 'r') as f:
             model_variant = json.load(f)
@@ -135,8 +136,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     with open(dataset_file, 'r') as f:
         dataset_list = f.read().splitlines()
 
-    error_func_sets = np.zeros(len(dataset_list))
-    dev_func_sets = np.zeros(len(dataset_list))
+    error_func_sets = numpy.zeros(len(dataset_list))
+    dev_func_sets = numpy.zeros(len(dataset_list))
 
     # Dictionary with all output data
     output = {'model': model_name, 'datasets': []}
@@ -155,8 +156,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         properties = parse_files.read_experiment(os.path.join(data_path, dataset))
         simulations = parse_files.create_simulations(properties)
 
-        ignition_delays_exp = np.zeros(len(simulations))
-        ignition_delays_sim = np.zeros(len(simulations))
+        ignition_delays_exp = numpy.zeros(len(simulations))
+        ignition_delays_sim = numpy.zeros(len(simulations))
 
         #############################################
         # Determine standard deviation of the dataset
@@ -181,7 +182,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                                       'supported as changing variables.'
                                       )
         # for ignition delay, use logarithm of values
-        standard_dev = estimate_std_dev(variable, np.log(ign_delay))
+        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
         dataset_meta['standard deviation'] = standard_dev
 
         #########################################
@@ -196,7 +197,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
              )
             ):
             print('Warning: Ar or He in dataset, but not in model. Skipping.')
-            error_func_sets[idx_set] = np.nan
+            error_func_sets[idx_set] = numpy.nan
             continue
 
         # Use available number of processors minus one,
@@ -208,7 +209,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(simulations):
             # special treatment based on pressure for Princeton model
 
-            if model_name in model_variant:
+            if model_variant and model_name in model_variant:
                 model_mod = ''
                 if 'bath gases' in model_variant[model_name]:
                     # find any bath gases requiring special treatment
@@ -237,7 +238,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
                     # choose closest pressure
                     # better way to do this?
-                    i = np.argmin(np.abs(np.array(
+                    i = numpy.argmin(numpy.abs(numpy.array(
                         [float(n)
                          for n in list(model_variant[model_name]['pressures'])
                          ]
@@ -267,46 +268,46 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             sim.process_results()
 
             ignition_delays_exp[idx] = sim.properties['ignition-delay'].magnitude
-            ignition_delays_sim[idx] = sim.properties['simulated ignition delay'].magnitude
+            ignition_delays_sim[idx] = sim.properties['simulated-ignition-delay'].magnitude
 
-            temp = sim.properties.to('kelvin').magnitude
-            pres = sim.properties.to('atm').magnitude
+            temp = sim.properties['temperature'].to('kelvin').magnitude
+            pres = sim.properties['pressure'].to('atm').magnitude
 
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': ignition_delays_exp[idx],
                  'simulated ignition delay': ignition_delays_sim[idx],
                  'temperature': temp, 'pressure': pres,
-                 'composition': properties['composition']
+                 'composition': sim.properties['composition']
                  })
 
         # calculate error function for this dataset
-        error_func = np.power((np.log(ignition_delays_sim) -
-                               np.log(ignition_delays_exp)) / standard_dev, 2
+        error_func = numpy.power((numpy.log(ignition_delays_sim) -
+                               numpy.log(ignition_delays_exp)) / standard_dev, 2
                               )
-        error_func = np.nanmean(error_func)
+        error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
         dataset_meta['error function'] = error_func
 
-        dev_func = (np.log(ignition_delays_sim) -
-                    np.log(ignition_delays_exp)
+        dev_func = (numpy.log(ignition_delays_sim) -
+                    numpy.log(ignition_delays_exp)
                     ) / standard_dev
-        dev_func = np.nanmean(dev_func)
+        dev_func = numpy.nanmean(dev_func)
         dev_func_sets[idx_set] = dev_func
         dataset_meta['absolute deviation'] = dev_func
 
         output['datasets'].append(dataset_meta)
 
     # Overall error function
-    error_func = np.nanmean(error_func_sets)
+    error_func = numpy.nanmean(error_func_sets)
     print('overall error function: ' + repr(error_func))
-    print('error standard deviation: ' + repr(np.nanstd(error_func_sets)))
+    print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
 
     # Absolute deviation function
-    abs_dev_func = np.nanmean(dev_func_sets)
+    abs_dev_func = numpy.nanmean(dev_func_sets)
     print('absolute deviation function: ' + repr(abs_dev_func))
 
     output['average error function'] = error_func
-    output['error function standard deviation'] = np.nanstd(error_func_sets)
+    output['error function standard deviation'] = numpy.nanstd(error_func_sets)
     output['average deviation function'] = abs_dev_func
 
     # Write data to JSON file
