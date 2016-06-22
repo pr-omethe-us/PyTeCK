@@ -13,11 +13,6 @@ from os.path import splitext, basename
 import numpy as np
 
 try:
-    import xml.etree.ElementTree as ET
-except ImportError:
-    import xml.etree.cElementTree as ET
-
-try:
     import yaml
 except ImportError:
     print('Warning: YAML must be installed to read input file.')

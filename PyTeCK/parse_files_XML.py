@@ -13,9 +13,16 @@ from os.path import splitext, basename
 import numpy as np
 
 try:
-    import xml.etree.ElementTree as ET
+    from lxml import etree
 except ImportError:
-    import xml.etree.cElementTree as ET
+    try:
+        import xml.etree.cElementTree as etree
+    except ImportError:
+        try:
+            import xml.etree.ElementTree as etree
+        except ImportError:
+          print("Failed to import ElementTree from any known place")
+          raise
 
 # Local imports
 from .utils import units, spec_key, get_temp_unit
@@ -26,13 +33,70 @@ from .exceptions import (KeywordError, UndefinedElementError,
 from .simulation import Simulation
 from . import validation
 
+def get_file_metadata(root):
+    """Read and parse ReSpecTh XML file metadata (file author, version, etc.)
+
+    Parameters
+    ----------
+    root : ``etree.Element``
+        root of ReSpecTh XML file
+
+    Returns
+    -------
+    properties : dict
+        Dictionary with file metadata
+
+    """
+    properties = {}
+
+    properties['file-author'] = {'name': '', 'ORCID': ''}
+    try:
+        properties['file-author']['name'] = root.find('fileAuthor').text
+    except AttributeError:
+        print('Warning: no fileAuthor given')
+
+    # Default version is 1.0
+    properties['file-version'] = '(1, 0)'
+    elem = root.find('fileVersion')
+    if elem is None:
+        print('Warning: no fileVersion element')
+
+    try:
+        version = (int(elem.find('major').text),
+                   int(elem.find('minor').text)
+                   )
+    except AttributeError:
+        print('Warning: missing fileVersion major/minor')
+    properties['file-version'] = str(version)
+
+    properties['reference'] = {}
+    elem = root.find('bibliographyLink')
+    try:
+        properties['reference']['citation'] = elem.attrib['preferredKey']
+    except KeyError:
+        print('Warning: missing preferredKey attribute in bibliographyLink')
+
+    try:
+        properties['reference']['doi'] = elem.attrib['doi']
+    except KeyError:
+        print('Warning: missing doi attribute in bibliographyLink')
+
+    return properties
+
 
 def get_experiment_kind(root):
     """Read common properties from root of ReSpecTh XML file.
 
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Type of experiment ('ST' or 'RCM')
-    :rtype: str
+    Parameters
+    ----------
+    root : ``etree.Element``
+        root of ReSpecTh XML file
+
+    Returns
+    -------
+    kind : str
+        Type of experiment ('ST' or 'RCM')
+
     """
     if root.find('experimentType').text != 'Ignition delay measurement':
         raise KeywordError('experimentType not ignition delay measurement')
@@ -51,10 +115,18 @@ def get_experiment_kind(root):
 def get_common_properties(properties, root):
     """Read common properties from root of ReSpecTh XML file.
 
-    :param dict properties: Dictionary with initial properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with common properties added
-    :rtype: dict
+    Parameters
+    ----------
+    properties : dict
+        Dictionary with initial properties
+    root : ``etree.Element``
+        root of ReSpecTh XML file
+
+    Returns
+    -------
+    properties : dict
+        Dictionary with common properties added
+
     """
     for elem in root.iterfind('commonProperties/property'):
         name = elem.attrib['name']
@@ -123,14 +195,21 @@ def get_common_properties(properties, root):
     return properties
 
 
-def get_ignition_type(properties, root):
+def get_ignition_type(root):
     """Gets ignition type and target.
 
-    :param dict properties: Dictionary with initial properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with ignition type/target added
-    :rtype: dict
+    Parameters
+    ----------
+    root : ``etree.Element``
+        root of ReSpecTh XML file
+
+    Returns
+    -------
+    ignition : dict
+        Dictionary with ignition type/target information
+
     """
+    ignition = {}
     elem = root.find('ignitionType')
 
     if elem is None:
@@ -166,11 +245,11 @@ def get_ignition_type(properties, root):
                     ]:
         raise NotImplementedError(ign_type + ' not supported')
 
-    properties['ignition type'] = ign_type
-    properties['ignition target'] = ign_target
+    ignition['type'] = ign_type
+    ignition['target'] = ign_target
 
-    amt = None
-    amt_units = None
+    ignition['target-value'] = None
+    ignition['target-units'] = None
     if ign_type in ['concentration', 'relative concentration']:
         try:
             amt = elem.attrib['amount']
@@ -181,25 +260,31 @@ def get_ignition_type(properties, root):
         except KeyError:
             raise MissingAttributeError('ignitionType units')
 
-        properties['ignition target value'] = amt
-        properties['ignition target units'] = amt_units
+        ignition['target-value'] = amt
+        ignition['target-units'] = amt_units
 
         raise NotImplementedError('concentration ignition delay type '
                                   'not supported'
                                   )
-    else:
-        properties['ignition target value'] = None
 
-    return properties
+    return ignition
 
 
 def get_datapoints(properties, root):
     """Parse datapoints with ignition delay from file.
 
-    :param dict properties: Dictionary with experimental properties
-    :param `Element` root: root of ReSpecTh XML file
-    :return: Dictionary with ignition delay data
-    :rtype: dict
+    Parameters
+    ----------
+    properties : dict
+        Dictionary with experimental properties
+    root : ``etree.Element``
+        root of ReSpecTh XML file
+
+    Returns
+    -------
+    properties : dict
+        Dictionary with ignition delay data
+
     """
     # Shock tube experiment will have one data group, while RCM may have one
     # or two (one for ignition delay, one for volume-history)
@@ -222,17 +307,23 @@ def get_datapoints(properties, root):
             else:
                 val_unit = units(prop.attrib['units'].lower())
             vals = np.zeros([num]) * val_unit
-            properties[prop.attrib['name']] = vals
+            if prop.attrib['name'] == 'ignition delay':
+                properties['ignition-delay'] = vals
+            else:
+                properties[prop.attrib['name']] = vals
 
         # now get data points
         for idx, dp in enumerate(dataGroup.findall('dataPoint')):
             for val in dp:
                 prop = property_id[val.tag]
+                if prop == 'ignition delay':
+                    prop = 'ignition-delay'
+
                 properties[prop].magnitude[idx] = float(val.text)
 
                 # Check units for correct dimensionality
-                if prop == 'ignition delay':
-                    validation.validate_gt('ignition-delay',
+                if prop == 'ignition-delay':
+                    validation.validate_gt(prop,
                                            properties[prop][idx],
                                            0. * units.second
                                            )
@@ -263,12 +354,22 @@ def get_datapoints(properties, root):
 def read_experiment(filename):
     """Reads experiment data from ReSpecTh XML file.
 
-    :param str filename: XML filename in ReSpecTh format with experimental data
-    :return: Dictionary with group of experimental properties
-    :rtype: dict
+    Parameters
+    ----------
+    filename : str
+        XML filename in ReSpecTh format with experimental data
+
+    Returns
+    -------
+    properties : dict
+        Dictionary with group of experimental properties
+
     """
 
-    tree = ET.parse(filename)
+    try:
+        tree = etree.parse(filename)
+    except OSError:
+        raise OSError('Unable to open file ' + filename)
     root = tree.getroot()
 
     properties = {}
@@ -277,6 +378,9 @@ def read_experiment(filename):
     properties['id'] = splitext(basename(filename))[0]
     properties['data-file'] = basename(filename)
 
+    # get file metadata
+    properties.update(get_file_metadata(root))
+
     # Ensure ignition delay, and get which kind of experiment
     properties['kind'] = get_experiment_kind(root)
 
@@ -284,7 +388,7 @@ def read_experiment(filename):
     properties = get_common_properties(properties, root)
 
     # Determine definition of ignition delay
-    properties = get_ignition_type(properties, root)
+    properties['ignition'] = get_ignition_type(root)
 
     # Now parse ignition delay datapoints
     properties = get_datapoints(properties, root)
@@ -310,40 +414,28 @@ def read_experiment(filename):
     return properties
 
 
-def create_simulations(properties):
-    """Set up individual simulations for each ignition delay value.
+def convert_XML_to_YAML(filename_xml):
+    """Convert ReSpecTh XML file to ChemKED YAML file.
 
-    :param dict properties: Dictionary with group of experimental properties
-    :return: List of :class:`Simulation` objects for each simulation
-    :rtype: list
+    Parameters
+    ----------
+    filename_xml : str
+        Name of ReSpecTh XML file to be converted.
+
+    Returns
+    -------
+    filename_yaml : str
+        Name of newly created ChemKED YAML file.
+
     """
 
-    simulations = []
-    for idx in range(len(properties['ignition-delay'])):
-        sim_properties = {}
-        # Common properties
-        sim_properties['composition'] = properties['composition']
-        sim_properties['data-file'] = properties['data-file']
-        sim_properties['id'] = properties['id'] + '_' + str(idx)
+    assert os.path.isfile(filename_xml), "XML file missing"
 
-        for prop in ['temperature', 'pressure', 'ignition-delay']:
-            if hasattr(properties[prop].magnitude, '__len__'):
-                sim_properties[prop] = properties[prop][idx]
-            else:
-                # This is a common property, this a scalar
-                sim_properties[prop] = properties[prop]
+    # get all information from XML file
+    properties = read_experiment(filename_xml)
 
-            # Copy pressure rise or volume history if present
-            if 'pressure-rise' in properties:
-                sim_properties['pressure-rise'] = properties['pressure-rise']
+    
 
-            if 'volume' in properties:
-                sim_properties['volume'] = properties['volume']
-                sim_properties['time'] = properties['time']
 
-        simulations.append(Simulation(properties['kind'], sim_properties,
-                                      properties['ignition target'],
-                                      properties['ignition type'],
-                                      properties['ignition target value']
-                                      ))
-    return simulations
+    with open(filename_yaml, 'w') as outfile:
+        outfile.write(yaml.dump(properties, default_flow_style=False))
