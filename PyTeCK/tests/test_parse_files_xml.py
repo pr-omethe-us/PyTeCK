@@ -10,12 +10,16 @@ import numpy as np
 import pytest
 
 try:
-    import lxml.etree as ET
+    from lxml import etree
 except ImportError:
     try:
-        import xml.etree.cElementTree as ET
+        import xml.etree.cElementTree as etree
     except ImportError:
-        import xml.etree.ElementTree as ET
+        try:
+            import xml.etree.ElementTree as etree
+        except ImportError:
+          print("Failed to import ElementTree from any known place")
+          raise
 
 # Local imports
 from .. import parse_files
@@ -32,7 +36,7 @@ class TestExperimentType:
         """
         file_path = os.path.join('testfile_st.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         kind = parse_files.get_experiment_kind(filename)
@@ -43,7 +47,7 @@ class TestExperimentType:
         """
         file_path = os.path.join('testfile_rcm.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         kind = parse_files.get_experiment_kind(root)
@@ -58,7 +62,7 @@ class TestCommonProperties:
         """
         file_path = os.path.join('testfile_st.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -86,7 +90,7 @@ class TestCommonProperties:
         """
         file_path = os.path.join('testfile_st2.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -114,7 +118,7 @@ class TestCommonProperties:
         """
         file_path = os.path.join('testfile_rcm.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -138,7 +142,7 @@ class TestIgnitionType:
         """
         file_path = os.path.join('testfile_rcm.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -152,7 +156,7 @@ class TestIgnitionType:
         """
         file_path = os.path.join('testfile_st.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -162,11 +166,11 @@ class TestIgnitionType:
         assert properties['ignition type'] == 'd/dt max'
 
     def test_pressure_species_target_OH(self):
-        """Test species max value as target.
+        """Test species max value as targetree.
         """
         file_path = os.path.join('testfile_st2.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -184,7 +188,7 @@ class TestDataGroups:
         """
         file_path = os.path.join('testfile_st.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -203,7 +207,7 @@ class TestDataGroups:
         """
         file_path = os.path.join('testfile_st2.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}
@@ -222,7 +226,7 @@ class TestDataGroups:
         """
         file_path = os.path.join('testfile_rcm.xml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        tree = ET.parse(filename)
+        tree = etree.parse(filename)
         root = tree.getroot()
 
         properties = {}

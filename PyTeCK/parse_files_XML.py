@@ -25,7 +25,7 @@ except ImportError:
           raise
 
 # Local imports
-from .utils import units, spec_key, get_temp_unit
+from .utils import units, spec_key, spec_key_rev, get_temp_unit
 from .exceptions import (KeywordError, UndefinedElementError,
                          MissingElementError, MissingAttributeError,
                          UndefinedKeywordError
@@ -434,8 +434,136 @@ def convert_XML_to_YAML(filename_xml):
     # get all information from XML file
     properties = read_experiment(filename_xml)
 
-    
+    apparatus = {'kind': 'shock tube' if properties['kind'] == 'ST'
+                         else 'rapid compression machine',
+                 'institution': '',
+                 'facility': ''
+                 }
 
+    common_properties = {}
+
+    # I think we can assume composition will always be a common property in
+    # ReSpecTh files
+    composition = []
+    for species, amount in properties['composition'].items():
+        comp = {'species': species, 'mole-fraction': float(amount)}
+        # Get InChI key
+        comp['InChI'] = spec_key_rev[species]
+        composition.append(comp)
+
+    common_properties['composition'] = composition
+
+    # ignition type is shared for all datapoints in ReSpecTh
+    ignition_type = {k: v for k, v in properties['ignition'].items()
+                     if v is not None
+                     }
+    if ignition_type['target'] == 'P':
+        ignition_type['target'] = 'pressure'
+    elif ignition_type['target'] == 'T':
+        ignition_type['target'] = 'temperature'
+    common_properties['ignition-type'] = ignition_type
+
+    # Need to check if some quantities have multiple values, while one of
+    # is common
+    variables = ['temperature', 'pressure', 'ignition-delay']
+    num_points = [np.size(properties[prop]) for prop in variables]
+
+    changing_variables = [variables[idx] for idx in range(len(num_points))
+                          if num_points[idx] == max(num_points)
+                          ]
+
+    common_variable_name = None
+    if min(num_points) != max(num_points):
+        common_variable_name = variables[argmin(num_points)]
+        common_variable = {
+            'value': float(properties[common_variable_name].magnitude.tolist()),
+            'units': str(properties[common_variable_name].units)
+            }
+        common_properties[common_variable_name] = common_variable
+
+    # pressure rise is common
+    pressure_rise = None
+    if 'pressure-rise' in properties:
+        pressure_rise = {
+            'value': float(properties['pressure-rise'].magnitude.tolist()),
+            'units': str(properties['pressure-rise'].units)
+            }
+        common_properties['pressure-rise'] = pressure_rise
+
+    # compression time is common
+    compression_time = None
+    if 'compression-time' in properties:
+        compression_time = {
+            'value': float(properties['compression-time'].magnitude.tolist()),
+            'units': str(properties['compression-time'].units)
+            }
+        common_properties['compression-time'] = compression_time
+
+    # Now go through datapoints (may only be one)
+    datapoints = []
+    for idx in range(max(num_points)):
+        datapoint = {'ignition-type': ignition_type,
+                     'composition': composition
+                     }
+        # assign common variable (if there is one)
+        if common_variable_name is not None:
+            datapoint[common_variable_name] = common_variable
+
+        for variable in changing_variables:
+            datapoint[variable] = {
+                'value': float(properties[variable][idx].magnitude),
+                'units': str(properties[variable][idx].units)
+                }
+            # need to handle temperature units specially?
+
+        # pressure rise
+        if pressure_rise is not None:
+            datapoint['pressure-rise'] = pressure_rise
+
+        # compression time
+        if compression_time is not None:
+            datapoint['compression-time'] = compression_time
+
+        # volume history
+        if 'volume' in properties:
+            assert 'time' in properties, 'Time needs to be included with volume'
+
+            volume_history = {
+                'time': {'units': str(properties['time'].units),
+                         'column': 0
+                         },
+                'volume': {'units': str(properties['volume'].units),
+                           'column': 1
+                           },
+                'values': []
+                }
+            for t, v in zip(properties['time'].magnitude,
+                            properties['volume'].magnitude
+                            ):
+                volume_history['values'].append([float(t), float(v)])
+
+            datapoint['volume-history'] = volume_history
+
+        datapoints.append(datapoint)
+
+    new_properties = {'file-author': properties['file-author'],
+                      'file-version': properties['file-version'],
+                      'reference': properties['reference'],
+                      'experiment-type': 'Ignition delay measurement',
+                      'apparatus': apparatus,
+                      'datapoints': datapoints
+                      }
+
+    if common_variable_name is not None:
+        new_properties['common-properties'] = common_properties
+
+    new_properties['reference']['authors'] = [{'name': '', 'ORCID': ''}]
+    new_properties['reference']['journal'] = ''
+    new_properties['reference']['year'] = ''
+    new_properties['reference']['volume'] = ''
+    new_properties['reference']['pages'] = ''
+
+    filename_yaml = splitext(basename(filename_xml))[0] + '.yaml'
 
     with open(filename_yaml, 'w') as outfile:
-        outfile.write(yaml.dump(properties, default_flow_style=False))
+        outfile.write(yaml.dump(new_properties, default_flow_style=False))
