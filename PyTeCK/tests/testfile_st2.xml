@@ -33,7 +33,7 @@
                 <amount units="mole fraction">0.9899</amount>
             </component>
         </property>
-        <property name="pressure rise" units="ms">
+        <property name="pressure rise" units="1/ms">
             <value>0.10</value>
         </property>
     </commonProperties>

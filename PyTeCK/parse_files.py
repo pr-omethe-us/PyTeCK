@@ -232,7 +232,7 @@ def get_datapoints(properties, raw_properties):
             if not temp_value:
                 raise MissingAttributeError('value', 'pressure-rise')
 
-            case['pressure-rise'] = float(temp_value) / units(temp_units)
+            case['pressure-rise'] = float(temp_value) * units(temp_units)
             validation.validate_geq('pressure rise', case['pressure-rise'],
                                     0. / units.second
                                     )

@@ -40,7 +40,7 @@ common-properties:
           mole-fraction: 0.9899
     pressure-rise: &pres-rise
         value: 0.10
-        units: ms
+        units: 1/ms
     ignition-type: &ign
         target: OH
         type: max

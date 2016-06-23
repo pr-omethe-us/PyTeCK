@@ -185,7 +185,7 @@ def get_common_properties(properties, root):
             if properties['kind'] == 'RCM':
                 raise KeywordError('Pressure rise cannot be defined for RCM.')
 
-            properties['pressure-rise'] = (float(elem.find('value').text) /
+            properties['pressure-rise'] = (float(elem.find('value').text) *
                                            units(elem.attrib['units'].lower())
                                            )
             validation.validate_geq('pressure rise',
