@@ -44,9 +44,9 @@ def get_experiment_kind(raw_properties):
     if not raw_properties.get('experiment-type', None):
         raise MissingElementError('experiment-type')
 
-    if raw_properties['experiment-type'] != 'Ignition delay measurement':
+    if raw_properties['experiment-type'] != 'Ignition delay':
         raise NotImplementedError('experimentType not '
-                                  'ignition delay measurement'
+                                  'ignition delay'
                                   )
 
     apparatus = raw_properties.get('apparatus', None)

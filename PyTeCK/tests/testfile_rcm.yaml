@@ -17,7 +17,7 @@ reference:
     volume: 38
     pages: 516-529
     detail: Fig. 6, open circle
-experiment-type: Ignition delay measurement
+experiment-type: Ignition delay
 apparatus:
     kind: rapid compression machine
     institution: Case Western Reserve University

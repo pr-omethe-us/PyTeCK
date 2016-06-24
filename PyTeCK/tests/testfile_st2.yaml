@@ -19,7 +19,7 @@ reference:
     volume: 32
     pages: 2216-2226
     detail: Artificial pressure rise and ignition target
-experiment-type: Ignition delay measurement
+experiment-type: Ignition delay
 apparatus:
     kind: shock tube
     institution: CNRS-ICARE
