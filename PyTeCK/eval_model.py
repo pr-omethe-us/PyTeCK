@@ -5,7 +5,6 @@ from __future__ import division
 # Standard libraries
 import os
 from os.path import splitext, basename
-import json
 import multiprocessing
 from argparse import ArgumentParser
 
@@ -13,6 +12,11 @@ import numpy
 from scipy.interpolate import UnivariateSpline
 
 import cantera as ct
+
+try:
+    import yaml
+except ImportError:
+    print('Warning: YAML must be installed to read input file.')
 
 # Local imports
 from .utils import units
@@ -99,7 +103,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     model_name : str
         Chemical kinetic model filename
     spec_keys_file : str
-        Name of JSON file identifying important species
+        Name of YAML file identifying important species
     dataset_file : str
         Name of file with list of data files
     data_path : str
@@ -109,7 +113,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     results_path : str
         Local path for creating results files. Optional; default = 'results'
     model_variant_file : str
-        Name of JSON file identifying ranges of conditions for variants of the
+        Name of YAML file identifying ranges of conditions for variants of the
         kinetic model. Optional; default = ``None``
     num_threads : int
         Number of CPU threads to use for performing simulations in parallel.
@@ -124,13 +128,13 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
     # Dict to translate species names into those used by models
     with open(spec_keys_file, 'r') as f:
-        model_spec_key = json.load(f)
+        model_spec_key = yaml.load(f)
 
     # Keys for models with variants depending on pressure or bath gas
     model_variant = None
     if model_variant_file:
         with open(model_variant_file, 'r') as f:
-            model_variant = json.load(f)
+            model_variant = yaml.load(f)
 
     # Read dataset list
     with open(dataset_file, 'r') as f:
@@ -310,6 +314,6 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     output['error function standard deviation'] = numpy.nanstd(error_func_sets)
     output['average deviation function'] = abs_dev_func
 
-    # Write data to JSON file
-    with open(splitext(basename(model_name))[0] + '-results.json', 'w') as f:
-        json.dump(output, f)
+    # Write data to YAML file
+    with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
+        yaml.dump(output, f)
