@@ -1,0 +1,12 @@
+---
+h2o2.cti:
+    H2: "H2"
+    O2: "O2"
+    Ar: "AR"
+gri30.cti:
+    H2: "H2"
+    O2: "O2"
+    N2: "N2"
+    CO: "CO"
+    Ar: "AR"
+    CO2: "CO2"
