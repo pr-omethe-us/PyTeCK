@@ -30,7 +30,7 @@ except ImportError:
           raise
 
 # Local imports
-from .utils import units, spec_key, spec_key_rev, get_temp_unit
+from .utils import units, SPEC_KEY, SPEC_KEY_REV, get_temp_unit
 from .exceptions import (KeywordError, UndefinedElementError,
                          MissingElementError, MissingAttributeError,
                          UndefinedKeywordError
@@ -142,7 +142,7 @@ def get_common_properties(properties, root):
                 # use InChI for unique species identifier (if possible)
                 try:
                     spec_id = child.find('speciesLink').attrib['InChI']
-                    spec = spec_key[spec_id]
+                    spec = SPEC_KEY[spec_id]
                 except KeyError:
                     spec = child.find('speciesLink').attrib['preferredKey']
 
@@ -453,7 +453,7 @@ def convert_XML_to_YAML(filename_xml):
     for species, amount in properties['composition'].items():
         comp = {'species': species, 'mole-fraction': float(amount)}
         # Get InChI key
-        comp['InChI'] = spec_key_rev[species]
+        comp['InChI'] = SPEC_KEY_REV[species]
         composition.append(comp)
 
     common_properties['composition'] = composition

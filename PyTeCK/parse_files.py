@@ -18,7 +18,7 @@ except ImportError:
     print('Warning: YAML must be installed to read input file.')
 
 # Local imports
-from .utils import units, spec_key, get_temp_unit
+from .utils import units, SPEC_KEY, get_temp_unit
 from .exceptions import (KeywordError, UndefinedElementError,
                          MissingElementError, MissingAttributeError,
                          UndefinedKeywordError
@@ -53,7 +53,7 @@ def get_experiment_kind(raw_properties):
     if not apparatus:
         raise MissingElementError('apparatus')
 
-    kind = apparatus.get('kind',  None)
+    kind = apparatus.get('kind', None)
     if not kind:
         raise MissingElementError('apparatus/kind')
     elif kind == 'shock tube':
@@ -205,7 +205,7 @@ def get_datapoints(properties, raw_properties):
                                                     'composition'
                                                     )
                 else:
-                    spec_name = spec_key[spec_id]
+                    spec_name = SPEC_KEY[spec_id]
 
                 spec_amount = component.get('mole-fraction', None)
                 if not spec_amount:

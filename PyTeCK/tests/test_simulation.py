@@ -241,12 +241,12 @@ class TestSimulation:
         assert len(simulations) == 5
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         gas = ct.Solution(mechanism_filename)
 
         sim = simulations[0]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         init_pressure = 220. * units.kilopascal
 
@@ -257,9 +257,9 @@ class TestSimulation:
                                    init_pressure.to('pascal').magnitude
                                    )
         mass_fracs = np.zeros(sim.gas.n_species)
-        mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(spec_key['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
@@ -271,7 +271,7 @@ class TestSimulation:
         assert sim.ignition_type == 'd/dt max'
 
         sim = simulations[1]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.kind == 'ST'
         np.testing.assert_allclose(sim.time_end, 4.4803e-2)
@@ -280,9 +280,9 @@ class TestSimulation:
                                    init_pressure.to('pascal').magnitude
                                    )
         mass_fracs = np.zeros(sim.gas.n_species)
-        mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(spec_key['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
@@ -307,16 +307,16 @@ class TestSimulation:
         simulations = parse_files.create_simulations(properties)
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         sim = simulations[0]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         # Only thing different from last test: ignition target is temperature
         assert sim.ignition_target == 'temperature'
 
         sim = simulations[1]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         # Only thing different from last test: ignition target is temperature
         assert sim.ignition_target == 'temperature'
@@ -334,7 +334,7 @@ class TestSimulation:
         assert len(simulations) == 1
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         init_temp = 1264.2
         init_pres = 2.18 * ct.one_atm
@@ -342,16 +342,16 @@ class TestSimulation:
         gas = ct.Solution(mechanism_filename)
 
         sim = simulations[0]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.kind == 'ST'
         np.testing.assert_allclose(sim.time_end, 2.9157e-2)
         np.testing.assert_allclose(sim.gas.T, init_temp)
         np.testing.assert_allclose(sim.gas.P, init_pres)
         mass_fracs = np.zeros(sim.gas.n_species)
-        mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(spec_key['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         assert sim.n_vars == gas.n_species + 3
 
@@ -381,22 +381,22 @@ class TestSimulation:
         assert len(simulations) == 1
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         gas = ct.Solution(mechanism_filename)
 
         sim = simulations[0]
-        sim.setup_case(mechanism_filename, spec_key)
+        sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.kind == 'RCM'
         np.testing.assert_allclose(sim.time_end, 0.1)
         np.testing.assert_allclose(sim.gas.T, 297.4)
         np.testing.assert_allclose(sim.gas.P, 127722.83)
         mass_fracs = np.zeros(sim.gas.n_species)
-        mass_fracs[sim.gas.species_index(spec_key['H2'])] = 0.12500
-        mass_fracs[sim.gas.species_index(spec_key['O2'])] = 0.06250
-        mass_fracs[sim.gas.species_index(spec_key['N2'])] = 0.18125
-        mass_fracs[sim.gas.species_index(spec_key['Ar'])] = 0.63125
+        mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.12500
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.06250
+        mass_fracs[sim.gas.species_index(SPEC_KEY['N2'])] = 0.18125
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.63125
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
 
         times = np.arange(0, 9.7e-2, 1.e-3)
@@ -455,12 +455,12 @@ class TestSimulation:
         simulations = parse_files.create_simulations(properties)
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, spec_key)
+            sim.setup_case(mechanism_filename, SPEC_KEY)
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
@@ -506,7 +506,7 @@ class TestSimulation:
                                            )
 
             sim = simulations[1]
-            sim.setup_case(mechanism_filename, spec_key)
+            sim.setup_case(mechanism_filename, SPEC_KEY)
             sim.run_case(1, path=temp_dir)
 
             assert os.path.exists(sim.properties['save-file'])
@@ -562,12 +562,12 @@ class TestSimulation:
         simulations = parse_files.create_simulations(properties)
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, spec_key)
+            sim.setup_case(mechanism_filename, SPEC_KEY)
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
@@ -624,12 +624,12 @@ class TestSimulation:
         simulations = parse_files.create_simulations(properties)
 
         mechanism_filename = 'gri30.xml'
-        spec_key = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
 
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, spec_key)
+            sim.setup_case(mechanism_filename, SPEC_KEY)
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
