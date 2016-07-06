@@ -60,7 +60,6 @@ parser.add_argument('-nt', '--num-threads',
                          'parallel.'
                     )
 parser.add_argument('-p', '--print',
-                    type=bool,
                     dest='print_results',
                     action='store_true',
                     default=False,
