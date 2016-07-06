@@ -4,7 +4,6 @@
 """
 from __future__ import print_function
 
-import cantera as ct
 import pint
 
 units = pint.UnitRegistry()
