@@ -1,5 +1,2 @@
-
-from .simulation import Simulation
-from .parse_files import read_experiment
-
-__all__ = ['Simulation', 'read_experiment']
+from ._version import __version__, __version_info__
+from .eval_model import evaluate_model
