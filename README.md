@@ -4,9 +4,25 @@ PyTeCK
 
 This software package automatically evaluates the performance of a chemical reaction mechanism using experimental data given in a specified YAML format.
 
+Installation
+------------
+Currently, PyTeCK can be installed by a module by downloading the source files,
+navigating to the directory, and using either setuptools
+
+    > python setup.py install
+
+or `pip`
+
+    > pip install .
+
+`pip` is recommended due to its easy uninstall option (`pip uninstall PyTeCK`).
+
+Once PyTeCK reaches v1.0, it will be distributed via PyPI and installable using
+`pip install PyTeCK`, with automatic dependency tracking.
+
 Usage
 -----
-The full list of options can be seen using `PyTeCK -h` or `PyTeCK --help`.
+Once installed, the full list of options can be seen using `PyTeCK -h` or `PyTeCK --help`.
 
 License
 -------

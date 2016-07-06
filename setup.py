@@ -27,7 +27,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=__version__,
 
-    description='test-kinetic-models',
+    description='Evaluation of chemical kinetic models with experimental data',
     long_description=long_description,
 
     # The project's main homepage.
@@ -87,7 +87,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
-     package_data={'PyTeCK': ['tests/*.xml']},
+     package_data={'PyTeCK': ['tests/*.xml', 'tests/*.yaml']},
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
