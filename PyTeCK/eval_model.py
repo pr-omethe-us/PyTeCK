@@ -94,7 +94,7 @@ def estimate_std_dev(indep_variable, dep_variable):
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
-                   num_threads=None
+                   num_threads=None, print_results=False
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
 
@@ -119,10 +119,13 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         Number of CPU threads to use for performing simulations in parallel.
         Optional; default = ``None``, in which case the available number of
         cores minus one is used.
+    print_results : bool
+        If ``True``, print results of the model evaluation to screen.
 
     Returns
     -------
-    None
+    output : dict
+        Dictionary with all information about model evaluation results.
 
     """
 
@@ -303,12 +306,14 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
     # Overall error function
     error_func = numpy.nanmean(error_func_sets)
-    print('overall error function: ' + repr(error_func))
-    print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
+    if print_results:
+        print('overall error function: ' + repr(error_func))
+        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
 
     # Absolute deviation function
     abs_dev_func = numpy.nanmean(dev_func_sets)
-    print('absolute deviation function: ' + repr(abs_dev_func))
+    if print_results:
+        print('absolute deviation function: ' + repr(abs_dev_func))
 
     output['average error function'] = error_func
     output['error function standard deviation'] = numpy.nanstd(error_func_sets)
@@ -317,3 +322,5 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
         yaml.dump(output, f)
+
+    return output

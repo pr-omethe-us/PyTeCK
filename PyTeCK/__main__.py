@@ -59,9 +59,16 @@ parser.add_argument('-nt', '--num-threads',
                     help='The number of threads to use to run simulations in '
                          'parallel.'
                     )
+parser.add_argument('-p', '--print',
+                    type=bool,
+                    dest='print_results',
+                    action='store_true',
+                    default=False,
+                    help='Print model evaluation results to screen.'
+                    )
 args = parser.parse_args()
 
 evaluate_model(args.model, args.model_keys_file, args.dataset,
                args.data_path, args.model_path, args.results_path,
-               args.model_variant_file, args.num_threads
+               args.model_variant_file, args.num_threads, args.print_results
                )
