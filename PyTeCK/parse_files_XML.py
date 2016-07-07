@@ -8,8 +8,8 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard libraries
-import sys
-from os.path import splitext, basename
+from os.path import splitext, basename, isfile
+from argparse import ArgumentParser
 import numpy as np
 
 try:
@@ -26,8 +26,8 @@ except ImportError:
         try:
             import xml.etree.ElementTree as etree
         except ImportError:
-          print("Failed to import ElementTree from any known place")
-          raise
+            print("Failed to import ElementTree from any known place")
+            raise
 
 # Local imports
 from .utils import units, SPEC_KEY, SPEC_KEY_REV, get_temp_unit
@@ -434,7 +434,7 @@ def convert_XML_to_YAML(filename_xml):
 
     """
 
-    assert os.path.isfile(filename_xml), "XML file missing"
+    assert isfile(filename_xml), "XML file missing"
 
     # get all information from XML file
     properties = read_experiment(filename_xml)
@@ -572,3 +572,18 @@ def convert_XML_to_YAML(filename_xml):
 
     with open(filename_yaml, 'w') as outfile:
         outfile.write(yaml.dump(new_properties, default_flow_style=False))
+    print('Converted to ' + filename_yaml)
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='Convert ReSpecTh XML file to ChemKED '
+                                        'YAML file.'
+                            )
+    parser.add_argument('-i', '--input',
+                        type=str,
+                        required=True,
+                        help='Input XML filename'
+                        )
+
+    args = parser.parse_args()
+    convert_XML_to_YAML(args.input)
