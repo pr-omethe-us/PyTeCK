@@ -6,7 +6,6 @@ from __future__ import division
 import os
 from os.path import splitext, basename
 import multiprocessing
-from argparse import ArgumentParser
 
 import numpy
 from scipy.interpolate import UnivariateSpline
