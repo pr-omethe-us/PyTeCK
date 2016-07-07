@@ -303,9 +303,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             pres = sim.properties['pressure'].to('atm').magnitude
 
             dataset_meta['datapoints'].append(
-                {'experimental ignition delay': ignition_delays_exp[idx],
-                 'simulated ignition delay': ignition_delays_sim[idx],
-                 'temperature': temp, 'pressure': pres,
+                {'experimental ignition delay': float(ignition_delays_exp[idx]),
+                 'simulated ignition delay': float(ignition_delays_sim[idx]),
+                 'temperature': float(temp), 'pressure': float(pres),
                  'composition': sim.properties['composition']
                  })
 
@@ -315,14 +315,14 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                               )
         error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
-        dataset_meta['error function'] = error_func
+        dataset_meta['error function'] = float(error_func)
 
         dev_func = (numpy.log(ignition_delays_sim) -
                     numpy.log(ignition_delays_exp)
                     ) / standard_dev
         dev_func = numpy.nanmean(dev_func)
         dev_func_sets[idx_set] = dev_func
-        dataset_meta['absolute deviation'] = dev_func
+        dataset_meta['absolute deviation'] = float(dev_func)
 
         output['datasets'].append(dataset_meta)
 
@@ -337,9 +337,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     if print_results:
         print('absolute deviation function: ' + repr(abs_dev_func))
 
-    output['average error function'] = error_func
-    output['error function standard deviation'] = numpy.nanstd(error_func_sets)
-    output['average deviation function'] = abs_dev_func
+    output['average error function'] = float(error_func)
+    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
+    output['average deviation function'] = float(abs_dev_func)
 
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
