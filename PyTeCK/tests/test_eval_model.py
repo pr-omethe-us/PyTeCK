@@ -63,6 +63,71 @@ class TestEstimateStandardDeviation:
         numpy.testing.assert_allclose(1.0, standard_dev, rtol=1.e-2)
 
 
+class TestGetChangingVariable:
+    """
+    """
+    def test_single_point(self):
+        """Check normal behavior for single point.
+        """
+        cases = [{'pressure': numpy.random.rand(1) * units('atm'),
+                  'temperature': numpy.random.rand(1) * units('K')}
+                 ]
+        variable = eval_model.get_changing_variable(cases)
+
+        assert len(variable) == 1
+        assert variable[0] == cases[0]['temperature'].magnitude
+
+    def test_temperature_changing(self):
+        """Check normal behavior for multiple points with temperature changing.
+        """
+        num = 10
+        pressure = numpy.random.rand(1) * units('atm')
+        temperatures = numpy.random.rand(num) * units('K')
+        cases = []
+        for temp in temperatures:
+            cases.append({'pressure': pressure, 'temperature': temp})
+
+        variable = eval_model.get_changing_variable(cases)
+
+        assert len(variable) == num
+        numpy.testing.assert_allclose(variable,
+                                      [c['temperature'].magnitude for c in cases]
+                                      )
+
+    def test_pressure_changing(self):
+        """Check normal behavior for multiple points with pressure changing.
+        """
+        num = 10
+        pressures = numpy.random.rand(num) * units('atm')
+        temperature = numpy.random.rand(1) * units('K')
+        cases = []
+        for pres in pressures:
+            cases.append({'pressure': pres, 'temperature': temperature})
+
+        variable = eval_model.get_changing_variable(cases)
+
+        assert len(variable) == num
+        numpy.testing.assert_allclose(variable,
+                                      [c['pressure'].magnitude for c in cases]
+                                      )
+
+    def test_both_changing(self):
+        """Check fallback behavior for both properties varying.
+        """
+        num = 10
+        pressures = numpy.random.rand(num) * units('atm')
+        temperatures = numpy.random.rand(num) * units('K')
+        cases = []
+        for pres, temp in zip(pressures, temperatures):
+            cases.append({'pressure': pres, 'temperature': temp})
+
+        variable = eval_model.get_changing_variable(cases)
+
+        assert len(variable) == num
+        numpy.testing.assert_allclose(variable,
+                                      [c['temperature'].magnitude for c in cases]
+                                      )
+
 class TestEvalModel:
     """
     """

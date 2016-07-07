@@ -91,6 +91,42 @@ def estimate_std_dev(indep_variable, dep_variable):
     return standard_dev
 
 
+def get_changing_variable(cases):
+    """Identify variable changing across multiple cases.
+
+    Parameters
+    ----------
+    cases : list(dict)
+        List of dictionaries with experimental case data.
+
+    Returns
+    -------
+    variable : list(float)
+        List of floats representing changing experimental variable.
+
+    """
+    changing_var = None
+
+    for var_name in ['temperature', 'pressure']:
+        var = [case[var_name] for case in cases]
+        if not all([x == var[0] for x in var]):
+            if not changing_var:
+                changing_var = var_name
+            else:
+                print('Warning: multiple changing variables. '
+                      'Using temperature.'
+                      )
+                changing_var = 'temperature'
+                break
+
+    # Temperature is default
+    if changing_var is None:
+        changing_var = 'temperature'
+
+    variable = [case[changing_var].magnitude for case in cases]
+    return variable
+
+
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
@@ -174,20 +210,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                      ]
 
         # get variable that is changing across datapoints
-        variable = None
-        for var_name in ['temperature', 'pressure']:
-            var = [case[var_name] for case in properties['cases']]
-            if not all([x == var[0] for x in var]):
-                if not variable:
-                    variable = [v.magnitude for v in var]
-                else:
-                    print('Warning: multiple changing variables. '
-                          'Using temperature'
-                          )
-        if not variable:
-            raise NotImplementedError('Only temperature and pressure '
-                                      'supported as changing variables.'
-                                      )
+        variable = get_changing_variable(properties['cases'])
         # for ignition delay, use logarithm of values
         standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
         dataset_meta['standard deviation'] = standard_dev
