@@ -10,7 +10,7 @@ from __future__ import division
 # Standard libraries
 from os.path import splitext, basename, isfile
 from argparse import ArgumentParser
-import numpy as np
+import numpy
 
 try:
     import yaml
@@ -311,7 +311,7 @@ def get_datapoints(properties, root):
                 val_unit = units(temp_unit)
             else:
                 val_unit = units(prop.attrib['units'].lower())
-            vals = np.zeros([num]) * val_unit
+            vals = numpy.zeros([num]) * val_unit
             if prop.attrib['name'] == 'ignition delay':
                 properties['ignition-delay'] = vals
             else:
@@ -400,7 +400,7 @@ def read_experiment(filename):
 
     # Get compression time for RCM, if volume history given
     if 'volume' in properties and 'compression-time' not in properties:
-        min_volume_idx = np.argmin(properties['volume'])
+        min_volume_idx = numpy.argmin(properties['volume'])
         min_volume_time = properties['time'][min_volume_idx]
         properties['compression-time'] = min_volume_time
 
@@ -433,8 +433,7 @@ def convert_XML_to_YAML(filename_xml):
         Name of newly created ChemKED YAML file.
 
     """
-
-    assert isfile(filename_xml), "XML file missing"
+    assert isfile(filename_xml), filename_xml + ' file missing'
 
     # get all information from XML file
     properties = read_experiment(filename_xml)
@@ -471,7 +470,7 @@ def convert_XML_to_YAML(filename_xml):
     # Need to check if some quantities have multiple values, while one of
     # is common
     variables = ['temperature', 'pressure', 'ignition-delay']
-    num_points = [np.size(properties[prop]) for prop in variables]
+    num_points = [numpy.size(properties[prop]) for prop in variables]
 
     changing_variables = [variables[idx] for idx in range(len(num_points))
                           if num_points[idx] == max(num_points)
@@ -479,7 +478,7 @@ def convert_XML_to_YAML(filename_xml):
 
     common_variable_name = None
     if min(num_points) != max(num_points):
-        common_variable_name = variables[argmin(num_points)]
+        common_variable_name = variables[numpy.argmin(num_points)]
         common_variable = {
             'value': float(properties[common_variable_name].magnitude.tolist()),
             'units': str(properties[common_variable_name].units)
