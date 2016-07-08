@@ -28,6 +28,7 @@ SPEC_KEY = {'1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3': 'nC7H16',
             '1S/He': 'He',
             '1S/CO2/c2-1-3': 'CO2',
             '1S/H2/h1H': 'H2',
+            '1S/H2O/h1H2': 'H2O',
            }
 
 SPEC_KEY_REV = {'nC7H16': '1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3',
@@ -40,6 +41,7 @@ SPEC_KEY_REV = {'nC7H16': '1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3',
                 'He': '1S/He',
                 'CO2': '1S/CO2/c2-1-3',
                 'H2': '1S/H2/h1H',
+                'H2O': '1S/H2O/h1H2',
                }
 
 SPEC_NAMES = {'nC7H16': 'n-heptane',
@@ -52,6 +54,7 @@ SPEC_NAMES = {'nC7H16': 'n-heptane',
               'He': 'helium',
               'CO2': 'carbon dioxide',
               'H2': 'hydrogen',
+              'H2O': 'water',
              }
 
 
