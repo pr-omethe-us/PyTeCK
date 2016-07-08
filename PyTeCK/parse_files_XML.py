@@ -235,6 +235,11 @@ def get_ignition_type(root):
 
     # Acceptable ignition targets include pressure, temperature, and species
     # concentrations
+    if ign_target == 'OHEX':
+        ign_target = 'OH*'
+    elif ign_target == 'CHEX':
+        ign_target = 'CH*'
+
     if ign_target not in ['P', 'T', 'OH', 'OH*', 'CH*', 'CH']:
         raise UndefinedKeywordError(ign_target)
 
