@@ -145,7 +145,6 @@ def get_common_properties(properties, root):
                     spec = SPEC_KEY[spec_id]
                 except KeyError:
                     spec = child.find('speciesLink').attrib['preferredKey']
-                    print('Warning: unknown InChI for species ' + spec)
 
                 # amount of that species
                 #initial_comp.append(spec + ':' + child.find('amount').text)
