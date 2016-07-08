@@ -145,6 +145,7 @@ def get_common_properties(properties, root):
                     spec = SPEC_KEY[spec_id]
                 except KeyError:
                     spec = child.find('speciesLink').attrib['preferredKey']
+                    print('Warning: unknown InChI for species ' + spec)
 
                 # amount of that species
                 #initial_comp.append(spec + ':' + child.find('amount').text)
@@ -466,7 +467,10 @@ def convert_XML_to_YAML(filename_xml, output='', file_author='',
     for species, amount in properties['composition'].items():
         comp = {'species': species, 'mole-fraction': float(amount)}
         # Get InChI key
-        comp['InChI'] = SPEC_KEY_REV[species]
+        try:
+            comp['InChI'] = SPEC_KEY_REV[species]
+        except KeyError:
+            print('Warning: unknown InChI for species ' + species)
         composition.append(comp)
 
     common_properties['composition'] = composition
