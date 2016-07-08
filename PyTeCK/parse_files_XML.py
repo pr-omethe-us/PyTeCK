@@ -8,7 +8,7 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard libraries
-from os.path import splitext, basename, isfile
+import os
 from argparse import ArgumentParser
 import numpy
 
@@ -380,8 +380,8 @@ def read_experiment(filename):
     properties = {}
 
     # Save name of original data filename
-    properties['id'] = splitext(basename(filename))[0]
-    properties['data-file'] = basename(filename)
+    properties['id'] = os.path.splitext(os.path.basename(filename))[0]
+    properties['data-file'] = os.path.basename(filename)
 
     # get file metadata
     properties.update(get_file_metadata(root))
@@ -419,13 +419,17 @@ def read_experiment(filename):
     return properties
 
 
-def convert_XML_to_YAML(filename_xml, file_author='', file_author_orcid=''):
+def convert_XML_to_YAML(filename_xml, output='', file_author='',
+                        file_author_orcid=''
+                        ):
     """Convert ReSpecTh XML file to ChemKED YAML file.
 
     Parameters
     ----------
     filename_xml : str
         Name of ReSpecTh XML file to be converted.
+    output : str
+        Optional; output path for converted file.
     file_author : str
         Optional; name to override original file author
     file_author_orcid : str
@@ -437,7 +441,7 @@ def convert_XML_to_YAML(filename_xml, file_author='', file_author_orcid=''):
         Name of newly created ChemKED YAML file.
 
     """
-    assert isfile(filename_xml), filename_xml + ' file missing'
+    assert os.path.isfile(filename_xml), filename_xml + ' file missing'
 
     # get all information from XML file
     properties = read_experiment(filename_xml)
@@ -577,11 +581,18 @@ def convert_XML_to_YAML(filename_xml, file_author='', file_author_orcid=''):
     new_properties['reference']['volume'] = ''
     new_properties['reference']['pages'] = ''
 
-    filename_yaml = splitext(basename(filename_xml))[0] + '.yaml'
+    filename_yaml = (os.path.splitext(os.path.basename(filename_xml))[0] +
+                     '.yaml'
+                     )
+
+    # add path
+    filename_yaml = os.path.join(output, filename_yaml)
 
     with open(filename_yaml, 'w') as outfile:
         outfile.write(yaml.dump(new_properties, default_flow_style=False))
     print('Converted to ' + filename_yaml)
+
+    return filename_yaml
 
 
 if __name__ == '__main__':
@@ -592,6 +603,12 @@ if __name__ == '__main__':
                         type=str,
                         required=True,
                         help='Input XML filename'
+                        )
+    parser.add_argument('-o', '--output',
+                        type=str,
+                        required=False,
+                        default='',
+                        help='Output directory for file'
                         )
     parser.add_argument('-fa', '--file-author',
                         dest='file_author',
@@ -609,4 +626,6 @@ if __name__ == '__main__':
                         )
 
     args = parser.parse_args()
-    convert_XML_to_YAML(args.input, args.file_author, args.file_author_orcid)
+    convert_XML_to_YAML(args.input, args.output,
+                        args.file_author, args.file_author_orcid
+                        )
