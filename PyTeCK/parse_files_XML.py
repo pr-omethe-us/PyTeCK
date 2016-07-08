@@ -419,13 +419,17 @@ def read_experiment(filename):
     return properties
 
 
-def convert_XML_to_YAML(filename_xml):
+def convert_XML_to_YAML(filename_xml, file_author='', file_author_orcid=''):
     """Convert ReSpecTh XML file to ChemKED YAML file.
 
     Parameters
     ----------
     filename_xml : str
         Name of ReSpecTh XML file to be converted.
+    file_author : str
+        Optional; name to override original file author
+    file_author_orcid : str
+        Optional; ORCID of file author
 
     Returns
     -------
@@ -437,6 +441,12 @@ def convert_XML_to_YAML(filename_xml):
 
     # get all information from XML file
     properties = read_experiment(filename_xml)
+
+    # apply any overrides
+    if file_author:
+        properties['file-author']['name'] = file_author
+    if file_author_orcid:
+        properties['file-author']['ORCID'] = file_author_orcid
 
     apparatus = {'kind': 'shock tube' if properties['kind'] == 'ST'
                          else 'rapid compression machine',
@@ -553,7 +563,7 @@ def convert_XML_to_YAML(filename_xml):
     new_properties = {'file-author': properties['file-author'],
                       'file-version': properties['file-version'],
                       'reference': properties['reference'],
-                      'experiment-type': 'Ignition delay measurement',
+                      'experiment-type': 'Ignition delay',
                       'apparatus': apparatus,
                       'datapoints': datapoints
                       }
@@ -583,6 +593,20 @@ if __name__ == '__main__':
                         required=True,
                         help='Input XML filename'
                         )
+    parser.add_argument('-fa', '--file-author',
+                        dest='file_author',
+                        type=str,
+                        required=False,
+                        default='',
+                        help='File author name to override original'
+                        )
+    parser.add_argument('-fo', '--file-author-orcid',
+                        dest='file_author_orcid',
+                        type=str,
+                        required=False,
+                        default='',
+                        help='File author ORCID'
+                        )
 
     args = parser.parse_args()
-    convert_XML_to_YAML(args.input)
+    convert_XML_to_YAML(args.input, args.file_author, args.file_author_orcid)
