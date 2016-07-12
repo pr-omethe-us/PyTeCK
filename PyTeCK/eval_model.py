@@ -326,6 +326,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
         output['datasets'].append(dataset_meta)
 
+        if print_results:
+            print('Done with ' + dataset)
+
     # Overall error function
     error_func = numpy.nanmean(error_func_sets)
     if print_results:
