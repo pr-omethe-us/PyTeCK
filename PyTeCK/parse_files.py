@@ -276,7 +276,10 @@ def get_datapoints(properties, raw_properties):
             if not datapoint['volume-history'].get('values', None):
                 raise MissingAttributeError('values', 'volume-history')
             else:
-                values = np.array(datapoint['volume-history']['values'])
+                # convert to NumPy array, ensure appropriate type
+                values = np.array(datapoint['volume-history']['values'],
+                                  dtype='float64'
+                                  )
 
             case['time'] = values[:, time_col] * units(time_units)
             case['volume'] = values[:, volume_col] * units(volume_units)
