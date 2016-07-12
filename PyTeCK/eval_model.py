@@ -212,7 +212,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         variable = get_changing_variable(properties['cases'])
         # for ignition delay, use logarithm of values
         standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
-        dataset_meta['standard deviation'] = standard_dev
+        dataset_meta['standard deviation'] = float(standard_dev)
 
         #########################################
         # Need to check if Ar or He in reactants,
