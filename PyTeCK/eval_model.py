@@ -168,6 +168,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         Dictionary with all information about model evaluation results.
 
     """
+    # Create results_path if it doesn't exist
+    if not os.path.exists(results_path):
+        os.makedirs(results_path)
 
     # Dict to translate species names into those used by models
     with open(spec_keys_file, 'r') as f:
