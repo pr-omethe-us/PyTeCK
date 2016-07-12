@@ -71,6 +71,11 @@ def estimate_std_dev(indep_variable, dep_variable):
     assert len(indep_variable) == len(dep_variable), \
         'independent and dependent variables not the same length'
 
+    # ensure data sorted based on independent variable to avoid some problems
+    sorted_vars = sorted(zip(indep_variable, dep_variable))
+    indep_variable = [pt[0] for pt in sorted_vars]
+    dep_variable = [pt[1] for pt in sorted_vars]
+
     # spline fit of the data
     if len(indep_variable) == 1 or len(indep_variable) == 2:
         # Fit of data will be perfect
@@ -310,9 +315,10 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                  })
 
         # calculate error function for this dataset
-        error_func = numpy.power((numpy.log(ignition_delays_sim) -
-                               numpy.log(ignition_delays_exp)) / standard_dev, 2
-                              )
+        error_func = numpy.power(
+            (numpy.log(ignition_delays_sim) -
+            numpy.log(ignition_delays_exp)) / standard_dev, 2
+            )
         error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
         dataset_meta['error function'] = float(error_func)
