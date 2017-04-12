@@ -9,21 +9,55 @@ import multiprocessing
 
 import numpy
 from scipy.interpolate import UnivariateSpline
-
 import cantera as ct
 
 try:
-    import yaml
+    import ruamel.yaml as yaml
 except ImportError:
     print('Warning: YAML must be installed to read input file.')
+    raise
+
+from pyked.chemked import ChemKED, DataPoint
 
 # Local imports
 from .utils import units
-from . import parse_files
 from .simulation import Simulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
+
+
+def create_simulations(dataset, properties):
+    """Set up individual simulations for each ignition delay value.
+
+    Parameters
+    ----------
+    dataset :
+
+    properties : pyked.chemked.ChemKED
+        ChemKED object with full set of experimental properties
+
+    Returns
+    -------
+    simulations : list
+        List of :class:`Simulation` objects for each simulation
+
+    """
+
+    simulations = []
+    for idx, case in enumerate(properties.datapoints):
+        sim_meta = {}
+        # Common metadata
+        sim_meta['data-file'] = dataset
+        sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+
+        simulations.append(Simulation(properties.experiment_type,
+                                      properties.apparatus.kind,
+                                      sim_meta,
+                                      case
+                                      )
+                           )
+    return simulations
 
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
@@ -45,9 +79,7 @@ def simulation_worker(sim_tuple):
     sim.setup_case(model_file, model_spec_key)
     sim.run_case(idx, path)
 
-    sim = Simulation(sim.kind, sim.properties, sim.ignition_target,
-                     sim.ignition_type, sim.ignition_target_value
-                     )
+    sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
 
 
@@ -100,8 +132,8 @@ def get_changing_variable(cases):
 
     Parameters
     ----------
-    cases : list(dict)
-        List of dictionaries with experimental case data.
+    cases : list(pyked.chemked.DataPoint)
+        List of DataPoint with experimental case data.
 
     Returns
     -------
@@ -112,8 +144,12 @@ def get_changing_variable(cases):
     changing_var = None
 
     for var_name in ['temperature', 'pressure']:
-        var = [case[var_name] for case in cases]
-        if not all([x == var[0] for x in var]):
+        if var_name == 'temperature':
+            variable = [case.temperature for case in cases]
+        elif var_name == 'pressure':
+            variable = [case.pressure for case in cases]
+
+        if not all([x == variable[0] for x in variable]):
             if not changing_var:
                 changing_var = var_name
             else:
@@ -127,7 +163,10 @@ def get_changing_variable(cases):
     if changing_var is None:
         changing_var = 'temperature'
 
-    variable = [case[changing_var].magnitude for case in cases]
+    if changing_var == 'temperature':
+        variable = [case.temperature.magnitude for case in cases]
+    elif changing_var == 'pressure':
+        variable = [case.pressure.magnitude for case in cases]
     return variable
 
 
@@ -174,13 +213,13 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
     # Dict to translate species names into those used by models
     with open(spec_keys_file, 'r') as f:
-        model_spec_key = yaml.load(f)
+        model_spec_key = yaml.safe_load(f)
 
     # Keys for models with variants depending on pressure or bath gas
     model_variant = None
     if model_variant_file:
         with open(model_variant_file, 'r') as f:
-            model_variant = yaml.load(f)
+            model_variant = yaml.safe_load(f)
 
     # Read dataset list
     with open(dataset_file, 'r') as f:
@@ -202,9 +241,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
         dataset_meta = {'dataset': dataset, 'dataset_id': idx_set}
 
-        # Create individual simulation cases for each datapoint in this dataset
-        properties = parse_files.read_experiment(os.path.join(data_path, dataset))
-        simulations = parse_files.create_simulations(properties)
+        # Create individual simulation cases for each datapoint in this set
+        properties = ChemKED(os.path.join(data_path, dataset))
+        simulations = create_simulations(dataset, properties)
 
         ignition_delays_exp = numpy.zeros(len(simulations))
         ignition_delays_sim = numpy.zeros(len(simulations))
@@ -212,24 +251,28 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         #############################################
         # Determine standard deviation of the dataset
         #############################################
-        ign_delay = [case['ignition-delay'].to('second').magnitude
-                     for case in properties['cases']
+        ign_delay = [case.ignition_delay.to('second').magnitude
+                     for case in properties.datapoints
                      ]
 
         # get variable that is changing across datapoints
-        variable = get_changing_variable(properties['cases'])
+        variable = get_changing_variable(properties.datapoints)
         # for ignition delay, use logarithm of values
         standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
         dataset_meta['standard deviation'] = float(standard_dev)
 
-        #########################################
-        # Need to check if Ar or He in reactants,
+        #######################################################
+        # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
-        #########################################
-        if ((any(['Ar' in case['composition'] for case in properties['cases']])
-            and 'Ar' not in model_spec_key[model_name]
-            ) or
-            (any(['He' in case['composition'] for case in properties['cases']])
+        #######################################################
+        if ((any(['Ar' in spec.values() for case in properties.datapoints
+                  for spec in case.composition]
+                  )
+             and 'Ar' not in model_spec_key[model_name]
+             ) or
+            (any(['He' in spec.values() for case in properties.datapoints
+                  for spec in case.composition]
+                  )
              and 'He' not in model_spec_key[model_name]
              )
             ):
@@ -247,6 +290,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             # special treatment based on pressure for Princeton model
 
             if model_variant and model_name in model_variant:
+                raise(Exception('this is not yet fixed.'))
+
                 model_mod = ''
                 if 'bath gases' in model_variant[model_name]:
                     # find any bath gases requiring special treatment
@@ -304,17 +349,17 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
-            ignition_delays_exp[idx] = sim.properties['ignition-delay'].magnitude
-            ignition_delays_sim[idx] = sim.properties['simulated-ignition-delay'].magnitude
+            ignition_delays_exp[idx] = sim.properties.ignition_delay.magnitude
+            ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
 
-            temp = sim.properties['temperature'].to('kelvin').magnitude
-            pres = sim.properties['pressure'].to('atm').magnitude
+            temp = sim.properties.temperature.to('kelvin').magnitude
+            pres = sim.properties.pressure.to('atm').magnitude
 
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': float(ignition_delays_exp[idx]),
                  'simulated ignition delay': float(ignition_delays_sim[idx]),
                  'temperature': float(temp), 'pressure': float(pres),
-                 'composition': sim.properties['composition']
+                 'composition': sim.properties.composition
                  })
 
         # calculate error function for this dataset

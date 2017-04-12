@@ -3,56 +3,48 @@ file-author:
     name: Kyle E Niemeyer
     ORCID: 0000-0003-4425-7097
 file-version: (1, 0)
+chemked-version: 0.0.1
 reference:
     doi: 10.1016/j.ijhydene.2007.04.008
     authors:
         - name: N. Chaumeix
-          ORCID:
         - name: S. Pichon
-          ORCID:
         - name: F. Lafosse
-          ORCID:
         - name: C.-E. Paillard
-          ORCID:
     journal: International Journal of Hydrogen Energy
     year: 2007
     volume: 32
     pages: 2216-2226
     detail: Artificial pressure rise and ignition target
-experiment-type: Ignition delay
+experiment-type: ignition delay
 apparatus:
     kind: shock tube
     institution: CNRS-ICARE
     facility: stainless steel shock tube
 common-properties:
     pressure: &pres
-        value: 2.18
-        units: atm
+      2.18 atm
     composition: &comp
-        - species: H2
+        - species-name: H2
           InChI: 1S/H2/h1H
           mole-fraction: 0.00444
-        - species: O2
+        - species-name: O2
           InChI: 1S/O2/c1-2
-          mole-fraction: 0.00566
-        - species: Ar
+          mole-fraction: 0.00556
+        - species-name: Ar
           InChI: 1S/Ar
-          mole-fraction: 0.9899
+          mole-fraction: 0.99
     pressure-rise: &pres-rise
-        value: 0.10
-        units: 1/ms
+      0.10 1/ms
     ignition-type: &ign
-        target: OH
-        type: max
+      target: OH
+      type: max
 datapoints:
-    - temperature:
-        value: 1264.2
-        units: kelvin
-      ignition-delay:
-          value: 291.57
-          units: us
-      pressure: *pres
-      composition: *comp
-      pressure-rise: *pres-rise
-      ignition-type: *ign
+  - temperature: 1264.2 kelvin
+    ignition-delay: 291.57 us
+    pressure: *pres
+    composition: *comp
+    pressure-rise: *pres-rise
+    ignition-type: *ign
+    equivalence-ratio: 0.4
 ...

@@ -3,54 +3,45 @@ file-author:
     name: Kyle E Niemeyer
     ORCID: 0000-0003-4425-7097
 file-version: (1, 0)
+chemked-version: 0.0.1
 reference:
     doi: 10.1002/kin.20180
     authors:
         - name: Gaurav Mittal
-          ORCID:
         - name: Chih-Jen Sung
           ORCID: 0000-0003-2046-8076
         - name: Richard A Yetter
-          ORCID:
     journal: International Journal of Chemical Kinetics
     year: 2006
     volume: 38
     pages: 516-529
     detail: Fig. 6, open circle
-experiment-type: Ignition delay
+experiment-type: ignition delay
 apparatus:
     kind: rapid compression machine
     institution: Case Western Reserve University
     facility: CWRU RCM
 datapoints:
-    - temperature:
-        value: 297.4
-        units: kelvin
-      ignition-delay:
-          value: 1.
-          units: ms
-      pressure:
-          value: 958.
-          units: torr
+    - temperature: 297.4 kelvin
+      ignition-delay: 1.0 ms
+      pressure: 958.0 torr
       composition:
-          - species: H2
+          - species-name: H2
             InChI: 1S/H2/h1H
             mole-fraction: 0.12500
-          - species: O2
+          - species-name: O2
             InChI: 1S/O2/c1-2
             mole-fraction: 0.06250
-          - species: N2
+          - species-name: N2
             InChI: 1S/N2/c1-2
             mole-fraction: 0.18125
-          - species: Ar
+          - species-name: Ar
             InChI: 1S/Ar
             mole-fraction: 0.63125
       ignition-type:
           target: pressure
           type: d/dt max
-      compression-time:
-          value: 38.0
-          units: ms
+      compression-time: 38.0 ms
       volume-history:
           time:
               units: s

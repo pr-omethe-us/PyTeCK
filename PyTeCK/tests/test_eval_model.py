@@ -11,6 +11,7 @@ import os
 import pkg_resources
 import numpy
 import pytest
+from pyked.chemked import ChemKED, DataPoint
 
 class TestEstimateStandardDeviation:
     """
@@ -69,13 +70,16 @@ class TestGetChangingVariable:
     def test_single_point(self):
         """Check normal behavior for single point.
         """
-        cases = [{'pressure': numpy.random.rand(1) * units('atm'),
-                  'temperature': numpy.random.rand(1) * units('K')}
+        cases = [DataPoint({'pressure': numpy.random.rand(1) * units('atm'),
+                            'temperature': numpy.random.rand(1) * units('K'),
+                            'composition': [{'species-name': 'O2', 'mole-fraction': 1.0}],
+                            'ignition-type': None
+                            })
                  ]
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == 1
-        assert variable[0] == cases[0]['temperature'].magnitude
+        assert variable[0] == cases[0].temperature.magnitude
 
     def test_temperature_changing(self):
         """Check normal behavior for multiple points with temperature changing.
@@ -85,13 +89,17 @@ class TestGetChangingVariable:
         temperatures = numpy.random.rand(num) * units('K')
         cases = []
         for temp in temperatures:
-            cases.append({'pressure': pressure, 'temperature': temp})
+            dp = DataPoint({'pressure': str(pressure[0]), 'temperature': str(temp),
+                            'composition': [{'species-name': 'O2', 'mole-fraction': 1.0}],
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
         numpy.testing.assert_allclose(variable,
-                                      [c['temperature'].magnitude for c in cases]
+                                      [c.temperature.magnitude for c in cases]
                                       )
 
     def test_pressure_changing(self):
@@ -102,13 +110,17 @@ class TestGetChangingVariable:
         temperature = numpy.random.rand(1) * units('K')
         cases = []
         for pres in pressures:
-            cases.append({'pressure': pres, 'temperature': temperature})
+            dp = DataPoint({'pressure': str(pres), 'temperature': str(temperature[0]),
+                            'composition': [{'species-name': 'O2', 'mole-fraction': 1.0}],
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
         numpy.testing.assert_allclose(variable,
-                                      [c['pressure'].magnitude for c in cases]
+                                      [c.pressure.magnitude for c in cases]
                                       )
 
     def test_both_changing(self):
@@ -119,13 +131,17 @@ class TestGetChangingVariable:
         temperatures = numpy.random.rand(num) * units('K')
         cases = []
         for pres, temp in zip(pressures, temperatures):
-            cases.append({'pressure': pres, 'temperature': temp})
+            dp = DataPoint({'pressure': str(pres), 'temperature': str(temp),
+                            'composition': [{'species-name': 'O2', 'mole-fraction': 1.0}],
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
         numpy.testing.assert_allclose(variable,
-                                      [c['temperature'].magnitude for c in cases]
+                                      [c.temperature.magnitude for c in cases]
                                       )
 
 class TestEvalModel:

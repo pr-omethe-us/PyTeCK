@@ -15,6 +15,8 @@ except ImportError:
     print("Error: Cantera must be installed.")
     raise
 
+from pyked.chemked import ChemKED, DataPoint
+
 # Taken from http://stackoverflow.com/a/22726782/1569494
 try:
     from tempfile import TemporaryDirectory
@@ -39,8 +41,8 @@ except ImportError:
                     raise
 
 from .. import simulation
-from .. import parse_files
 from ..utils import units
+from ..eval_model import create_simulations
 
 
 class TestFirstDerivative:
@@ -233,10 +235,10 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         assert len(simulations) == 5
 
@@ -250,7 +252,7 @@ class TestSimulation:
 
         init_pressure = 220. * units.kilopascal
 
-        assert sim.kind == 'ST'
+        assert sim.apparatus == 'shock tube'
         np.testing.assert_allclose(sim.time_end, 4.7154e-2)
         np.testing.assert_allclose(sim.gas.T, 1164.48)
         np.testing.assert_allclose(sim.gas.P,
@@ -258,8 +260,8 @@ class TestSimulation:
                                    )
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
@@ -273,7 +275,7 @@ class TestSimulation:
         sim = simulations[1]
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
-        assert sim.kind == 'ST'
+        assert sim.apparatus == 'shock tube'
         np.testing.assert_allclose(sim.time_end, 4.4803e-2)
         np.testing.assert_allclose(sim.gas.T, 1164.97)
         np.testing.assert_allclose(sim.gas.P,
@@ -281,8 +283,8 @@ class TestSimulation:
                                    )
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
@@ -298,13 +300,13 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
-        properties['cases'][0]['ignition']['target'] = 'temperature'
-        properties['cases'][1]['ignition']['target'] = 'temperature'
+        properties.datapoints[0].ignition_type['target'] = 'temperature'
+        properties.datapoints[1].ignition_type['target'] = 'temperature'
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         mechanism_filename = 'gri30.xml'
         SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
@@ -326,10 +328,10 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         assert len(simulations) == 1
 
@@ -344,14 +346,14 @@ class TestSimulation:
         sim = simulations[0]
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
-        assert sim.kind == 'ST'
+        assert sim.apparatus == 'shock tube'
         np.testing.assert_allclose(sim.time_end, 2.9157e-2)
         np.testing.assert_allclose(sim.gas.T, init_temp)
         np.testing.assert_allclose(sim.gas.P, init_pres)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
-        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00566
-        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.9899
+        mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
+        mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
         np.testing.assert_allclose(sim.gas.X, mass_fracs)
         assert sim.n_vars == gas.n_species + 3
 
@@ -373,10 +375,10 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         assert len(simulations) == 1
 
@@ -388,7 +390,7 @@ class TestSimulation:
         sim = simulations[0]
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
-        assert sim.kind == 'RCM'
+        assert sim.apparatus == 'rapid compression machine'
         np.testing.assert_allclose(sim.time_end, 0.1)
         np.testing.assert_allclose(sim.gas.T, 297.4)
         np.testing.assert_allclose(sim.gas.P, 127722.83)
@@ -449,10 +451,10 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         mechanism_filename = 'gri30.xml'
         SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
@@ -464,8 +466,8 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save-file'])
-            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
+            assert os.path.exists(sim.meta['save-file'])
+            with tables.open_file(sim.meta['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
@@ -476,12 +478,12 @@ class TestSimulation:
 
                 # Ensure final state matches expected
                 time_end = 4.7154e-2
-                temp = 1250.4302692265724
-                pres = 235713.89675269192
+                temp = 1250.440275095967
+                pres = 235715.78371450436
                 mass_fracs = np.array([
-                    3.64552619e-09,   6.29878862e-11,   3.86203527e-08,
-                    2.76983487e-03,   9.11687374e-07,   2.01253503e-03,
-                    7.24907234e-09,   4.46269923e-10,   0.00000000e+00,
+                    3.78280811e-09,   6.55635749e-11,   3.88632912e-08,
+                    2.68924922e-03,   9.14481216e-07,   2.01249201e-03,
+                    7.30336393e-09,   4.48899838e-10,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -495,7 +497,7 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-                    9.95216668e-01,   0.00000000e+00,   0.00000000e+00,
+                    9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
                     ])
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
@@ -509,8 +511,8 @@ class TestSimulation:
             sim.setup_case(mechanism_filename, SPEC_KEY)
             sim.run_case(1, path=temp_dir)
 
-            assert os.path.exists(sim.properties['save-file'])
-            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
+            assert os.path.exists(sim.meta['save-file'])
+            with tables.open_file(sim.meta['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
@@ -521,12 +523,12 @@ class TestSimulation:
 
                 # Ensure final state matches expected
                 time_end = 4.4803e-2
-                temp = 1250.9189833285129
-                pres = 235706.84568464456
+                temp = 1250.9289794273782
+                pres = 235708.7300698561
                 mass_fracs = np.array([
-                    3.94722613e-09,   6.97944529e-11,   4.13427490e-08,
-                    2.76981872e-03,   9.44595276e-07,   2.01251469e-03,
-                    7.76952198e-09,   4.74561071e-10,   0.00000000e+00,
+                    4.09616997e-09,   7.26607683e-11,   4.16076690e-08,
+                    2.68923307e-03,   9.47551606e-07,   2.01247148e-03,
+                    7.82886351e-09,   4.77404824e-10,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -540,7 +542,7 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-                    9.95216668e-01,   0.00000000e+00,   0.00000000e+00,
+                    9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
                     ])
                 np.testing.assert_allclose(table.col('time')[-1], time_end)
@@ -556,10 +558,10 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         mechanism_filename = 'gri30.xml'
         SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
@@ -571,8 +573,8 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save-file'])
-            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
+            assert os.path.exists(sim.meta['save-file'])
+            with tables.open_file(sim.meta['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
@@ -583,8 +585,8 @@ class TestSimulation:
 
                 # Ensure final state matches expected
                 time_end = 2.9157e-2
-                temp = 2305.8237874245747
-                pres = 915450.07204899541
+                temp = 2305.9275837885516
+                pres = 915452.1978990212
                 mass_fracs = np.array([
                     2.51956828e-06,   5.66072823e-07,   3.79092386e-05,
                     2.69481635e-03,   1.31733886e-04,   1.91567661e-03,
@@ -618,10 +620,10 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = parse_files.read_experiment(filename)
+        properties = ChemKED(filename)
 
         # Now create list of Simulation objects
-        simulations = parse_files.create_simulations(properties)
+        simulations = create_simulations(filename, properties)
 
         mechanism_filename = 'gri30.xml'
         SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
@@ -633,8 +635,8 @@ class TestSimulation:
             sim.run_case(0, path=temp_dir)
 
             # check for presence of data file
-            assert os.path.exists(sim.properties['save-file'])
-            with tables.open_file(sim.properties['save-file'], 'r') as h5file:
+            assert os.path.exists(sim.meta['save-file'])
+            with tables.open_file(sim.meta['save-file'], 'r') as h5file:
                 # Load Table with Group name simulation
                 table = h5file.root.simulation
 
