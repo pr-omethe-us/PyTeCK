@@ -9,7 +9,6 @@ import multiprocessing
 
 import numpy
 from scipy.interpolate import UnivariateSpline
-import cantera as ct
 
 try:
     import yaml

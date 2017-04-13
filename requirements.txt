@@ -1,7 +1,0 @@
-numpy >= 1.11.0
-scipy >= 0.18.0
-pyyaml >= 3.12
-pint >= 0.7.2
-tables
-cantera >= 2.3.0
-pyked > 0.0.1

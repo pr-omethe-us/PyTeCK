@@ -38,8 +38,7 @@ install_requires = [
     'pyyaml>=3.12,<4.0',
     'pint>=0.7.2',
     'numpy>=1.11.0',
-    'cantera>=2.3.0',
-    'pytables',
+    'tables',
     'pyked>0.0.1',
 ]
 
