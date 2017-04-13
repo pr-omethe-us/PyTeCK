@@ -13,7 +13,7 @@ import sys
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'PyTeCK', '_version.py')) as version_file:
+with open(path.join(here, 'pyteck', '_version.py')) as version_file:
     exec(version_file.read())
 
 with open(path.join(here, 'README.md')) as readme_file:
@@ -95,7 +95,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'PyTeCK=PyTeCK.__main__:main',
+            'pyteck=pyteck.__main__:main',
         ],
     },
 
