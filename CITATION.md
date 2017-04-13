@@ -2,15 +2,15 @@
 
 To cite PyTeCK in a scholarly article, please use
 
-> K. E. Niemeyer. (2016) PyTeCK v0.1 [software]. https://github.com/kyleniemeyer/PyTeCK
+> K. E. Niemeyer. (2017) PyTeCK v0.2.0 [software]. https://github.com/kyleniemeyer/PyTeCK
 
 A BibTeX entry for LaTeX users is
 
 ```TeX
 @misc{PyKED,
     author = {Kyle E Niemeyer},
-    year = 2016,
-    title = {PyTeCK v0.1},
+    year = 2017,
+    title = {PyTeCK v0.2.0},
     doi = {},
     url = {https://github.com/kyleniemeyer/PyTeCK},
 }

@@ -37,6 +37,8 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda config --append channels conda-forge
+    - conda config --append channels cantera
+    - conda config --append channels pr-omethe-us
     - sed -i -e "s/\${PYTHON}/"${PYTHON}"/" test-environment.yaml
     - if [[ -z "$TRAVIS_TAG" ]]; then
         conda env create -qf test-environment.yaml;
