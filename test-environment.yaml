@@ -5,7 +5,7 @@ channels:
 - cantera
 - pr-omethe-us
 dependencies:
-  - numpy>=1.11.0
+  - numpy=1.11.3
   - scipy>=0.18.0
   - pyyaml>=3.12
   - pytest>=3.0.1
