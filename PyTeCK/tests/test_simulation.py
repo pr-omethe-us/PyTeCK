@@ -15,7 +15,7 @@ except ImportError:
     print("Error: Cantera must be installed.")
     raise
 
-from pyked.chemked import ChemKED, DataPoint
+from pyked.chemked import ChemKED, DataPoint, VolumeHistory
 
 # Taken from http://stackoverflow.com/a/22726782/1569494
 try:
@@ -55,7 +55,7 @@ class TestFirstDerivative:
         x = np.arange(n)
         y = np.ones(n)
         dydx = simulation.first_derivative(x, y)
-        np.testing.assert_array_equal(np.zeros(n), dydx)
+        assert np.allclose(np.zeros(n), dydx)
 
     def test_derivative_one(self):
         """Tests unity first derivative.
@@ -64,14 +64,14 @@ class TestFirstDerivative:
         x = np.arange(n)
         y = np.arange(n)
         dydx = simulation.first_derivative(x, y)
-        np.testing.assert_array_equal(np.ones(n), dydx)
+        assert np.allclose(np.ones(n), dydx)
 
     def test_derivative_sin(self):
         """Tests derivative of sin.
         """
         x = np.arange(0., 10., 0.001)
         dydx = simulation.first_derivative(x, np.sin(x))
-        np.testing.assert_array_almost_equal(dydx, np.cos(x))
+        assert np.allclose(dydx, np.cos(x))
 
 
 class TestSampleRisingPressure:
@@ -92,7 +92,7 @@ class TestSampleRisingPressure:
         assert times[-1] == time_end
 
         # Ensure pressure all equal to initial pressure
-        np.testing.assert_allclose(pressures, pres)
+        assert np.allclose(pressures, pres)
 
     def test_sample_pressure_rise(self):
         """Test that pressure sampled correctly with rise.
@@ -109,11 +109,9 @@ class TestSampleRisingPressure:
         assert times[-1] == time_end
 
         # Ensure final pressure correct, and check constant derivative
-        np.testing.assert_allclose(pressures[-1],
-                                   pres*(pres_rise * time_end + 1)
-                                   )
+        assert np.allclose(pressures[-1], pres*(pres_rise * time_end + 1))
         dpdt = simulation.first_derivative(times, pressures)
-        np.testing.assert_allclose(dpdt, pres * pres_rise)
+        assert np.allclose(dpdt, pres * pres_rise)
 
 
 class TestCreateVolumeHistory:
@@ -126,8 +124,8 @@ class TestCreateVolumeHistory:
                     'air.xml', 300., ct.one_atm, 'N2:1.0', 0.0, 1.0
                     )
         # check that end time is correct and volume unchanged
-        np.testing.assert_approx_equal(times[-1], 1.0)
-        np.testing.assert_allclose(volume, 1.0)
+        assert np.isclose(times[-1], 1.0)
+        assert np.allclose(volume, 1.0)
 
     def test_artificial_volume_profile_nitrogen(self):
         """Check correct volume profile for nitrogen mixture.
@@ -152,8 +150,8 @@ class TestCreateVolumeHistory:
         volume = ((end_pres / initial_pres)**(-1. / gamma))
 
         # check that end time is correct and volume matches expected
-        np.testing.assert_allclose(times[-1], 1.0)
-        np.testing.assert_allclose(volume, volumes[-1], rtol=1e-5)
+        assert np.allclose(times[-1], 1.0)
+        assert np.allclose(volume, volumes[-1], rtol=1e-5)
 
 
 class TestVolumeProfile:
@@ -166,10 +164,8 @@ class TestVolumeProfile:
         times = np.arange(0, tmax, 0.001)
         volumes = np.cos(times)
 
-        properties = {}
-        properties['time'] = times * units.second
-        properties['volume'] = volumes * units.cm3
-        volume_profile = simulation.VolumeProfile(properties)
+        volume_history = VolumeHistory(time=times * units.second, volume=volumes * units.cm3)
+        volume_profile = simulation.VolumeProfile(volume_history)
 
         assert volume_profile(tmax + 1.) == 0.
 
@@ -180,14 +176,12 @@ class TestVolumeProfile:
         times = np.arange(0, tmax, 0.001)
         volumes = np.cos(times)
 
-        properties = {}
-        properties['time'] = times * units.second
-        properties['volume'] = volumes * units.cm3
-        velocity_profile = simulation.VolumeProfile(properties)
+        volume_history = VolumeHistory(time=times * units.second, volume=volumes * units.cm3)
+        velocity_profile = simulation.VolumeProfile(volume_history)
 
-        np.testing.assert_allclose(velocity_profile(np.pi), -np.sin(np.pi),
-                                   rtol=1e-7, atol=1e-10
-                                   )
+        assert np.allclose(velocity_profile(np.pi), -np.sin(np.pi),
+                           rtol=1e-7, atol=1e-10
+                           )
 
 
 class TestPressureRiseProfile:
@@ -208,7 +202,8 @@ class TestPressureRiseProfile:
 
         # Sample pressure
         [times, pressures] = simulation.sample_rising_pressure(
-            end_time, init_pressure, 2.e3, pressure_rise)
+            end_time, init_pressure, 2.e3, pressure_rise
+            )
 
         # Check velocity profile against "theoretical" volume derivative
         gas = ct.Solution('air.xml')
@@ -224,7 +219,7 @@ class TestPressureRiseProfile:
                            (pressures[i] / init_pressure)**((-1. / gamma) - 1.0)
                            )
 
-        np.testing.assert_allclose(velocities, dvolumes, rtol=1e-3)
+        assert np.allclose(velocities, dvolumes, rtol=1e-3)
 
 
 class TestSimulation:
@@ -253,47 +248,43 @@ class TestSimulation:
         init_pressure = 220. * units.kilopascal
 
         assert sim.apparatus == 'shock tube'
-        np.testing.assert_allclose(sim.time_end, 4.7154e-2)
-        np.testing.assert_allclose(sim.gas.T, 1164.48)
-        np.testing.assert_allclose(sim.gas.P,
-                                   init_pressure.to('pascal').magnitude
-                                   )
+        assert np.allclose(sim.time_end, 4.7154e-2)
+        assert np.allclose(sim.gas.T, 1164.48)
+        assert np.allclose(sim.gas.P, init_pressure.to('pascal').magnitude)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
         mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
         mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
-        np.testing.assert_allclose(sim.gas.X, mass_fracs)
+        assert np.allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
         for time in times:
-            np.testing.assert_allclose(sim.reac.walls[0].vdot(time), 0.0)
+            assert np.allclose(sim.reac.walls[0].vdot(time), 0.0)
         assert sim.n_vars == gas.n_species + 3
 
-        assert sim.ignition_target == 'pressure'
-        assert sim.ignition_type == 'd/dt max'
+        assert sim.properties.ignition_target == 'pressure'
+        assert sim.properties.ignition_type == 'd/dt max'
 
         sim = simulations[1]
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.apparatus == 'shock tube'
-        np.testing.assert_allclose(sim.time_end, 4.4803e-2)
-        np.testing.assert_allclose(sim.gas.T, 1164.97)
-        np.testing.assert_allclose(sim.gas.P,
-                                   init_pressure.to('pascal').magnitude
-                                   )
+        assert np.allclose(sim.time_end, 4.4803e-2)
+        assert np.allclose(sim.gas.T, 1164.97)
+        assert np.allclose(sim.gas.P, init_pressure.to('pascal').magnitude)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
         mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
         mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
-        np.testing.assert_allclose(sim.gas.X, mass_fracs)
+        assert np.allclose(sim.gas.X, mass_fracs)
         # no wall velocity
         times = np.linspace(0., sim.time_end, 100)
         for time in times:
-            np.testing.assert_allclose(sim.reac.walls[0].vdot(time), 0.0)
+            assert np.allclose(sim.reac.walls[0].vdot(time), 0.0)
         assert sim.n_vars == gas.n_species + 3
 
-        assert sim.ignition_target == 'pressure'
-        assert sim.ignition_type == 'd/dt max'
+        assert sim.properties.ignition_target == 'pressure'
+        assert sim.properties.ignition_type == 'd/dt max'
 
     def test_shock_tube_temperature_target_setup_case(self):
         """Test that shock tube case with temperature target set up properly.
@@ -315,13 +306,13 @@ class TestSimulation:
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
         # Only thing different from last test: ignition target is temperature
-        assert sim.ignition_target == 'temperature'
+        assert sim.properties.ignition_target == 'temperature'
 
         sim = simulations[1]
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
         # Only thing different from last test: ignition target is temperature
-        assert sim.ignition_target == 'temperature'
+        assert sim.properties.ignition_target == 'temperature'
 
     def test_shock_tube_pressure_rise_setup_case(self):
         """Test that shock tube case with pressure rise is set up properly.
@@ -347,14 +338,14 @@ class TestSimulation:
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.apparatus == 'shock tube'
-        np.testing.assert_allclose(sim.time_end, 2.9157e-2)
-        np.testing.assert_allclose(sim.gas.T, init_temp)
-        np.testing.assert_allclose(sim.gas.P, init_pres)
+        assert np.allclose(sim.time_end, 2.9157e-2)
+        assert np.allclose(sim.gas.T, init_temp)
+        assert np.allclose(sim.gas.P, init_pres)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.00444
         mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.00556
         mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.99
-        np.testing.assert_allclose(sim.gas.X, mass_fracs)
+        assert np.allclose(sim.gas.X, mass_fracs)
         assert sim.n_vars == gas.n_species + 3
 
         # Check constructed velocity profile
@@ -368,7 +359,7 @@ class TestSimulation:
         velocities = np.zeros(times.size)
         for i, time in enumerate(times):
             velocities[i] = sim.reac.walls[0].vdot(time)
-        np.testing.assert_allclose(dVdt, velocities)
+        assert np.allclose(dVdt, velocities, rtol=1e-3)
 
     def test_rcm_setup_case(self):
         """Test that RCM case is set up properly.
@@ -391,15 +382,15 @@ class TestSimulation:
         sim.setup_case(mechanism_filename, SPEC_KEY)
 
         assert sim.apparatus == 'rapid compression machine'
-        np.testing.assert_allclose(sim.time_end, 0.1)
-        np.testing.assert_allclose(sim.gas.T, 297.4)
-        np.testing.assert_allclose(sim.gas.P, 127722.83)
+        assert np.allclose(sim.time_end, 0.1)
+        assert np.allclose(sim.gas.T, 297.4)
+        assert np.allclose(sim.gas.P, 127722.83)
         mass_fracs = np.zeros(sim.gas.n_species)
         mass_fracs[sim.gas.species_index(SPEC_KEY['H2'])] = 0.12500
         mass_fracs[sim.gas.species_index(SPEC_KEY['O2'])] = 0.06250
         mass_fracs[sim.gas.species_index(SPEC_KEY['N2'])] = 0.18125
         mass_fracs[sim.gas.species_index(SPEC_KEY['Ar'])] = 0.63125
-        np.testing.assert_allclose(sim.gas.X, mass_fracs)
+        assert np.allclose(sim.gas.X, mass_fracs)
 
         times = np.arange(0, 9.7e-2, 1.e-3)
         volumes = np.array([
@@ -442,7 +433,7 @@ class TestSimulation:
         velocities = np.zeros(times.size)
         for i, time in enumerate(times):
             velocities[i] = sim.reac.walls[0].vdot(time)
-        np.testing.assert_allclose(dVdt, velocities)
+        assert np.allclose(dVdt, velocities)
         assert sim.n_vars == gas.n_species + 3
 
     def test_shock_tube_run_cases(self):
@@ -500,12 +491,12 @@ class TestSimulation:
                     9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
                     ])
-                np.testing.assert_allclose(table.col('time')[-1], time_end)
-                np.testing.assert_allclose(table.col('temperature')[-1], temp)
-                np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
-                                           mass_fracs, rtol=1e-5, atol=1e-9
-                                           )
+                assert np.allclose(table.col('time')[-1], time_end)
+                assert np.allclose(table.col('temperature')[-1], temp)
+                assert np.allclose(table.col('pressure')[-1], pres)
+                assert np.allclose(table.col('mass_fractions')[-1],
+                                   mass_fracs, rtol=1e-5, atol=1e-9
+                                   )
 
             sim = simulations[1]
             sim.setup_case(mechanism_filename, SPEC_KEY)
@@ -545,12 +536,12 @@ class TestSimulation:
                     9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
                     ])
-                np.testing.assert_allclose(table.col('time')[-1], time_end)
-                np.testing.assert_allclose(table.col('temperature')[-1], temp)
-                np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
-                                           mass_fracs, rtol=1e-5, atol=1e-9
-                                           )
+                assert np.allclose(table.col('time')[-1], time_end)
+                assert np.allclose(table.col('temperature')[-1], temp)
+                assert np.allclose(table.col('pressure')[-1], pres)
+                assert np.allclose(table.col('mass_fractions')[-1],
+                                   mass_fracs, rtol=1e-5, atol=1e-9
+                                   )
 
     def test_shock_tube_pressure_rise_run_cases(self):
         """Test that shock tube cases with pressure rise run correctly.
@@ -588,9 +579,9 @@ class TestSimulation:
                 temp = 2305.9275837885516
                 pres = 915452.1978990212
                 mass_fracs = np.array([
-                    2.51956828e-06,   5.66072823e-07,   3.79092386e-05,
-                    2.69481635e-03,   1.31733886e-04,   1.91567661e-03,
-                    1.07135128e-07,   2.75177762e-09,   0.00000000e+00,
+                    2.55673782e-06,   5.70019832e-07,   3.73361152e-05,
+                    2.61559579e-03,   1.30748753e-04,   1.91579133e-03,
+                    1.04724319e-07,   2.70985419e-09,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -604,15 +595,15 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
-                    9.95216668e-01,   0.00000000e+00,   0.00000000e+00,
+                    9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
                     ])
-                np.testing.assert_allclose(table.col('time')[-1], time_end)
-                np.testing.assert_allclose(table.col('temperature')[-1], temp)
-                np.testing.assert_allclose(table.col('pressure')[-1], pres)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
-                                           mass_fracs, rtol=1e-5, atol=1e-9
-                                           )
+                assert np.allclose(table.col('time')[-1], time_end)
+                assert np.allclose(table.col('temperature')[-1], temp)
+                assert np.allclose(table.col('pressure')[-1], pres)
+                assert np.allclose(table.col('mass_fractions')[-1],
+                                   mass_fracs, rtol=1e-5, atol=1e-9
+                                   )
 
     def test_rcm_run_cases(self):
         """Test that RCM case runs correctly.
@@ -668,11 +659,13 @@ class TestSimulation:
                     7.74803838e-01,   2.72630502e-66,   2.88273784e-67,
                     -2.18774836e-50,  -1.47465442e-48
                     ])
-                np.testing.assert_allclose(table.col('time')[-1], time_end)
-                np.testing.assert_allclose(table.col('temperature')[-1], temp,
-                                           rtol=1e-5, atol=1e-9)
-                np.testing.assert_allclose(table.col('pressure')[-1], pres,
-                                           rtol=1e-5, atol=1e-9)
-                np.testing.assert_allclose(table.col('mass_fractions')[-1],
-                                           mass_fracs, rtol=1e-4, atol=1e-8
-                                           )
+                assert np.allclose(table.col('time')[-1], time_end)
+                assert np.allclose(table.col('temperature')[-1], temp,
+                                   rtol=1e-5, atol=1e-9
+                                   )
+                assert np.allclose(table.col('pressure')[-1], pres,
+                                   rtol=1e-5, atol=1e-9
+                                   )
+                assert np.allclose(table.col('mass_fractions')[-1],
+                                   mass_fracs, rtol=1e-4, atol=1e-8
+                                   )

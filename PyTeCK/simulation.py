@@ -103,24 +103,24 @@ class VolumeProfile(object):
     `CanSen <http://bryanwweber.github.io/CanSen/>`
     """
 
-    def __init__(self, properties):
+    def __init__(self, volume_history):
         """Set the initial values of the arrays from the input keywords.
 
-        The time and volume are read from the input file and stored in
-        the ``properties`` dictionary. The velocity is calculated by
+        The time and volume are read from the input file and stored in an
+        ``VolumeHistory`` object. The velocity is calculated by
         assuming a unit area and using central differences. This function is
         only called once when the class is initialized at the beginning of a
         problem so it is efficient.
 
-        :param dict properties: Dictionary of properties read from input file
+        :param VolumeHistory volume_history: time and volume history
         """
 
         # The time and volume are each stored as a ``numpy.array`` in the
         # properties dictionary. The volume is normalized by the first volume
         # element so that a unit area can be used to calculate the velocity.
-        self.times = properties['time'].magnitude
-        volumes = (properties['volume'].magnitude /
-                   properties['volume'].magnitude[0]
+        self.times = volume_history.time.magnitude
+        volumes = (volume_history.volume.magnitude /
+                   volume_history.volume.magnitude[0]
                    )
 
         # The velocity is calculated by the second-order central differences.
@@ -216,7 +216,7 @@ class Simulation(object):
         self.gas = ct.Solution(model_file)
 
         # Convert ignition delay to seconds
-        self.properties.ignition_delay = self.properties.ignition_delay.to('second')
+        self.properties.ignition_delay.ito('second')
 
         # Set end time of simulation to 100 times the experimental ignition delay
         self.time_end = 100. * self.properties.ignition_delay.magnitude
@@ -234,9 +234,11 @@ class Simulation(object):
         #reactants = ','.join(self.properties['composition'])
         #
         # TODO: support other composition specification types
-        if self.properties.composition_type != 'mole-fraction':
+        if self.properties.composition_type != 'mole fraction':
             raise(BaseException('error: not yet supported'))
-        reactants = [species_key[spec['species-name']] + ':' + str(spec['mole-fraction'])
+            return
+        reactants = [species_key[spec['species-name']] + ':' +
+                     str(spec['amount'].magnitude)
                      for spec in self.properties.composition
                      ]
         reactants = ','.join(reactants)
@@ -255,8 +257,7 @@ class Simulation(object):
             # Shock tube modeled by constant UV with isentropic compression
 
             # Need to convert pressure rise units to seconds
-            pres_rise = self.properties.pressure_rise
-            self.properties.pressure_rise = pres_rise.to('1 / second')
+            self.properties.pressure_rise.ito('1 / second')
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=PressureRiseProfile(
@@ -280,12 +281,11 @@ class Simulation(object):
               ):
             # Rapid compression machine modeled with volume-time history
 
-            raise(Exception('not yet tested.'))
             # First convert time units if necessary
-            self.properties.volume_history.time = self.properties.volume_history.time.to('second')
+            self.properties.volume_history.time.ito('second')
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
-                                velocity=VolumeProfile(self.properties)
+                                velocity=VolumeProfile(self.properties.volume_history)
                                 )
 
         # Number of solution variables is number of species + mass,
@@ -376,7 +376,7 @@ class Simulation(object):
             # Main time integration loop; continue integration while time of
             # the ``ReactorNet`` is less than specified end time.
             while self.reac_net.time < self.time_end:
-                self.reac_net.step(self.time_end)
+                self.reac_net.step()
 
                 # Interpolate to end time if step took us beyond that point
                 if self.reac_net.time > self.time_end:
