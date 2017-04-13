@@ -2,15 +2,21 @@
 from __future__ import print_function
 from __future__ import division
 
+# Standard libraries
+import os
+import pkg_resources
+
+# Third-party libraries
+import numpy
+import pytest
+from pyked.chemked import ChemKED, DataPoint
+
+# Local imports
 from .. import eval_model
 from ..simulation import Simulation
 from ..utils import units
 from ..exceptions import UndefinedKeywordError
 
-import os
-import pkg_resources
-import numpy
-import pytest
 
 class TestEstimateStandardDeviation:
     """
@@ -60,7 +66,7 @@ class TestEstimateStandardDeviation:
         standard_dev = eval_model.estimate_std_dev(changing_variable,
                                                    dependent_variable + noise
                                                    )
-        numpy.testing.assert_allclose(1.0, standard_dev, rtol=1.e-2)
+        assert numpy.isclose(1.0, standard_dev, rtol=1.e-2)
 
 
 class TestGetChangingVariable:
@@ -69,13 +75,19 @@ class TestGetChangingVariable:
     def test_single_point(self):
         """Check normal behavior for single point.
         """
-        cases = [{'pressure': numpy.random.rand(1) * units('atm'),
-                  'temperature': numpy.random.rand(1) * units('K')}
+        cases = [DataPoint({'pressure': [numpy.random.rand(1) * units('atm')],
+                            'temperature': [numpy.random.rand(1) * units('K')],
+                            'composition':
+                                {'kind': 'mole fraction',
+                                 'species': [{'species-name': 'O2', 'amount': [1.0]}]
+                                 },
+                            'ignition-type': None
+                            })
                  ]
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == 1
-        assert variable[0] == cases[0]['temperature'].magnitude
+        assert variable[0] == cases[0].temperature.magnitude
 
     def test_temperature_changing(self):
         """Check normal behavior for multiple points with temperature changing.
@@ -85,14 +97,20 @@ class TestGetChangingVariable:
         temperatures = numpy.random.rand(num) * units('K')
         cases = []
         for temp in temperatures:
-            cases.append({'pressure': pressure, 'temperature': temp})
+            dp = DataPoint({'pressure': [str(pressure[0])],
+                            'temperature': [str(temp)],
+                            'composition':
+                                {'kind': 'mole fraction',
+                                 'species': [{'species-name': 'O2', 'amount': [1.0]}]
+                                 },
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
-        numpy.testing.assert_allclose(variable,
-                                      [c['temperature'].magnitude for c in cases]
-                                      )
+        assert numpy.allclose(variable, [c.temperature.magnitude for c in cases])
 
     def test_pressure_changing(self):
         """Check normal behavior for multiple points with pressure changing.
@@ -102,14 +120,20 @@ class TestGetChangingVariable:
         temperature = numpy.random.rand(1) * units('K')
         cases = []
         for pres in pressures:
-            cases.append({'pressure': pres, 'temperature': temperature})
+            dp = DataPoint({'pressure': [str(pres)],
+                            'temperature': [str(temperature[0])],
+                            'composition':
+                                {'kind': 'mole fraction',
+                                 'species': [{'species-name': 'O2', 'amount': [1.0]}]
+                                 },
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
-        numpy.testing.assert_allclose(variable,
-                                      [c['pressure'].magnitude for c in cases]
-                                      )
+        assert numpy.allclose(variable, [c.pressure.magnitude for c in cases])
 
     def test_both_changing(self):
         """Check fallback behavior for both properties varying.
@@ -119,25 +143,39 @@ class TestGetChangingVariable:
         temperatures = numpy.random.rand(num) * units('K')
         cases = []
         for pres, temp in zip(pressures, temperatures):
-            cases.append({'pressure': pres, 'temperature': temp})
+            dp = DataPoint({'pressure': [str(pres)],
+                            'temperature': [str(temp)],
+                            'composition':
+                                {'kind': 'mole fraction',
+                                 'species': [{'species-name': 'O2', 'amount': [1.0]}]
+                                 },
+                            'ignition-type': None
+                            })
+            cases.append(dp)
 
         variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
-        numpy.testing.assert_allclose(variable,
-                                      [c['temperature'].magnitude for c in cases]
-                                      )
+        assert numpy.allclose(variable, [c.temperature.magnitude for c in cases])
 
 class TestEvalModel:
     """
     """
+    def relative_location(self, file):
+        file_path = os.path.join(file)
+        return pkg_resources.resource_filename(__name__, file_path)
+
     def test(self):
         """
         """
-
-        eval_model.evaluate_model('h2o2.cti', 'PyTeCK/tests/spec_keys.yaml',
-                                  'PyTeCK/tests/dataset_file.txt',
-                                  data_path='PyTeCK/tests/',
+        output = eval_model.evaluate_model(
+                                  'h2o2.cti',
+                                  self.relative_location('spec_keys.yaml'),
+                                  self.relative_location('dataset_file.txt'),
+                                  data_path=self.relative_location(''),
                                   model_path='',
                                   num_threads=1
                                   )
+        assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
+        assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
+        assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)

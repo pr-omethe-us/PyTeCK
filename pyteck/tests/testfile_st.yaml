@@ -1,0 +1,86 @@
+---
+file-author:
+  name: Kyle E Niemeyer
+  ORCID: 0000-0003-4425-7097
+file-version: 0
+chemked-version: 0.0.1
+reference:
+  doi: 10.1016/j.ijhydene.2007.04.008
+  authors:
+    - name: N. Chaumeix
+    - name: S. Pichon
+    - name: F. Lafosse
+    - name: C.-E. Paillard
+  journal: International Journal of Hydrogen Energy
+  year: 2007
+  volume: 32
+  pages: 2216-2226
+  detail: Fig. 12., right, open diamond
+experiment-type: ignition delay
+apparatus:
+  kind: shock tube
+  institution: CNRS-ICARE
+  facility: stainless steel shock tube
+common-properties:
+  pressure: &pres
+    - 220 kilopascal
+  composition: &comp
+    kind: mole fraction
+    species:
+      - species-name: H2
+        InChI: 1S/H2/h1H
+        amount:
+          - 0.00444
+      - species-name: O2
+        InChI: 1S/O2/c1-2
+        amount:
+          - 0.00556
+      - species-name: Ar
+        InChI: 1S/Ar
+        amount:
+          - 0.99
+  ignition-type: &ign
+    target: pressure
+    type: d/dt max
+datapoints:
+  - temperature:
+      - 1164.48 kelvin
+    ignition-delay:
+      - 471.54 us
+    pressure: *pres
+    composition: *comp
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+  - temperature:
+      - 1164.97 kelvin
+    ignition-delay:
+      - 448.03 us
+    pressure: *pres
+    composition: *comp
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+  - temperature:
+      - 1264.2 kelvin
+    ignition-delay:
+      - 291.57 us
+    pressure: *pres
+    composition: *comp
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+  - temperature:
+      - 1332.57 kelvin
+    ignition-delay:
+      - 205.93 us
+    pressure: *pres
+    composition: *comp
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+  - temperature:
+      - 1519.18 kelvin
+    ignition-delay:
+      - 88.11 us
+    pressure: *pres
+    composition: *comp
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+...

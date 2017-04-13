@@ -1,0 +1,57 @@
+---
+file-author:
+  name: Kyle E Niemeyer
+  ORCID: 0000-0003-4425-7097
+file-version: 0
+chemked-version: 0.0.1
+reference:
+  doi: 10.1016/j.ijhydene.2007.04.008
+  authors:
+    - name: N. Chaumeix
+    - name: S. Pichon
+    - name: F. Lafosse
+    - name: C.-E. Paillard
+  journal: International Journal of Hydrogen Energy
+  year: 2007
+  volume: 32
+  pages: 2216-2226
+  detail: Artificial pressure rise and ignition target
+experiment-type: ignition delay
+apparatus:
+  kind: shock tube
+  institution: CNRS-ICARE
+  facility: stainless steel shock tube
+common-properties:
+  pressure: &pres
+    - 2.18 atm
+  composition: &comp
+    kind: mole fraction
+    species:
+      - species-name: H2
+        InChI: 1S/H2/h1H
+        amount:
+          - 0.00444
+      - species-name: O2
+        InChI: 1S/O2/c1-2
+        amount:
+          - 0.00556
+      - species-name: Ar
+        InChI: 1S/Ar
+        amount:
+          - 0.99
+  pressure-rise: &pres-rise
+    - 0.10 1/ms
+  ignition-type: &ign
+    target: OH
+    type: max
+datapoints:
+  - temperature:
+      - 1264.2 kelvin
+    ignition-delay:
+      - 291.57 us
+    pressure: *pres
+    composition: *comp
+    pressure-rise: *pres-rise
+    ignition-type: *ign
+    equivalence-ratio: 0.4
+...
