@@ -2,16 +2,21 @@
 from __future__ import print_function
 from __future__ import division
 
+# Standard libraries
+import os
+import pkg_resources
+
+# Third-party libraries
+import numpy
+import pytest
+from pyked.chemked import ChemKED, DataPoint
+
+# Local imports
 from .. import eval_model
 from ..simulation import Simulation
 from ..utils import units
 from ..exceptions import UndefinedKeywordError
 
-import os
-import pkg_resources
-import numpy
-import pytest
-from pyked.chemked import ChemKED, DataPoint
 
 class TestEstimateStandardDeviation:
     """
@@ -156,15 +161,18 @@ class TestGetChangingVariable:
 class TestEvalModel:
     """
     """
+    def relative_location(self, file):
+        file_path = os.path.join(file)
+        return pkg_resources.resource_filename(__name__, file_path)
+
     def test(self):
         """
         """
-
         output = eval_model.evaluate_model(
                                   'h2o2.cti',
-                                  'PyTeCK/tests/spec_keys.yaml',
-                                  'PyTeCK/tests/dataset_file.txt',
-                                  data_path='PyTeCK/tests/',
+                                  self.relative_location('spec_keys.yaml'),
+                                  self.relative_location('dataset_file.txt'),
+                                  data_path=self.relative_location(''),
                                   model_path='',
                                   num_threads=1
                                   )
