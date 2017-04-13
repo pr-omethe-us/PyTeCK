@@ -1,0 +1,49 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: pyteck
+  version: {{ data['version'] }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python >=3.5,{{PY_VER}}*
+    - setuptools
+
+  run:
+    - python {{PY_VER}}*
+    - pyyaml >=3.12,<4.0
+    - numpy >=1.11.0
+    - scipy >=0.18.0
+    - pint >=0.7.2
+    - pytables
+    - cantera >=2.3.0
+    - pyked >0.0.1
+
+test:
+  imports:
+    - pyked
+
+  requires:
+    - pytest >=3.0.1
+    - pytest-cov >=2.3.1
+
+  commands:
+    - pytest -vv --pyargs pyteck
+
+about:
+  home: data['url']
+  license: MIT
+  license_file: LICENSE
+  license_family: MIT
+
+  summary: data['description']
+  description: data['long_description']
+  doc_url: https://kyleniemeyer.github.io/PyTeCK
+  dev_url: data['url']

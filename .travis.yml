@@ -1,5 +1,14 @@
-sudo: required
+sudo: false
+env:
+  global:
+    - secure: "CE68N8pVwz8X3Ot0KPXtUg8y5oPbJpwkaNyq1nyFKcdhYKoT0EFE5KjaSaNYgYgHojMpQvdhSLtdBpbDoqqDjwyw1N06rndZpVhxhoq8BDmFLs02pN/+w7ihKH73w5aYAqFVCNAF0WW9nLFn2Sg+948V9XlSe4XxH9a1paw8C9wGLF4XbyObGLV4ej1oxv7XDx4//ehOBZDjuVdfZYRZ65HFb+AIQD9OUlZ6aEHczNyQ8sAQxwTdRayWbRY+kjB8Oaa8chtEa/sfQLGnAMQTuxomTD5D40B2AiMbt53BWT2rDgih5Y8padpIGiDgCSQL+XtGlPsRLv/Wr3k9oRpJ1fwGEdBHC4Zn+J6nIy7xGPFEbvCOMbYI0Ie34bqEYZfu+E6bVwbLqMDKo+sZ+mMkrwCPVMKQoWMyx8cYuP0oMKlyAYYYK0V9YGjqgszmLaIDogP/aUMPBN9s92P4VURlhpDuFvAeGpEGT1cb/8deWShMXvx2NCvDsjRCYFZ73qcPxkA1VI03T25gjOBvbnreKltuu17Mteq1i7Gk/ULDvJNGMYrd/2ap/wiAXjFM3sGSDN5LKMCqQNHbzx438Q0Wu12TT85g9bDWAlMMawKxXRCFasbHZJmTJ9vC2c1xtbRyhPf6eiP4RG1EiPX0Y3DpZq9neUfX7wvtd4VL3gZOhBo="
+    - secure: "K7wWKBL4k6/NW+s/U7jU/41ydEjgzYe0O/Wqk2gdZpECoMZVsp0F4FmaeT72B0Z6HEt79n0AnPC+t8PpXH4VD8/KLykpEHix8UU2o/6ZosgdrSmuTkE2FW5B8Z8+xdcYCOVR9A2PxxfpmkJmGVslrPmuCz1w2E8ahiTJ0YHa6ap1xeuowZv243IiWCYzVdIpbtjnU4pMee5RwGRT6rimUMAfRrv23WLNl/erQRFtxD6jeyMCXQxreaCDShVo0iNrfRxhOe0sU6cnUqtlzc10OjmHnKAwyV3PnYC+wbtb/aszK47hlag7yokWERXFP30isian+gf82P9GqLlrLRW7ZdehT/n0oJo+W2zV0HaRmy2se/Eet0u2cnx7XWcb69ob7CRpx/qQq0cKxFOgqb2sVMSZwQHwJG5HyXerJt+97kYgjEv7Gksr1LjQk/fdHFZA8Ayp+MQLgFdjOlaI/ISNTwZo7ddxyfofCNC0btY7fCb4H1Il6bnJt1C0QcsEn6wWjb8VSuNu/vRa+rwVsteuk4SppRRq+9RoezEalO7br1OaPApieLkk0+aSh7ohqtq1ugCVoGGsw/tXchB+f90GrO0EkSRMCaCgiPSCRCHxx1tEslyOd+xk8KVW3V+w4b5G/Ay0iAh0qKyCBYQzUUM/BUwXlsgUsN8M5ligM7dQ/mo="
+
 language: python
+
+addons:
+  apt_packages:
+    - pandoc
 
 matrix:
   include:
@@ -17,9 +26,6 @@ matrix:
 
 # Install packages
 install:
-    - sudo apt-get update
-      # We do this conditionally because it saves us some downloading if the
-      # version is the same.
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
       elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -47,4 +53,41 @@ install:
     - sudo ln -s /run/shm /dev/shm
 
 # command to run tests
-script: py.test -vv
+script:
+  - set -e
+  - if [[ -z "$TRAVIS_TAG" ]]; then
+      python setup.py test;
+      if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+        git checkout -- test-environment.yaml;
+        conda install -q sphinx doctr;
+        python setup.py install;
+        cd docs;
+        make html SPHINXOPTS="-W";
+        cd ..;
+        doctr deploy .;
+      fi
+    else
+      conda build conda.recipe --python=${PYTHON};
+      anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda/conda-bld/*/pyteck*.tar.bz2;
+    fi
+  - set +e
+
+after_success:
+  - if [[ -z "$TRAVIS_TAG" ]]; then
+      bash <(curl -s https://codecov.io/bash);
+    fi
+
+before_deploy:
+  - pip install pypandoc
+
+deploy:
+  provider: pypi
+  user: kyleniemeyer
+  password:
+    secure: "vaCCwVyZ8m+PDWub0kpPWYwwAUrtgnFQxU9qKc6VwIp3cCtYyEAZjTbAUzBfc/DsqmpCoLI62hYrQWqq0PwFfs4/1Ho+ppJuuiPvcIs0Syh8iv37YKnQG5Yjc9OjEGOY3ZScIUz57X67dst8HBiNHZnovwh5yxoGCTYrP0HdPlQbMkU6byzpXJ/+gzZaRiXXCPElEMf7HRuOZCkoDUIxypcBAvRHjyqI5TLecfkZBllkA3MFfEMT2mDurU4fmSsS7ndcKONaW9OKWSpSEItGle1Yq68qLN3xJIDSVfWg+vAUANuNAZJwo3CyfwPdxfWq4zth9+fY56ZJg3rz2QhC4kVJIOyNfyHyLdKXCQpCg2A0zcTMItnHafKm8eN2IPKNkO+HN1mpE6+G0UTnGfQtsA3FWQvedvA/WH5f226JJ1RNlJAsMDpf08WK7tTtc4rQ0Rm9TtKiblcZ+AxQMyZCdO3UxKCzqpusZmueIbr4koPFczaQYDsldWihboWp6ToAymI1XwcsSQTQTTcqGqt5ADuI9Ae0egWqpsAe72aiTYUR/FrIXD2ylSQl0E3UobjkYl+5kT4pJtF3TknJqN4VZDAbRP1IxPGcpNXLuZXekLpNaaDxJFepAnytWtIGd/W2vt+Afv5vt5VvGLFS56uuxOkLlIFebw0NfXnT1citLLM="
+  server: https://testpypi.python.org/pypi  # Remove after testing
+  on:
+    tags: true
+    condition: $TRAVIS_OS_NAME == "linux" && $PYTHON == "3.6"
+  distributions: "sdist bdist_wheel"
+  skip_upload_docs: true

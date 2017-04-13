@@ -12,7 +12,7 @@ from scipy.interpolate import UnivariateSpline
 import cantera as ct
 
 try:
-    import ruamel.yaml as yaml
+    import yaml
 except ImportError:
     print('Warning: YAML must be installed to read input file.')
     raise
