@@ -110,6 +110,12 @@ class TestDetectPeaks:
             valleys_before = np.array([i for i in range(start, ind) if y[i] < y[ind]])
             valleys_after = np.array([i for i in range(ind+1, end+1) if y[i] < y[ind]])
 
+            # first and last values cannot be peaks/valleys
+            if valleys_before.size and valleys_before[0] == 0:
+                valleys_before = valleys_before[1:]
+            if valleys_after.size and valleys_after[-1] == y.size-1:
+                valleys_after = valleys_after[:-1]
+
             # # remove bad valleys if within minimum peak distance of previous valley
             if idx > 0:
                 ind_prev = valleys[idx - 1]
