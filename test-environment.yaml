@@ -1,0 +1,16 @@
+name: test-environment
+channels:
+- defaults
+- conda-forge
+- cantera
+- pr-omethe-us
+dependencies:
+  - numpy>=1.11.0
+  - pyyaml>=3.12
+  - pytest>=3.0.0
+  - pytest-cov>=2.3.1
+  - python=${PYTHON}
+  - pint>=0.7.2
+  - pytables
+  - cantera>=2.3.0
+  - pyked>=0.1.1
