@@ -6,10 +6,6 @@ env:
 
 language: generic
 
-addons:
-  apt_packages:
-    - pandoc
-
 matrix:
   include:
     - os: linux
@@ -23,6 +19,10 @@ matrix:
 
     - os: osx
       env: PYTHON="3.6"
+
+addons:
+  apt_packages:
+    - pandoc
 
 # Install packages
 install:
