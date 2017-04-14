@@ -7,7 +7,8 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Anaconda](https://anaconda.org/kyleniemeyer/pyteck/badges/version.svg)](https://anaconda.org/kyleniemeyer/pyteck)
 
-This software package automatically evaluates the performance of a chemical reaction mechanism using experimental data given in a specified YAML format.
+This software package automatically evaluates the performance of a chemical kinetic
+model using experimental data given in a specified YAML format.
 
 ## Installation
 
@@ -43,8 +44,8 @@ conduct adapted from the [Contributor Covenant](http://contributor-covenant.org)
 
 Please adhere to this code of conduct in any interactions you have in the PyTeCK community.
 It is strictly enforced on all official PyTeCK repositories, websites, and resources.
-If you encounter someone violating these terms, please let a maintainer
-([@kyleniemeyer](https://github.com/kyleniemeyer)) know via email at <kyle.niemeyer@gmail.com>
+If you encounter someone violating these terms, please let
+[@kyleniemeyer](https://github.com/kyleniemeyer) know via email at <kyle.niemeyer@gmail.com>
 and we will address it as soon as possible.
 
 ## Citation
@@ -55,4 +56,5 @@ for instructions on how to cite this resource directly.
 
 ## License
 
-PyTeCK is released under the MIT license; see [LICENSE](https://github.com/kyleniemeyer/PyTeCK/blob/master/LICENSE) for details.
+PyTeCK is released under the MIT license; see
+[LICENSE](https://github.com/kyleniemeyer/PyTeCK/blob/master/LICENSE) for details.
