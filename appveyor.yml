@@ -17,6 +17,8 @@ install:
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda config --append channels conda-forge
+  - cmd: conda config --append channels cantera
+  - cmd: conda config --append channels pr-omethe-us
   - cmd: conda update -q conda
   - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}",$env:PYTHON_VERSION} | set-content test-environment.yaml
   - cmd: IF "%APPVEYOR_REPO_TAG%"=="false" conda env create -qf test-environment.yaml
