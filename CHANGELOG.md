@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## [0.2.1] - 2017-04-14
+### Added
+- Adds AppVeyor build for Windows conda packages
+- Adds CONTRIBUTING guide
 
 ## [0.2.0] - 2017-04-13
 ### Added
