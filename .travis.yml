@@ -22,10 +22,6 @@ matrix:
     - os: osx
       env: PYTHON="3.6"
 
-addons:
-  apt_packages:
-    - pandoc
-
 # Install packages
 install:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -41,8 +37,8 @@ install:
     - conda config --append channels conda-forge
     - conda config --append channels cantera
     - conda config --append channels pr-omethe-us
-    - sed -i -e "s/\${PYTHON}/"${PYTHON}"/" test-environment.yaml
     - if [[ -z "$TRAVIS_TAG" ]]; then
+        sed -i -e "s/\${PYTHON}/"${PYTHON}"/" test-environment.yaml;
         conda env create -qf test-environment.yaml;
         source activate test-environment;
       else
@@ -78,6 +74,7 @@ after_success:
     fi
 
 before_deploy:
+  - conda install pandoc
   - pip install pypandoc
 
 deploy:
