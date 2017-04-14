@@ -1,5 +1,6 @@
 # PyTeCK
 
+[![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
 [![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
 [![codecov](https://codecov.io/gh/kyleniemeyer/PyTeCK/branch/master/graph/badge.svg)](https://codecov.io/gh/kyleniemeyer/PyTeCK)
 [![Dependency Status](https://dependencyci.com/github/kyleniemeyer/PyTeCK/badge)](https://dependencyci.com/github/kyleniemeyer/PyTeCK)
