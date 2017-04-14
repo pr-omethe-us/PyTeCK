@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Adds DOI badge to README and CITATION
+- Adds AppVeyor build status badge to README
 
 ### Fixed
 

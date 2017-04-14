@@ -2,6 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
 [![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
+[![Build Status](https://ci.appveyor.com/api/projects/status/a7a3prqgvfg8rr5f?svg=true)](https://ci.appveyor.com/project/kyleniemeyer/pyteck)
 [![codecov](https://codecov.io/gh/kyleniemeyer/PyTeCK/branch/master/graph/badge.svg)](https://codecov.io/gh/kyleniemeyer/PyTeCK)
 [![Dependency Status](https://dependencyci.com/github/kyleniemeyer/PyTeCK/badge)](https://dependencyci.com/github/kyleniemeyer/PyTeCK)
 [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-contributor%20covenant-green.svg)](http://contributor-covenant.org/version/1/4/)
