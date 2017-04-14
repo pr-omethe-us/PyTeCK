@@ -11,8 +11,18 @@ This software package automatically evaluates the performance of a chemical reac
 
 ## Installation
 
-Currently, PyTeCK can be installed by a module by downloading the source files,
-navigating to the directory, and using either setuptools
+The easiest way to install PyTeCK is via `conda`. You can install to your environment with
+
+    > conda install -c kyleniemeyer pyteck
+
+which will also handle all the dependencies. Alternatively, you can install from
+PyPI with
+
+    > pip install pyteck
+
+If you prefer to install manually, or want a particular version outside of the
+tagged releases distributed to those services, you can download the source files
+from this repository, navigate to the directory, and install using either `setuptools`
 
     > python setup.py install
 
@@ -22,16 +32,13 @@ or `pip`
 
 `pip` is recommended due to its easy uninstall option (`pip uninstall pyteck`).
 
-Once PyTeCK reaches v1.0, it will be distributed via PyPI and installable using
-`pip install pyteck`, with automatic dependency tracking.
-
 ## Usage
 
 Once installed, the full list of options can be seen using `pyteck -h` or `pyteck --help`.
 
 ## Code of Conduct
 
-In order to have a more open and welcoming community, PyKED adheres to a code of
+In order to have a more open and welcoming community, PyTeCK adheres to a code of
 conduct adapted from the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 Please adhere to this code of conduct in any interactions you have in the PyTeCK community.
@@ -40,11 +47,12 @@ If you encounter someone violating these terms, please let a maintainer
 ([@kyleniemeyer](https://github.com/kyleniemeyer)) know via email at <kyle.niemeyer@gmail.com>
 and we will address it as soon as possible.
 
-## License
-
-PyTeCK is released under the MIT license; see LICENSE for details.
-
 ## Citation
 
 If you use this package as part of a scholarly publication, please refer to
-CITATION.md for instructions on how to cite this resource directly.
+[CITATION.md](https://github.com/kyleniemeyer/PyTeCK/blob/master/CITATION.md)
+for instructions on how to cite this resource directly.
+
+## License
+
+PyTeCK is released under the MIT license; see [LICENSE](https://github.com/kyleniemeyer/PyTeCK/blob/master/LICENSE) for details.
