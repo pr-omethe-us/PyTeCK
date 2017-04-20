@@ -469,9 +469,9 @@ class Simulation(object):
             if self.properties.compression_time is not None:
                 time_comp = self.properties.compression_time
 
-            ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] -
-                                           time_comp) > 0. * units.second
-                                           )]] - time_comp
+            ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
+                                              > 0. * units.second
+                                             )]] - time_comp
         elif self.properties.ignition_type == '1/2 max':
             # maximum value, and associated index
             max_val = numpy.max(target)
@@ -482,7 +482,9 @@ class Simulation(object):
             # Find index associated with the 1/2 max value, but only consider
             # points before the peak
             half_idx = (numpy.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-            ign_delays = time[half_idx]
+            ign_delays = [time[half_idx]]
+
+            # TODO: detect two-stage ignition when 1/2 max type?
 
         # Overall ignition delay
         if len(ign_delays) > 0:

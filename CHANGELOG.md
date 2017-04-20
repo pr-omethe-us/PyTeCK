@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Adds AppVeyor build status badge to README
 
 ### Fixed
+- Fixes ignition delay detection for 1/2 max type (only one value possible, rather than list)
 
 ### Changed
 
