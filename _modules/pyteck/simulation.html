@@ -514,9 +514,9 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span>
 
-            <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">ind</span> <span class="o">&lt;=</span> <span class="n">max_ind</span><span class="p">]]</span> <span class="o">-</span>
-                                           <span class="n">time_comp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
-                                           <span class="p">)]]</span> <span class="o">-</span> <span class="n">time_comp</span>
+            <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">ind</span> <span class="o">&lt;=</span> <span class="n">max_ind</span><span class="p">]]</span> <span class="o">-</span> <span class="n">time_comp</span><span class="p">)</span>
+                                              <span class="o">&gt;</span> <span class="mf">0.</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+                                             <span class="p">)]]</span> <span class="o">-</span> <span class="n">time_comp</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;1/2 max&#39;</span><span class="p">:</span>
             <span class="c1"># maximum value, and associated index</span>
             <span class="n">max_val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
@@ -527,7 +527,9 @@
             <span class="c1"># Find index associated with the 1/2 max value, but only consider</span>
             <span class="c1"># points before the peak</span>
             <span class="n">half_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">max_val</span><span class="p">))</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
-            <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">half_idx</span><span class="p">]</span>
+            <span class="n">ign_delays</span> <span class="o">=</span> <span class="p">[</span><span class="n">time</span><span class="p">[</span><span class="n">half_idx</span><span class="p">]]</span>
+
+            <span class="c1"># TODO: detect two-stage ignition when 1/2 max type?</span>
 
         <span class="c1"># Overall ignition delay</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ign_delays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
