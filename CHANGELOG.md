@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Adds DOI badge to README and CITATION
 - Adds AppVeyor build status badge to README
+- Adds restart option to skip existing results files.
 
 ### Fixed
 - Fixes ignition delay detection for 1/2 max type (only one value possible, rather than list)
