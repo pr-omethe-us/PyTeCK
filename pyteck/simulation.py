@@ -206,11 +206,12 @@ class Simulation(object):
         self.meta = meta
         self.properties = properties
 
-    def setup_case(self, model_file, species_key):
+    def setup_case(self, model_file, species_key, path=''):
         """Sets up the simulation case to be run.
 
         :param str model_file: Filename for Cantera-format model
         :param dict species_key: Dictionary with species names for `model_file`
+        :param str path: Path for data file
         """
 
         self.gas = ct.Solution(model_file)
@@ -334,12 +335,19 @@ class Simulation(object):
             self.properties.ignition_target = self.properties.ignition_type['target']
             self.properties.ignition_type = self.properties.ignition_type['type']
 
-    def run_case(self, idx, path=None):
+        # Set file for later data file
+        file_path = os.path.join(path, self.meta['id'] + '.h5')
+        self.meta['save-file'] = file_path
+
+    def run_case(self, restart=False):
         """Run simulation case set up ``setup_case``.
 
-        :param int idx: Simulation case identifier
-        :param str path: Path for data file
+        :param bool restart: If ``True``, skip if results file exists.
         """
+
+        if restart and os.path.isfile(self.meta['save-file']):
+            print('Skipped existing case ', self.meta['id'])
+            return
 
         # Save simulation results in hdf5 table format.
         table_def = {'time': tables.Float64Col(pos=0),
@@ -350,9 +358,6 @@ class Simulation(object):
                           shape=(self.reac.thermo.n_species), pos=4
                           ),
                      }
-
-        file_path = os.path.join(path, self.meta['id'] + '.h5')
-        self.meta['save-file'] = file_path
 
         with tables.open_file(self.meta['save-file'], mode='w',
                               title=self.meta['id']
@@ -425,7 +430,7 @@ class Simulation(object):
             # Write ``table`` to disk
             table.flush()
 
-        print('Done with case', idx)
+        print('Done with case ', self.meta['id'])
 
     def process_results(self):
         """Process integration results to obtain ignition delay.

@@ -453,8 +453,8 @@ class TestSimulation:
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, SPEC_KEY)
-            sim.run_case(0, path=temp_dir)
+            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
+            sim.run_case()
 
             # check for presence of data file
             assert os.path.exists(sim.meta['save-file'])
@@ -499,8 +499,8 @@ class TestSimulation:
                                    )
 
             sim = simulations[1]
-            sim.setup_case(mechanism_filename, SPEC_KEY)
-            sim.run_case(1, path=temp_dir)
+            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
+            sim.run_case()
 
             assert os.path.exists(sim.meta['save-file'])
             with tables.open_file(sim.meta['save-file'], 'r') as h5file:
@@ -560,8 +560,8 @@ class TestSimulation:
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, SPEC_KEY)
-            sim.run_case(0, path=temp_dir)
+            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
+            sim.run_case()
 
             # check for presence of data file
             assert os.path.exists(sim.meta['save-file'])
@@ -622,8 +622,8 @@ class TestSimulation:
         # Setup and run each simulation
         with TemporaryDirectory() as temp_dir:
             sim = simulations[0]
-            sim.setup_case(mechanism_filename, SPEC_KEY)
-            sim.run_case(0, path=temp_dir)
+            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
+            sim.run_case()
 
             # check for presence of data file
             assert os.path.exists(sim.meta['save-file'])
@@ -669,3 +669,5 @@ class TestSimulation:
                 assert np.allclose(table.col('mass_fractions')[-1],
                                    mass_fracs, rtol=1e-4, atol=1e-8
                                    )
+
+    # TODO: add test for restart option

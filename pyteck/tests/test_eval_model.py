@@ -11,6 +11,29 @@ import numpy
 import pytest
 from pyked.chemked import ChemKED, DataPoint
 
+# Taken from http://stackoverflow.com/a/22726782/1569494
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from contextlib import contextmanager
+    import shutil
+    import tempfile
+    import errno
+
+    @contextmanager
+    def TemporaryDirectory():
+        name = tempfile.mkdtemp()
+        try:
+            yield name
+        finally:
+            try:
+                shutil.rmtree(name)
+            except OSError as e:
+                # Reraise unless ENOENT: No such file or directory
+                # (ok if directory has already been deleted)
+                if e.errno != errno.ENOENT:
+                    raise
+
 # Local imports
 from .. import eval_model
 from ..simulation import Simulation
@@ -168,14 +191,17 @@ class TestEvalModel:
     def test(self):
         """
         """
-        output = eval_model.evaluate_model(
-                                  'h2o2.cti',
-                                  self.relative_location('spec_keys.yaml'),
-                                  self.relative_location('dataset_file.txt'),
-                                  data_path=self.relative_location(''),
-                                  model_path='',
-                                  num_threads=1
-                                  )
-        assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
-        assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
-        assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)
+
+        with TemporaryDirectory() as temp_dir:
+            output = eval_model.evaluate_model(
+                                      'h2o2.cti',
+                                      self.relative_location('spec_keys.yaml'),
+                                      self.relative_location('dataset_file.txt'),
+                                      data_path=self.relative_location(''),
+                                      model_path='',
+                                      results_path=temp_dir,
+                                      num_threads=1
+                                      )
+            assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
+            assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
+            assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)

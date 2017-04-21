@@ -65,9 +65,16 @@ parser.add_argument('-p', '--print',
                     default=False,
                     help='Print model evaluation results to screen.'
                     )
+parser.add_argument('--restart',
+                    dest='restart',
+                    action='store_true',
+                    default=False,
+                    help='Reuse prior results files, and only calculate new ones.'
+                    )
 args = parser.parse_args()
 
 evaluate_model(args.model, args.model_keys_file, args.dataset,
                args.data_path, args.model_path, args.results_path,
-               args.model_variant_file, args.num_threads, args.print_results
+               args.model_variant_file, args.num_threads, args.print_results,
+               args.restart,
                )

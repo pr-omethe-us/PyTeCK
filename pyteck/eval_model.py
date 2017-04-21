@@ -73,10 +73,10 @@ def simulation_worker(sim_tuple):
         Simulation case with calculated ignition delay.
 
     """
-    sim, idx, model_file, model_spec_key, path = sim_tuple
+    sim, model_file, model_spec_key, path, restart = sim_tuple
 
-    sim.setup_case(model_file, model_spec_key)
-    sim.run_case(idx, path)
+    sim.setup_case(model_file, model_spec_key, path)
+    sim.run_case(restart)
 
     sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
@@ -172,7 +172,7 @@ def get_changing_variable(cases):
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
-                   num_threads=None, print_results=False
+                   num_threads=None, print_results=False, restart=False,
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
 
@@ -199,6 +199,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         cores minus one is used.
     print_results : bool
         If ``True``, print results of the model evaluation to screen.
+    restart : bool
+        If ``True'', process saved results. Mainly intended for testing/development.
 
     Returns
     -------
@@ -331,9 +333,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             else:
                 model_file = os.path.join(model_path, model_name)
 
-            jobs.append([sim, idx, model_file,
-                         model_spec_key[model_name], results_path
-                         ])
+            jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
 
         # run all cases
         jobs = tuple(jobs)
