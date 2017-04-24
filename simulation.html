@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Simulation &#8212; PyTeCK 0.2.1 documentation</title>
+    <title>Simulation &#8212; PyTeCK 0.2.2a2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.1',
+        VERSION:     '0.2.2a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -80,17 +80,13 @@ the <code class="docutils literal"><span class="pre">Wall</span></code> velocity
 
 <dl class="method">
 <dt id="pyteck.simulation.Simulation.run_case">
-<code class="descname">run_case</code><span class="sig-paren">(</span><em>idx</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.run_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.run_case" title="Permalink to this definition">¶</a></dt>
+<code class="descname">run_case</code><span class="sig-paren">(</span><em>restart=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.run_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.run_case" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run simulation case set up <code class="docutils literal"><span class="pre">setup_case</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>idx</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) &#8211; Simulation case identifier</li>
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Path for data file</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, skip if results file exists.</td>
 </tr>
 </tbody>
 </table>
@@ -98,7 +94,7 @@ the <code class="docutils literal"><span class="pre">Wall</span></code> velocity
 
 <dl class="method">
 <dt id="pyteck.simulation.Simulation.setup_case">
-<code class="descname">setup_case</code><span class="sig-paren">(</span><em>model_file</em>, <em>species_key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.setup_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.setup_case" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setup_case</code><span class="sig-paren">(</span><em>model_file</em>, <em>species_key</em>, <em>path=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.setup_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.setup_case" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets up the simulation case to be run.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -107,6 +103,7 @@ the <code class="docutils literal"><span class="pre">Wall</span></code> velocity
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>model_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Filename for Cantera-format model</li>
 <li><strong>species_key</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) &#8211; Dictionary with species names for <code class="xref py py-obj docutils literal"><span class="pre">model_file</span></code></li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Path for data file</li>
 </ul>
 </td>
 </tr>

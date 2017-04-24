@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.1 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.1',
+        VERSION:     '0.2.2a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -251,11 +251,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">meta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span>
 
-<div class="viewcode-block" id="Simulation.setup_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.setup_case">[docs]</a>    <span class="k">def</span> <span class="nf">setup_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_file</span><span class="p">,</span> <span class="n">species_key</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulation.setup_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.setup_case">[docs]</a>    <span class="k">def</span> <span class="nf">setup_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_file</span><span class="p">,</span> <span class="n">species_key</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets up the simulation case to be run.</span>
 
 <span class="sd">        :param str model_file: Filename for Cantera-format model</span>
 <span class="sd">        :param dict species_key: Dictionary with species names for `model_file`</span>
+<span class="sd">        :param str path: Path for data file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">gas</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Solution</span><span class="p">(</span><span class="n">model_file</span><span class="p">)</span>
@@ -377,14 +378,21 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="s1">&#39;d/dt max&#39;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Simulation.run_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.run_case">[docs]</a>    <span class="k">def</span> <span class="nf">run_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Set file for later data file</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_path</span></div>
+
+<div class="viewcode-block" id="Simulation.run_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.run_case">[docs]</a>    <span class="k">def</span> <span class="nf">run_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run simulation case set up ``setup_case``.</span>
 
-<span class="sd">        :param int idx: Simulation case identifier</span>
-<span class="sd">        :param str path: Path for data file</span>
+<span class="sd">        :param bool restart: If ``True``, skip if results file exists.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">restart</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Skipped existing case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+            <span class="k">return</span>
 
         <span class="c1"># Save simulation results in hdf5 table format.</span>
         <span class="n">table_def</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
@@ -395,9 +403,6 @@
                           <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">n_species</span><span class="p">),</span> <span class="n">pos</span><span class="o">=</span><span class="mi">4</span>
                           <span class="p">),</span>
                      <span class="p">}</span>
-
-        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_path</span>
 
         <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
                               <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
@@ -470,7 +475,7 @@
             <span class="c1"># Write ``table`` to disk</span>
             <span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with case&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Simulation.process_results"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.process_results">[docs]</a>    <span class="k">def</span> <span class="nf">process_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process integration results to obtain ignition delay.</span>
