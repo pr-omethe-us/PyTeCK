@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Adds DOI badge to README and CITATION
 - Adds AppVeyor build status badge to README
 - Adds restart option to skip existing results files.
+- Updates PyKED version requirement and adds optional validation skipping
 
 ### Fixed
 - Fixes ignition delay detection for 1/2 max type (only one value possible, rather than list)

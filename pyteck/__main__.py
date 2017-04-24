@@ -71,10 +71,16 @@ parser.add_argument('--restart',
                     default=False,
                     help='Reuse prior results files, and only calculate new ones.'
                     )
+parser.add_argument('--skip-validation',
+                    dest='skip_validation',
+                    action='store_true',
+                    default=False,
+                    help='Skips ChemKED file validation.'
+                    )
 args = parser.parse_args()
 
 evaluate_model(args.model, args.model_keys_file, args.dataset,
                args.data_path, args.model_path, args.results_path,
                args.model_variant_file, args.num_threads, args.print_results,
-               args.restart,
+               args.restart, args.skip_validation,
                )

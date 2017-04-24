@@ -173,6 +173,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=False, restart=False,
+                   skip_validation=False,
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
 
@@ -200,7 +201,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     print_results : bool
         If ``True``, print results of the model evaluation to screen.
     restart : bool
-        If ``True'', process saved results. Mainly intended for testing/development.
+        If ``True``, process saved results. Mainly intended for testing/development.
+    skip_validation : bool
+        If ``True``, skips validation of ChemKED files.
 
     Returns
     -------
@@ -243,7 +246,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         dataset_meta = {'dataset': dataset, 'dataset_id': idx_set}
 
         # Create individual simulation cases for each datapoint in this set
-        properties = ChemKED(os.path.join(data_path, dataset))
+        properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
         simulations = create_simulations(dataset, properties)
 
         ignition_delays_exp = numpy.zeros(len(simulations))
