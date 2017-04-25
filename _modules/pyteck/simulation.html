@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a2 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.2a2',
+        VERSION:     '0.2.2a3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -494,25 +494,25 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">target</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">)[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span><span class="p">]</span>
 
+        <span class="c1"># add units to time</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">time</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+
         <span class="c1"># Analysis for ignition depends on type specified</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;d/dt max&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;d/dt max&#39;</span><span class="p">:</span>
                 <span class="c1"># Evaluate derivative</span>
-                <span class="n">target</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 
             <span class="c1"># Get indices of peaks</span>
             <span class="n">ind</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
             <span class="c1"># Fall back on derivative if max value doesn&#39;t work.</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
-                <span class="n">target</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
                 <span class="n">ind</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
             <span class="c1"># Get index of largest peak (overall ignition delay)</span>
             <span class="n">max_ind</span> <span class="o">=</span> <span class="n">ind</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">ind</span><span class="p">])]</span>
-
-            <span class="c1"># add units to time</span>
-            <span class="n">time</span> <span class="o">=</span> <span class="n">time</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
 
             <span class="c1"># Will need to subtract compression time for RCM</span>
             <span class="n">time_comp</span> <span class="o">=</span> <span class="mf">0.0</span>
