@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixes ignition delay detection for 1/2 max type (only one value possible, rather than list)
 - Fixes test for detecting peaks with min distance
+- Ensure time has units when 1/2 max target
 
 ### Changed
 
