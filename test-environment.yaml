@@ -14,4 +14,4 @@ dependencies:
   - pint>=0.7.2
   - pytables
   - cantera>=2.3.0
-  - pyked>=0.1.4
+  - pyked>=0.2.0
