@@ -43,7 +43,7 @@ def first_derivative(x, y):
     :return: First derivative, :math:`dy/dx`
     :rtype: numpy.ndarray
     """
-    return (numpy.gradient(y, numpy.gradient(x), edge_order=2))
+    return numpy.gradient(y, x, edge_order=2)
 
 
 def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
@@ -223,27 +223,25 @@ class Simulation(object):
         self.time_end = 100. * self.properties.ignition_delay.magnitude
 
         # Initial temperature needed in Kelvin for Cantera
-        initial_temp = self.properties.temperature.to('kelvin').magnitude
+        self.properties.temperature.ito('kelvin')
 
         # Initial pressure needed in Pa for Cantera
-        initial_pres = self.properties.pressure.to('pascal').magnitude
+        self.properties.pressure.ito('pascal')
 
-        # Initial composition stored in ``properties`` list as dictionary
-        # with internal species names as keys and amounts as values.
-        # Need to convert to mechanism-specific species name, then format into
-        # string with `spec:val` items joined by commas for Cantera
-        #reactants = ','.join(self.properties['composition'])
-        #
-        # TODO: support other composition specification types
-        if self.properties.composition_type != 'mole fraction':
-            raise(BaseException('error: not yet supported'))
+        # Reactants given in format for Cantera
+        if self.properties.composition_type in ['mole fraction', 'mole percent']:
+            self.gas.TPX = (self.properties.temperature.magnitude,
+                            self.properties.pressure.magnitude,
+                            self.properties.get_cantera_mole_fraction()
+                            )
+        elif self.properties.composition_type == 'mass fraction':
+            self.gas.TPY = (self.properties.temperature.magnitude,
+                            self.properties.pressure.magnitude,
+                            self.properties.get_cantera_mass_fraction()
+                            )
+        else:
+            raise(BaseException('error: not supported'))
             return
-        reactants = [species_key[spec['species-name']] + ':' +
-                     str(spec['amount'].magnitude)
-                     for spec in self.properties.composition
-                     ]
-        reactants = ','.join(reactants)
-        self.gas.TPX = initial_temp, initial_pres, reactants
 
         # Create non-interacting ``Reservoir`` on other side of ``Wall``
         env = ct.Reservoir(ct.Solution('air.xml'))
@@ -263,9 +261,9 @@ class Simulation(object):
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=PressureRiseProfile(
                                     model_file,
-                                    initial_temp,
-                                    initial_pres,
-                                    reactants,
+                                    self.gas.T,
+                                    self.gas.P,
+                                    self.gas.X,
                                     self.properties.pressure_rise.magnitude,
                                     self.time_end
                                     )
