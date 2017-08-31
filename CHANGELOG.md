@@ -15,8 +15,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixes ignition delay detection for 1/2 max type (only one value possible, rather than list)
 - Fixes test for detecting peaks with min distance
 - Ensure time has units when 1/2 max target
+- Fixed handling of models with variants
 
 ### Changed
+- Simulation input parameters now change units in place
+- Simulation input composition uses ChemKED Cantera functions
 
 ## [0.2.1] - 2017-04-14
 ### Added

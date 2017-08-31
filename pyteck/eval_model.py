@@ -291,16 +291,16 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         # setup all cases
         jobs = []
         for idx, sim in enumerate(simulations):
-            # special treatment based on pressure for Princeton model
+            # special treatment based on pressure for Princeton model (and others)
 
             if model_variant and model_name in model_variant:
-                raise(Exception('this is not yet fixed.'))
-
                 model_mod = ''
                 if 'bath gases' in model_variant[model_name]:
                     # find any bath gases requiring special treatment
                     bath_gases = set(model_variant[model_name]['bath gases'])
-                    gases = bath_gases.intersection(set(sim.properties['composition']))
+                    gases = bath_gases.intersection(
+                        set([c['species-name'] for c in sim.properties.composition])
+                        )
 
                     # If only one bath gas present, use that. If multiple, use the
                     # predominant species. If none of the designated bath gases
@@ -320,7 +320,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
                 if 'pressures' in model_variant[model_name]:
                     # pressure to atm
-                    pres = sim.properties['pressure'].to('atm').magnitude
+                    pres = sim.properties.pressure.to('atm').magnitude
 
                     # choose closest pressure
                     # better way to do this?
@@ -351,24 +351,26 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
+            dataset_meta['datapoints'].append(
+                {'experimental ignition delay': str(sim.properties.ignition_delay),
+                 'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
+                 'temperature': str(sim.properties.temperature),
+                 'pressure': str(sim.properties.pressure),
+                 'composition': [{'InChI': comp['InChI'],
+                                  'species-name': comp['species-name'],
+                                  'amount': str(comp['amount'].magnitude),
+                                  } for comp in sim.properties.composition],
+                 'composition type': sim.properties.composition_type,
+                 })
+
             ignition_delays_exp[idx] = sim.properties.ignition_delay.magnitude
             ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
-
-            temp = sim.properties.temperature.to('kelvin').magnitude
-            pres = sim.properties.pressure.to('atm').magnitude
-
-            dataset_meta['datapoints'].append(
-                {'experimental ignition delay': float(ignition_delays_exp[idx]),
-                 'simulated ignition delay': float(ignition_delays_sim[idx]),
-                 'temperature': float(temp), 'pressure': float(pres),
-                 'composition': sim.properties.composition
-                 })
 
         # calculate error function for this dataset
         error_func = numpy.power(
             (numpy.log(ignition_delays_sim) -
-            numpy.log(ignition_delays_exp)) / standard_dev, 2
-            )
+             numpy.log(ignition_delays_exp)) / standard_dev, 2
+             )
         error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
         dataset_meta['error function'] = float(error_func)
