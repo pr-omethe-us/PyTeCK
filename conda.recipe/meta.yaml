@@ -24,7 +24,7 @@ requirements:
     - pint >=0.7.2
     - pytables
     - cantera >=2.3.0
-    - pyked >=0.2.0
+    - pyked >=0.2.1
 
 test:
   imports:
