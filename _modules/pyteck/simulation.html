@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a3 documentation</title>
-    
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a5 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.2a3',
+        VERSION:     '0.2.2a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
+  <body>
   
 
     <div class="document">
@@ -88,7 +85,7 @@
 <span class="sd">    :return: First derivative, :math:`dy/dx`</span>
 <span class="sd">    :rtype: numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">edge_order</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">edge_order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="sample_rising_pressure"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.sample_rising_pressure">[docs]</a><span class="k">def</span> <span class="nf">sample_rising_pressure</span><span class="p">(</span><span class="n">time_end</span><span class="p">,</span> <span class="n">init_pres</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">pressure_rise_rate</span><span class="p">):</span>
@@ -268,27 +265,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span> <span class="o">=</span> <span class="mf">100.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
 
         <span class="c1"># Initial temperature needed in Kelvin for Cantera</span>
-        <span class="n">initial_temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kelvin&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;kelvin&#39;</span><span class="p">)</span>
 
         <span class="c1"># Initial pressure needed in Pa for Cantera</span>
-        <span class="n">initial_pres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pascal&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;pascal&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Initial composition stored in ``properties`` list as dictionary</span>
-        <span class="c1"># with internal species names as keys and amounts as values.</span>
-        <span class="c1"># Need to convert to mechanism-specific species name, then format into</span>
-        <span class="c1"># string with `spec:val` items joined by commas for Cantera</span>
-        <span class="c1">#reactants = &#39;,&#39;.join(self.properties[&#39;composition&#39;])</span>
-        <span class="c1">#</span>
-        <span class="c1"># TODO: support other composition specification types</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="o">!=</span> <span class="s1">&#39;mole fraction&#39;</span><span class="p">:</span>
-            <span class="k">raise</span><span class="p">(</span><span class="ne">BaseException</span><span class="p">(</span><span class="s1">&#39;error: not yet supported&#39;</span><span class="p">))</span>
+        <span class="c1"># Reactants given in format for Cantera</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mole fraction&#39;</span><span class="p">,</span> <span class="s1">&#39;mole percent&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPX</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get_cantera_mole_fraction</span><span class="p">()</span>
+                            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="o">==</span> <span class="s1">&#39;mass fraction&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPY</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get_cantera_mass_fraction</span><span class="p">()</span>
+                            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span><span class="p">(</span><span class="ne">BaseException</span><span class="p">(</span><span class="s1">&#39;error: not supported&#39;</span><span class="p">))</span>
             <span class="k">return</span>
-        <span class="n">reactants</span> <span class="o">=</span> <span class="p">[</span><span class="n">species_key</span><span class="p">[</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span>
-                     <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
-                     <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span>
-                     <span class="p">]</span>
-        <span class="n">reactants</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPX</span> <span class="o">=</span> <span class="n">initial_temp</span><span class="p">,</span> <span class="n">initial_pres</span><span class="p">,</span> <span class="n">reactants</span>
 
         <span class="c1"># Create non-interacting ``Reservoir`` on other side of ``Wall``</span>
         <span class="n">env</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Reservoir</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">Solution</span><span class="p">(</span><span class="s1">&#39;air.xml&#39;</span><span class="p">))</span>
@@ -308,9 +303,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">wall</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Wall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
                                 <span class="n">velocity</span><span class="o">=</span><span class="n">PressureRiseProfile</span><span class="p">(</span>
                                     <span class="n">model_file</span><span class="p">,</span>
-                                    <span class="n">initial_temp</span><span class="p">,</span>
-                                    <span class="n">initial_pres</span><span class="p">,</span>
-                                    <span class="n">reactants</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">P</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">X</span><span class="p">,</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span>
                                     <span class="p">)</span>
@@ -580,7 +575,7 @@
       &copy;2017, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

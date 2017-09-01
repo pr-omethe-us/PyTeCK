@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pyteck.eval_model &#8212; PyTeCK 0.2.2a3 documentation</title>
-    
+    <title>pyteck.eval_model &#8212; PyTeCK 0.2.2a5 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.2a3',
+        VERSION:     '0.2.2a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
+  <body>
   
 
     <div class="document">
@@ -336,16 +333,16 @@
         <span class="c1"># setup all cases</span>
         <span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simulations</span><span class="p">):</span>
-            <span class="c1"># special treatment based on pressure for Princeton model</span>
+            <span class="c1"># special treatment based on pressure for Princeton model (and others)</span>
 
             <span class="k">if</span> <span class="n">model_variant</span> <span class="ow">and</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">:</span>
-                <span class="k">raise</span><span class="p">(</span><span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;this is not yet fixed.&#39;</span><span class="p">))</span>
-
                 <span class="n">model_mod</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
                 <span class="k">if</span> <span class="s1">&#39;bath gases&#39;</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">]:</span>
                     <span class="c1"># find any bath gases requiring special treatment</span>
                     <span class="n">bath_gases</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;bath gases&#39;</span><span class="p">])</span>
-                    <span class="n">gases</span> <span class="o">=</span> <span class="n">bath_gases</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;composition&#39;</span><span class="p">]))</span>
+                    <span class="n">gases</span> <span class="o">=</span> <span class="n">bath_gases</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                        <span class="nb">set</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">])</span>
+                        <span class="p">)</span>
 
                     <span class="c1"># If only one bath gas present, use that. If multiple, use the</span>
                     <span class="c1"># predominant species. If none of the designated bath gases</span>
@@ -365,7 +362,7 @@
 
                 <span class="k">if</span> <span class="s1">&#39;pressures&#39;</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">]:</span>
                     <span class="c1"># pressure to atm</span>
-                    <span class="n">pres</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;atm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+                    <span class="n">pres</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;atm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
 
                     <span class="c1"># choose closest pressure</span>
                     <span class="c1"># better way to do this?</span>
@@ -396,24 +393,26 @@
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">process_results</span><span class="p">()</span>
 
+            <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;experimental ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">),</span>
+                 <span class="s1">&#39;simulated ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]),</span>
+                 <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="p">),</span>
+                 <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="p">),</span>
+                 <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;InChI&#39;</span><span class="p">:</span> <span class="n">comp</span><span class="p">[</span><span class="s1">&#39;InChI&#39;</span><span class="p">],</span>
+                                  <span class="s1">&#39;species-name&#39;</span><span class="p">:</span> <span class="n">comp</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">],</span>
+                                  <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span><span class="p">),</span>
+                                  <span class="p">}</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">],</span>
+                 <span class="s1">&#39;composition type&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span><span class="p">,</span>
+                 <span class="p">})</span>
+
             <span class="n">ignition_delays_exp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
             <span class="n">ignition_delays_sim</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span>
-
-            <span class="n">temp</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kelvin&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
-            <span class="n">pres</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;atm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
-
-            <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">{</span><span class="s1">&#39;experimental ignition delay&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">ignition_delays_exp</span><span class="p">[</span><span class="n">idx</span><span class="p">]),</span>
-                 <span class="s1">&#39;simulated ignition delay&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">ignition_delays_sim</span><span class="p">[</span><span class="n">idx</span><span class="p">]),</span>
-                 <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">temp</span><span class="p">),</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">pres</span><span class="p">),</span>
-                 <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span>
-                 <span class="p">})</span>
 
         <span class="c1"># calculate error function for this dataset</span>
         <span class="n">error_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">power</span><span class="p">(</span>
             <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_sim</span><span class="p">)</span> <span class="o">-</span>
-            <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_exp</span><span class="p">))</span> <span class="o">/</span> <span class="n">standard_dev</span><span class="p">,</span> <span class="mi">2</span>
-            <span class="p">)</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_exp</span><span class="p">))</span> <span class="o">/</span> <span class="n">standard_dev</span><span class="p">,</span> <span class="mi">2</span>
+             <span class="p">)</span>
         <span class="n">error_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">error_func</span><span class="p">)</span>
         <span class="n">error_func_sets</span><span class="p">[</span><span class="n">idx_set</span><span class="p">]</span> <span class="o">=</span> <span class="n">error_func</span>
         <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;error function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">error_func</span><span class="p">)</span>
@@ -483,7 +482,7 @@
       &copy;2017, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>

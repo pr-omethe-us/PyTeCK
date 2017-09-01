@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Evaluate Model &#8212; PyTeCK 0.2.2a3 documentation</title>
-    
+    <title>Evaluate Model &#8212; PyTeCK 0.2.2a5 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.2a3',
+        VERSION:     '0.2.2a5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Detect Peaks" href="detect_peaks.html" />
@@ -36,7 +33,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
+  <body>
   
 
     <div class="document">
@@ -55,12 +52,12 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dataset</strong> &#8211; </li>
-<li><strong>properties</strong> (<em>pyked.chemked.ChemKED</em>) &#8211; ChemKED object with full set of experimental properties</li>
+<li><strong>dataset</strong> – </li>
+<li><strong>properties</strong> (<em>pyked.chemked.ChemKED</em>) – ChemKED object with full set of experimental properties</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>simulations</strong> &#8211; List of <code class="xref py py-class docutils literal"><span class="pre">Simulation</span></code> objects for each simulation</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>simulations</strong> – List of <code class="xref py py-class docutils literal"><span class="pre">Simulation</span></code> objects for each simulation</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a></p>
@@ -78,12 +75,12 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>indep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em><em></em>) &#8211; Independent variable (e.g., temperature, pressure)</li>
-<li><strong>dep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em><em></em>) &#8211; Dependent variable (e.g., ignition delay)</li>
+<li><strong>indep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – Independent variable (e.g., temperature, pressure)</li>
+<li><strong>dep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – Dependent variable (e.g., ignition delay)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>standard_dev</strong> &#8211; Standard deviation of difference between data and best-fit line</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>standard_dev</strong> – Standard deviation of difference between data and best-fit line</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)">float</a></p>
@@ -102,24 +99,24 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Chemical kinetic model filename</li>
-<li><strong>spec_keys_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Name of YAML file identifying important species</li>
-<li><strong>dataset_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Name of file with list of data files</li>
-<li><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Local path for data files. Optional; default = &#8216;data&#8217;</li>
-<li><strong>model_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Local path for model file. Optional; default = &#8216;models&#8217;</li>
-<li><strong>results_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Local path for creating results files. Optional; default = &#8216;results&#8217;</li>
-<li><strong>model_variant_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) &#8211; Name of YAML file identifying ranges of conditions for variants of the
+<li><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Chemical kinetic model filename</li>
+<li><strong>spec_keys_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of YAML file identifying important species</li>
+<li><strong>dataset_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of file with list of data files</li>
+<li><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for data files. Optional; default = ‘data’</li>
+<li><strong>model_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for model file. Optional; default = ‘models’</li>
+<li><strong>results_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for creating results files. Optional; default = ‘results’</li>
+<li><strong>model_variant_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of YAML file identifying ranges of conditions for variants of the
 kinetic model. Optional; default = <code class="docutils literal"><span class="pre">None</span></code></li>
-<li><strong>num_threads</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) &#8211; Number of CPU threads to use for performing simulations in parallel.
+<li><strong>num_threads</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of CPU threads to use for performing simulations in parallel.
 Optional; default = <code class="docutils literal"><span class="pre">None</span></code>, in which case the available number of
 cores minus one is used.</li>
-<li><strong>print_results</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, print results of the model evaluation to screen.</li>
-<li><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, process saved results. Mainly intended for testing/development.</li>
-<li><strong>skip_validation</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) &#8211; If <code class="docutils literal"><span class="pre">True</span></code>, skips validation of ChemKED files.</li>
+<li><strong>print_results</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal"><span class="pre">True</span></code>, print results of the model evaluation to screen.</li>
+<li><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal"><span class="pre">True</span></code>, process saved results. Mainly intended for testing/development.</li>
+<li><strong>skip_validation</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal"><span class="pre">True</span></code>, skips validation of ChemKED files.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong> &#8211; Dictionary with all information about model evaluation results.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>output</strong> – Dictionary with all information about model evaluation results.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)">dict</a></p>
@@ -137,9 +134,9 @@ cores minus one is used.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cases</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><em>pyked.chemked.DataPoint</em><em>)</em><em></em>) &#8211; List of DataPoint with experimental case data.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cases</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><em>pyked.chemked.DataPoint</em><em>)</em>) – List of DataPoint with experimental case data.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>variable</strong> &#8211; List of floats representing changing experimental variable.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>variable</strong> – List of floats representing changing experimental variable.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a>(<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)">float</a>)</td>
 </tr>
@@ -150,7 +147,7 @@ cores minus one is used.</li>
 <dl class="data">
 <dt id="pyteck.eval_model.min_deviation">
 <code class="descclassname">pyteck.eval_model.</code><code class="descname">min_deviation</code><em class="property"> = 0.1</em><a class="headerlink" href="#pyteck.eval_model.min_deviation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; minimum allowable standard deviation for experimental data</p>
+<dd><p><em>float</em> – minimum allowable standard deviation for experimental data</p>
 </dd></dl>
 
 <dl class="function">
@@ -161,10 +158,10 @@ cores minus one is used.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sim_tuple</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><em>tuple</em></a>) &#8211; Contains Simulation object and other parameters needed to setup
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sim_tuple</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><em>tuple</em></a>) – Contains Simulation object and other parameters needed to setup
 and run case.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>sim</strong> &#8211; Simulation case with calculated ignition delay.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>sim</strong> – Simulation case with calculated ignition delay.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="docutils literal"><span class="pre">Simulation</span></code></td>
 </tr>
@@ -183,7 +180,7 @@ and run case.</td>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to PyTeCK&#8217;s documentation!</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to PyTeCK’s documentation!</a></li>
       <li>Next: <a href="detect_peaks.html" title="next chapter">Detect Peaks</a></li>
   </ul></li>
 </ul>
@@ -213,7 +210,7 @@ and run case.</td>
       &copy;2017, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
