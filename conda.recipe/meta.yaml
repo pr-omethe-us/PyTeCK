@@ -19,8 +19,8 @@ requirements:
   run:
     - python {{PY_VER}}*
     - pyyaml >=3.12,<4.0
-    - numpy ==1.11.3
-    - scipy >=0.18.0
+    - numpy >=1.13.1
+    - scipy >=0.19.1
     - pint >=0.7.2
     - pytables
     - cantera >=2.3.0
