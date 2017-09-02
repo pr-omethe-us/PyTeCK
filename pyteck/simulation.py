@@ -228,16 +228,22 @@ class Simulation(object):
         # Initial pressure needed in Pa for Cantera
         self.properties.pressure.ito('pascal')
 
+        # convert reactant names to those needed for model
+        reactants = [species_key[spec['species-name']] + ':' + str(spec['amount'].magnitude)
+                     for spec in self.properties.composition
+                     ]
+        reactants = ','.join(reactants)
+
         # Reactants given in format for Cantera
         if self.properties.composition_type in ['mole fraction', 'mole percent']:
             self.gas.TPX = (self.properties.temperature.magnitude,
                             self.properties.pressure.magnitude,
-                            self.properties.get_cantera_mole_fraction()
+                            reactants
                             )
         elif self.properties.composition_type == 'mass fraction':
             self.gas.TPY = (self.properties.temperature.magnitude,
                             self.properties.pressure.magnitude,
-                            self.properties.get_cantera_mass_fraction()
+                            reactants
                             )
         else:
             raise(BaseException('error: not supported'))
