@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a5 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.2a6 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.2a5',
+        VERSION:     '0.2.2a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -270,16 +270,22 @@
         <span class="c1"># Initial pressure needed in Pa for Cantera</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;pascal&#39;</span><span class="p">)</span>
 
+        <span class="c1"># convert reactant names to those needed for model</span>
+        <span class="n">reactants</span> <span class="o">=</span> <span class="p">[</span><span class="n">species_key</span><span class="p">[</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+                     <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span>
+                     <span class="p">]</span>
+        <span class="n">reactants</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
+
         <span class="c1"># Reactants given in format for Cantera</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mole fraction&#39;</span><span class="p">,</span> <span class="s1">&#39;mole percent&#39;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPX</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get_cantera_mole_fraction</span><span class="p">()</span>
+                            <span class="n">reactants</span>
                             <span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="o">==</span> <span class="s1">&#39;mass fraction&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPY</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get_cantera_mass_fraction</span><span class="p">()</span>
+                            <span class="n">reactants</span>
                             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span><span class="p">(</span><span class="ne">BaseException</span><span class="p">(</span><span class="s1">&#39;error: not supported&#39;</span><span class="p">))</span>
