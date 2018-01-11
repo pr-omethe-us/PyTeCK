@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Fixed
+- Standard deviation calculator now averages any duplicates to avoid an error.
 
 ### Changed
 
