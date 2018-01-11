@@ -5,13 +5,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.eval_model &#8212; PyTeCK 0.2.2 documentation</title>
+    <title>pyteck.eval_model &#8212; PyTeCK 0.2.3a0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.2',
+        VERSION:     '0.2.3a0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -143,6 +143,15 @@
 
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">),</span> \
         <span class="s1">&#39;independent and dependent variables not the same length&#39;</span>
+
+    <span class="c1"># ensure no repetition of independent variable by taking average of associated dependent</span>
+    <span class="c1"># variables and removing duplicates</span>
+    <span class="n">vals</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">repeated</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">repeated</span><span class="p">:</span>
+        <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">indep_variable</span> <span class="o">==</span> <span class="n">val</span><span class="p">)</span>
+        <span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">dep_variable</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">,</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
     <span class="c1"># ensure data sorted based on independent variable to avoid some problems</span>
     <span class="n">sorted_vars</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">))</span>
@@ -479,7 +488,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Kyle E. Niemeyer.
+      &copy;2018, Kyle E. Niemeyer.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
