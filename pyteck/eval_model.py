@@ -102,6 +102,15 @@ def estimate_std_dev(indep_variable, dep_variable):
     assert len(indep_variable) == len(dep_variable), \
         'independent and dependent variables not the same length'
 
+    # ensure no repetition of independent variable by taking average of associated dependent
+    # variables and removing duplicates
+    vals, count = numpy.unique(indep_variable, return_counts=True)
+    repeated = vals[count > 1]
+    for val in repeated:
+        idx, = numpy.where(indep_variable == val)
+        dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
+        dep_variable = numpy.delete(dep_variable, idx[1:])
+
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))
     indep_variable = [pt[0] for pt in sorted_vars]
