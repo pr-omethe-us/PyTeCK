@@ -91,6 +91,18 @@ class TestEstimateStandardDeviation:
                                                    )
         assert numpy.isclose(1.0, standard_dev, rtol=1.e-2)
 
+    def test_repeated_points(self):
+        """Check that function correctly handles repeated points with no error.
+        """
+        changing_variable = numpy.arange(1, 4)
+        dependent_variable = numpy.arange(1, 4)
+        changing_variable[1] = changing_variable[0]
+
+        standard_dev = eval_model.estimate_std_dev(changing_variable,
+                                                   dependent_variable
+                                                   )
+        assert standard_dev == eval_model.min_deviation
+
 
 class TestGetChangingVariable:
     """
