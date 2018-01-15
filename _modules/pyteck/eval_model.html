@@ -152,6 +152,8 @@
         <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">indep_variable</span> <span class="o">==</span> <span class="n">val</span><span class="p">)</span>
         <span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">dep_variable</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">,</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">indep_variable</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
 
     <span class="c1"># ensure data sorted based on independent variable to avoid some problems</span>
     <span class="n">sorted_vars</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">))</span>
@@ -491,7 +493,7 @@
       &copy;2018, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
