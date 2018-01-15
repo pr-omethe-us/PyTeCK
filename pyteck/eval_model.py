@@ -110,6 +110,8 @@ def estimate_std_dev(indep_variable, dep_variable):
         idx, = numpy.where(indep_variable == val)
         dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
         dep_variable = numpy.delete(dep_variable, idx[1:])
+        indep_variable = numpy.delete(indep_variable, idx[1:])
+
 
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))

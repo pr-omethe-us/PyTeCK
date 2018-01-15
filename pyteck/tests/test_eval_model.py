@@ -94,8 +94,8 @@ class TestEstimateStandardDeviation:
     def test_repeated_points(self):
         """Check that function correctly handles repeated points with no error.
         """
-        changing_variable = numpy.arange(1, 4)
-        dependent_variable = numpy.arange(1, 4)
+        changing_variable = numpy.arange(1, 10)
+        dependent_variable = numpy.arange(1, 10)
         changing_variable[1] = changing_variable[0]
 
         standard_dev = eval_model.estimate_std_dev(changing_variable,
