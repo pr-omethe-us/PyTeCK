@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Fixed
-- Standard deviation calculator now averages any duplicates to avoid an error.
 
 ### Changed
 
+
+## [0.2.3] - 2018-02-07
+### Fixed
+- Standard deviation calculator now averages any duplicates to avoid an error.
 
 ## [0.2.2] - 2017-09-02
 ### Added
@@ -48,7 +51,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - First published version of PyTeCK.
 - Supports validation using both shock tube and RCM experimental data in ChemKED format, but RCM not fully functional.
 
- [Unreleased]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.2...HEAD
+ [Unreleased]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.3...HEAD
+ [0.2.3]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.2...0.2.3
  [0.2.2]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.1...0.2.2
  [0.2.1]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.0...0.2.1
  [0.2.0]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.1...0.2.0
