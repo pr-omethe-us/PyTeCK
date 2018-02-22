@@ -174,9 +174,15 @@ def get_changing_variable(cases):
         changing_var = 'temperature'
 
     if changing_var == 'temperature':
-        variable = [case.temperature.magnitude for case in cases]
+        variable = [case.temperature.value.magnitude if hasattr(case.temperature, 'value')
+                    else case.temperature.magnitude
+                    for case in cases
+                    ]
     elif changing_var == 'pressure':
-        variable = [case.pressure.magnitude for case in cases]
+        variable = [case.pressure.magnitude if hasattr(case.pressure, 'value')
+                    else case.pressure.magnitude
+                    for case in cases
+                    ]
     return variable
 
 
@@ -266,7 +272,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         #############################################
         # Determine standard deviation of the dataset
         #############################################
-        ign_delay = [case.ignition_delay.to('second').magnitude
+        ign_delay = [case.ignition_delay.to('second').value.magnitude
+                     if hasattr(case.ignition_delay, 'value')
+                     else case.ignition_delay.to('second').magnitude
                      for case in properties.datapoints
                      ]
 

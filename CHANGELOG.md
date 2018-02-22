@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Fixed
+- Fixed ability to handle ChemKED files with uncertainty for various properties.
 
 ### Changed
 

@@ -217,16 +217,25 @@ class Simulation(object):
         self.gas = ct.Solution(model_file)
 
         # Convert ignition delay to seconds
-        self.properties.ignition_delay.ito('second')
+        if hasattr(self.properties.ignition_delay, 'value'):
+            self.properties.ignition_delay = self.properties.ignition_delay.to('second').value
+        else:
+            self.properties.ignition_delay.ito('second')
 
         # Set end time of simulation to 100 times the experimental ignition delay
         self.time_end = 100. * self.properties.ignition_delay.magnitude
 
         # Initial temperature needed in Kelvin for Cantera
-        self.properties.temperature.ito('kelvin')
+        if hasattr(self.properties.temperature, 'value'):
+            self.properties.temperature = self.properties.temperature.to('kelvin').value
+        else:
+            self.properties.temperature.ito('kelvin')
 
         # Initial pressure needed in Pa for Cantera
-        self.properties.pressure.ito('pascal')
+        if hasattr(self.properties.pressure, 'value'):
+            self.properties.pressure = self.properties.pressure.to('pascal').value
+        else:
+            self.properties.pressure.ito('pascal')
 
         # convert reactant names to those needed for model
         reactants = [species_key[spec['species-name']] + ':' + str(spec['amount'].magnitude)
@@ -262,7 +271,10 @@ class Simulation(object):
             # Shock tube modeled by constant UV with isentropic compression
 
             # Need to convert pressure rise units to seconds
-            self.properties.pressure_rise.ito('1 / second')
+            if hasattr(self.properties.pressure_rise, 'value'):
+                self.properties.pressure_rise = self.properties.pressure_rise.to('1 / second').value
+            else:
+                self.properties.pressure_rise.ito('1 / second')
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=PressureRiseProfile(
