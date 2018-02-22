@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.eval_model &#8212; PyTeCK 0.2.3 documentation</title>
+    <title>pyteck.eval_model &#8212; PyTeCK 0.2.4a1 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '0.2.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
@@ -30,8 +22,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
@@ -97,8 +88,8 @@
                                       <span class="n">sim_meta</span><span class="p">,</span>
                                       <span class="n">case</span>
                                       <span class="p">)</span>
-                           <span class="p">)</span>
-    <span class="k">return</span> <span class="n">simulations</span></div>
+                           <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">simulations</span>
 
 <div class="viewcode-block" id="simulation_worker"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.simulation_worker">[docs]</a><span class="k">def</span> <span class="nf">simulation_worker</span><span class="p">(</span><span class="n">sim_tuple</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Worker for multiprocessing of simulation cases.</span>
@@ -120,8 +111,8 @@
     <span class="n">sim</span><span class="o">.</span><span class="n">setup_case</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">model_spec_key</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
     <span class="n">sim</span><span class="o">.</span><span class="n">run_case</span><span class="p">(</span><span class="n">restart</span><span class="p">)</span>
 
-    <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">apparatus</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">sim</span></div>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">apparatus</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">sim</span>
 
 
 <div class="viewcode-block" id="estimate_std_dev"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.estimate_std_dev">[docs]</a><span class="k">def</span> <span class="nf">estimate_std_dev</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">):</span>
@@ -175,8 +166,8 @@
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Standard deviation of </span><span class="si">{:.2f}</span><span class="s1"> too low, &#39;</span>
               <span class="s1">&#39;using </span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">standard_dev</span><span class="p">,</span> <span class="n">min_deviation</span><span class="p">))</span>
         <span class="n">standard_dev</span> <span class="o">=</span> <span class="n">min_deviation</span>
-
-    <span class="k">return</span> <span class="n">standard_dev</span></div>
+</div>
+    <span class="k">return</span> <span class="n">standard_dev</span>
 
 
 <div class="viewcode-block" id="get_changing_variable"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.get_changing_variable">[docs]</a><span class="k">def</span> <span class="nf">get_changing_variable</span><span class="p">(</span><span class="n">cases</span><span class="p">):</span>
@@ -216,10 +207,16 @@
         <span class="n">changing_var</span> <span class="o">=</span> <span class="s1">&#39;temperature&#39;</span>
 
     <span class="k">if</span> <span class="n">changing_var</span> <span class="o">==</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span>
-        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">]</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span>
+                    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
+                    <span class="p">]</span>
     <span class="k">elif</span> <span class="n">changing_var</span> <span class="o">==</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span>
-        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">variable</span></div>
+        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span>
+                    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
+                    <span class="p">]</span></div>
+    <span class="k">return</span> <span class="n">variable</span>
 
 
 <div class="viewcode-block" id="evaluate_model"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.evaluate_model">[docs]</a><span class="k">def</span> <span class="nf">evaluate_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">spec_keys_file</span><span class="p">,</span> <span class="n">dataset_file</span><span class="p">,</span>
@@ -308,7 +305,9 @@
         <span class="c1">#############################################</span>
         <span class="c1"># Determine standard deviation of the dataset</span>
         <span class="c1">#############################################</span>
-        <span class="n">ign_delay</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">ign_delay</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+                     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                     <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
                      <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span>
                      <span class="p">]</span>
 
@@ -458,8 +457,8 @@
     <span class="c1"># Write data to YAML file</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">splitext</span><span class="p">(</span><span class="n">basename</span><span class="p">(</span><span class="n">model_name</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-results.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">output</span></div>
+</div>
+    <span class="k">return</span> <span class="n">output</span>
 </pre></div>
 
           </div>
@@ -477,12 +476,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -493,7 +494,7 @@
       &copy;2018, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
