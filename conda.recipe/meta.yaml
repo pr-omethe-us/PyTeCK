@@ -20,11 +20,11 @@ requirements:
     - python {{PY_VER}}*
     - pyyaml >=3.12,<4.0
     - numpy >=1.13.1
-    - scipy >=0.19.1
+    - scipy >=1.0.0
     - pint >=0.7.2
     - pytables
     - cantera >=2.3.0
-    - pyked >=0.2.1
+    - pyked >=0.3.0
 
 test:
   imports:
