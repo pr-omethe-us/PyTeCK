@@ -6,7 +6,7 @@
   <head>
         <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.4a2 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.4a4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -432,49 +432,15 @@
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
-                <span class="c1"># Interpolate to end time if step took us beyond that point</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">:</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">,</span>
-                        <span class="p">[</span><span class="n">prev_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span><span class="p">],</span>
-                        <span class="p">[</span><span class="n">prev_temp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span><span class="p">]</span>
-                        <span class="p">)</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">,</span>
-                        <span class="p">[</span><span class="n">prev_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span><span class="p">],</span>
-                        <span class="p">[</span><span class="n">prev_pres</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span><span class="p">]</span>
-                        <span class="p">)</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">,</span>
-                        <span class="p">[</span><span class="n">prev_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span><span class="p">],</span>
-                        <span class="p">[</span><span class="n">prev_vol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span><span class="p">]</span>
-                        <span class="p">)</span>
-                    <span class="n">mass_fracs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mass_fracs</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
-                        <span class="n">mass_fracs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">,</span>
-                            <span class="p">[</span><span class="n">prev_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span><span class="p">],</span>
-                            <span class="p">[</span><span class="n">prev_mass_frac</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
-                            <span class="p">)</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_fracs</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Save new timestep information</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span>
-                    <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span>
+                <span class="c1"># Save new timestep information</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span>
 
                 <span class="c1"># Add ``timestep`` to table</span>
                 <span class="n">timestep</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
-
-                <span class="c1"># Save values for next step in case of interpolation needed</span>
-                <span class="n">prev_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span>
-                <span class="n">prev_temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span>
-                <span class="n">prev_pres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span>
-                <span class="n">prev_vol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span>
-                <span class="n">prev_mass_frac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span>
 
             <span class="c1"># Write ``table`` to disk</span>
             <span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
