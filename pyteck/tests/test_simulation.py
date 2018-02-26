@@ -436,6 +436,7 @@ class TestSimulation:
         assert np.allclose(dVdt, velocities)
         assert sim.n_vars == gas.n_species + 3
 
+    @pytest.mark.xfail(reason="cannot currently guarantee integration to specified end time")
     def test_shock_tube_run_cases(self):
         """Test that shock tube cases run correctly.
         """
@@ -543,6 +544,7 @@ class TestSimulation:
                                    mass_fracs, rtol=1e-5, atol=1e-9
                                    )
 
+    @pytest.mark.xfail(reason="cannot currently guarantee integration to specified end time")
     def test_shock_tube_pressure_rise_run_cases(self):
         """Test that shock tube cases with pressure rise run correctly.
         """
@@ -605,6 +607,7 @@ class TestSimulation:
                                    mass_fracs, rtol=1e-5, atol=1e-9
                                    )
 
+    @pytest.mark.xfail(reason="cannot currently guarantee integration to specified end time")
     def test_rcm_run_cases(self):
         """Test that RCM case runs correctly.
         """
