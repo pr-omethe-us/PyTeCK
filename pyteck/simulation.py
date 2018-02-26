@@ -399,49 +399,15 @@ class Simulation(object):
             while self.reac_net.time < self.time_end:
                 self.reac_net.step()
 
-                # Interpolate to end time if step took us beyond that point
-                if self.reac_net.time > self.time_end:
-                    timestep['time'] = self.time_end
-                    timestep['temperature'] = numpy.interp(
-                        self.time_end,
-                        [prev_time, self.reac_net.time],
-                        [prev_temp, self.reac.T]
-                        )
-                    timestep['pressure'] = numpy.interp(
-                        self.time_end,
-                        [prev_time, self.reac_net.time],
-                        [prev_pres, self.reac.thermo.P]
-                        )
-                    timestep['volume'] = numpy.interp(
-                        self.time_end,
-                        [prev_time, self.reac_net.time],
-                        [prev_vol, self.reac.volume]
-                        )
-                    mass_fracs = numpy.zeros(self.reac.Y.size)
-                    for i in range(mass_fracs.size):
-                        mass_fracs[i] = numpy.interp(
-                            self.time_end,
-                            [prev_time, self.reac_net.time],
-                            [prev_mass_frac[i], self.reac.Y[i]]
-                            )
-                    timestep['mass_fractions'] = mass_fracs
-                else:
-                    # Save new timestep information
-                    timestep['time'] = self.reac_net.time
-                    timestep['temperature'] = self.reac.T
-                    timestep['pressure'] = self.reac.thermo.P
-                    timestep['volume'] = self.reac.volume
-                    timestep['mass_fractions'] = self.reac.Y
+                # Save new timestep information
+                timestep['time'] = self.reac_net.time
+                timestep['temperature'] = self.reac.T
+                timestep['pressure'] = self.reac.thermo.P
+                timestep['volume'] = self.reac.volume
+                timestep['mass_fractions'] = self.reac.Y
 
                 # Add ``timestep`` to table
                 timestep.append()
-
-                # Save values for next step in case of interpolation needed
-                prev_time = self.reac_net.time
-                prev_temp = self.reac.T
-                prev_pres = self.reac.thermo.P
-                prev_vol = self.reac.volume
-                prev_mass_frac = self.reac.Y
 
             # Write ``table`` to disk
             table.flush()
