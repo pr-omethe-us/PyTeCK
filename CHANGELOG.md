@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed ability to handle ChemKED files with uncertainty for various properties.
 
 ### Changed
+- Removed interpolation from end of integration (was never really necessary).
 
 
 ## [0.2.3] - 2018-02-07
