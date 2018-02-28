@@ -4,9 +4,9 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.eval_model &#8212; PyTeCK 0.2.4a4 documentation</title>
+    <title>pyteck.eval_model &#8212; PyTeCK 0.2.4a6 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -212,7 +212,7 @@
                     <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
                     <span class="p">]</span>
     <span class="k">elif</span> <span class="n">changing_var</span> <span class="o">==</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span>
-        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
                     <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span>
                     <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
                     <span class="p">]</span></div>
@@ -403,8 +403,13 @@
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">process_results</span><span class="p">()</span>
 
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+                <span class="n">ignition_delay</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignition_delay</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span>
+
             <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">{</span><span class="s1">&#39;experimental ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">),</span>
+                <span class="p">{</span><span class="s1">&#39;experimental ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">ignition_delay</span><span class="p">),</span>
                  <span class="s1">&#39;simulated ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]),</span>
                  <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="p">),</span>
                  <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="p">),</span>
@@ -415,7 +420,7 @@
                  <span class="s1">&#39;composition type&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span><span class="p">,</span>
                  <span class="p">})</span>
 
-            <span class="n">ignition_delays_exp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
+            <span class="n">ignition_delays_exp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
             <span class="n">ignition_delays_sim</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span>
 
         <span class="c1"># calculate error function for this dataset</span>
@@ -494,7 +499,7 @@
       &copy;2018, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
