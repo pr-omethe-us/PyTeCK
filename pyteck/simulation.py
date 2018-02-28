@@ -239,11 +239,15 @@ class Simulation(object):
 
         # need to extract values from Quantity or Measurement object
         if hasattr(self.properties.temperature, 'value'):
-            temp = self.properites.temperature.value.magnitude
+            temp = self.properties.temperature.value.magnitude
+        elif hasattr(self.properties.temperature, 'nominal_value'):
+            temp = self.properties.temperature.nominal_value
         else:
             temp = self.properties.temperature.magnitude
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
+        elif hasattr(self.properties.pressure, 'nominal_value'):
+            temp = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
 
