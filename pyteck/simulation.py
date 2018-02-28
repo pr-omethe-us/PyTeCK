@@ -217,25 +217,19 @@ class Simulation(object):
         self.gas = ct.Solution(model_file)
 
         # Convert ignition delay to seconds
-        if hasattr(self.properties.ignition_delay, 'value'):
-            self.properties.ignition_delay = self.properties.ignition_delay.to('second').value
-        else:
-            self.properties.ignition_delay.ito('second')
+        self.properties.ignition_delay.ito('second')
 
         # Set end time of simulation to 100 times the experimental ignition delay
-        self.time_end = 100. * self.properties.ignition_delay.magnitude
+        if hasattr(self.properties.ignition_delay, 'value'):
+            self.time_end = 100. * self.properties.ignition_delay.value.magnitude
+        else:
+            self.time_end = 100. * self.properties.ignition_delay.magnitude
 
         # Initial temperature needed in Kelvin for Cantera
-        if hasattr(self.properties.temperature, 'value'):
-            self.properties.temperature = self.properties.temperature.to('kelvin').value
-        else:
-            self.properties.temperature.ito('kelvin')
+        self.properties.temperature.ito('kelvin')
 
         # Initial pressure needed in Pa for Cantera
-        if hasattr(self.properties.pressure, 'value'):
-            self.properties.pressure = self.properties.pressure.to('pascal').value
-        else:
-            self.properties.pressure.ito('pascal')
+        self.properties.pressure.ito('pascal')
 
         # convert reactant names to those needed for model
         reactants = [species_key[spec['species-name']] + ':' + str(spec['amount'].magnitude)
@@ -243,17 +237,21 @@ class Simulation(object):
                      ]
         reactants = ','.join(reactants)
 
+        # need to extract values from Quantity or Measurement object
+        if hasattr(self.properties.temperature, 'value'):
+            temp = self.properites.temperature.value.magnitude
+        else:
+            temp = self.properties.temperature.magnitude
+        if hasattr(self.properties.pressure, 'value'):
+            pres = self.properties.pressure.value.magnitude
+        else:
+            pres = self.properties.pressure.magnitude
+
         # Reactants given in format for Cantera
         if self.properties.composition_type in ['mole fraction', 'mole percent']:
-            self.gas.TPX = (self.properties.temperature.magnitude,
-                            self.properties.pressure.magnitude,
-                            reactants
-                            )
+            self.gas.TPX = temp, pres, reactants
         elif self.properties.composition_type == 'mass fraction':
-            self.gas.TPY = (self.properties.temperature.magnitude,
-                            self.properties.pressure.magnitude,
-                            reactants
-                            )
+            self.gas.TPY = temp, pres, reactants
         else:
             raise(BaseException('error: not supported'))
             return
@@ -271,10 +269,11 @@ class Simulation(object):
             # Shock tube modeled by constant UV with isentropic compression
 
             # Need to convert pressure rise units to seconds
+            self.properties.pressure_rise.ito('1 / second')
             if hasattr(self.properties.pressure_rise, 'value'):
-                self.properties.pressure_rise = self.properties.pressure_rise.to('1 / second').value
+                pres_rise = self.properties.pressure_rise.value.magnitude
             else:
-                self.properties.pressure_rise.ito('1 / second')
+                pres_rise = self.properties.pressure_rise.magnitude
 
             self.wall = ct.Wall(self.reac, env, A=1.0,
                                 velocity=PressureRiseProfile(
@@ -282,7 +281,7 @@ class Simulation(object):
                                     self.gas.T,
                                     self.gas.P,
                                     self.gas.X,
-                                    self.properties.pressure_rise.magnitude,
+                                    pres_rise,
                                     self.time_end
                                     )
                                 )
@@ -454,7 +453,11 @@ class Simulation(object):
             # Will need to subtract compression time for RCM
             time_comp = 0.0
             if self.properties.compression_time is not None:
-                time_comp = self.properties.compression_time
+                if hasattr(self.properties.compression_time, 'value'):
+                    time_comp = self.properties.compression_time.value
+                else:
+                    time_comp = self.properties.compression_time
+
 
             ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
                                               > 0. * units.second

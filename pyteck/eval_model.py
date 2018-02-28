@@ -179,7 +179,7 @@ def get_changing_variable(cases):
                     for case in cases
                     ]
     elif changing_var == 'pressure':
-        variable = [case.pressure.magnitude if hasattr(case.pressure, 'value')
+        variable = [case.pressure.value.magnitude if hasattr(case.pressure, 'value')
                     else case.pressure.magnitude
                     for case in cases
                     ]
@@ -370,8 +370,13 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
+            if hasattr(sim.properties.ignition_delay, 'value')
+                ignition_delay = sim.properties.ignition_delay.value
+            else:
+                ignition_delay = sim.properties.ignition_delay
+
             dataset_meta['datapoints'].append(
-                {'experimental ignition delay': str(sim.properties.ignition_delay),
+                {'experimental ignition delay': str(ignition_delay),
                  'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
                  'temperature': str(sim.properties.temperature),
                  'pressure': str(sim.properties.pressure),
@@ -382,7 +387,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                  'composition type': sim.properties.composition_type,
                  })
 
-            ignition_delays_exp[idx] = sim.properties.ignition_delay.magnitude
+            ignition_delays_exp[idx] = ignition_delay.magnitude
             ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
 
         # calculate error function for this dataset
