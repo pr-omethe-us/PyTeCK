@@ -375,6 +375,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             else:
                 ignition_delay = sim.properties.ignition_delay
 
+            if hasattr(ignition_delay, 'nominal_value'):
+                ignition_delay = ignition_delay.nominal_value * units.second
+
             dataset_meta['datapoints'].append(
                 {'experimental ignition delay': str(ignition_delay),
                  'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
