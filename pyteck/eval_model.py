@@ -370,7 +370,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         for idx, sim in enumerate(results):
             sim.process_results()
 
-            if hasattr(sim.properties.ignition_delay, 'value')
+            if hasattr(sim.properties.ignition_delay, 'value'):
                 ignition_delay = sim.properties.ignition_delay.value
             else:
                 ignition_delay = sim.properties.ignition_delay
