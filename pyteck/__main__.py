@@ -16,7 +16,7 @@ parser.add_argument('-k', '--model-keys',
                     type=str,
                     dest='model_keys_file',
                     required=True,
-                    help='JSON file with keys for species in models.'
+                    help='YAML file with keys for species in models.'
                     )
 parser.add_argument('-d', '--dataset',
                     type=str,
@@ -48,7 +48,7 @@ parser.add_argument('-v', '--model-variant',
                     type=str,
                     dest='model_variant_file',
                     required=False,
-                    help='JSON with variants for models for, e.g., bath '
+                    help='YAML with variants for models for, e.g., bath '
                          'gases and pressures.'
                     )
 parser.add_argument('-nt', '--num-threads',
