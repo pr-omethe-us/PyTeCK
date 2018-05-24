@@ -4,16 +4,16 @@
 
 To cite PyTeCK in a scholarly article, please use
 
-> K. E. Niemeyer. (2017) PyTeCK v0.2.1 [software]. Zenodo. https://doi.org/10.5281/zenodo.######
+> K. E. Niemeyer. (2017) PyTeCK v0.2.1 [software]. Zenodo. https://doi.org/10.5281/zenodo.546270
 
 A BibTeX entry for LaTeX users is
 
 ```TeX
-@misc{PyKED,
+@misc{PyTeCK,
     author = {Kyle E Niemeyer},
     year = 2017,
-    title = {PyTeCK v0.2.1},
-    doi = {10.5281/zenodo.######},
+    title = {{PyTeCK} v0.2.1},
+    doi = {10.5281/zenodo.546270},
     url = {https://github.com/kyleniemeyer/PyTeCK},
 }
 ```
