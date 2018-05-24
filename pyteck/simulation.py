@@ -119,8 +119,8 @@ class VolumeProfile(object):
         # properties dictionary. The volume is normalized by the first volume
         # element so that a unit area can be used to calculate the velocity.
         self.times = volume_history.time.magnitude
-        volumes = (volume_history.volume.magnitude /
-                   volume_history.volume.magnitude[0]
+        volumes = (volume_history.quantity.magnitude /
+                   volume_history.quantity.magnitude[0]
                    )
 
         # The velocity is calculated by the second-order central differences.
@@ -456,11 +456,11 @@ class Simulation(object):
 
             # Will need to subtract compression time for RCM
             time_comp = 0.0
-            if self.properties.compression_time is not None:
-                if hasattr(self.properties.compression_time, 'value'):
-                    time_comp = self.properties.compression_time.value
+            if self.properties.rcm_data.compression_time is not None:
+                if hasattr(self.properties.rcm_data.compression_time, 'value'):
+                    time_comp = self.properties.rcm_data.compression_time.value
                 else:
-                    time_comp = self.properties.compression_time
+                    time_comp = self.properties.rcm_data.compression_time
 
 
             ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)

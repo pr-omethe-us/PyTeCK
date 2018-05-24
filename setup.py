@@ -39,7 +39,7 @@ install_requires = [
     'pint>=0.7.2',
     'numpy>=1.13.0',
     'tables',
-    'pyked>=0.2.1',
+    'pyked>=0.4.1',
     'scipy>=0.19.0',
 ]
 
