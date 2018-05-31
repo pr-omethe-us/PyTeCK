@@ -232,7 +232,8 @@ class Simulation(object):
         self.properties.pressure.ito('pascal')
 
         # convert reactant names to those needed for model
-        reactants = [species_key[spec['species-name']] + ':' + str(spec['amount'].magnitude)
+        reactants = [species_key[self.properties.composition[spec].species_name] + ':' +
+                     str(self.properties.composition[spec].amount.magnitude)
                      for spec in self.properties.composition
                      ]
         reactants = ','.join(reactants)
@@ -456,7 +457,7 @@ class Simulation(object):
 
             # Will need to subtract compression time for RCM
             time_comp = 0.0
-            if self.properties.rcm_data.compression_time is not None:
+            if hasattr(self.properties.rcm_data, 'compression_time'):
                 if hasattr(self.properties.rcm_data.compression_time, 'value'):
                     time_comp = self.properties.rcm_data.compression_time.value
                 else:

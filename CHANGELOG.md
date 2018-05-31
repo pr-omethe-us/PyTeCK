@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed ability to handle ChemKED files with uncertainty for various properties.
 - Updated handling of RCM volume history and compression time to PyKED v0.4.1
+- Fixed searching through composition dict for Ar and He
+- Fixed file-author -> file-authors in test files
 
 ### Changed
 - Removed interpolation from end of integration (was never really necessary).

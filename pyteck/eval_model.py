@@ -288,12 +288,12 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
         #######################################################
-        if ((any(['Ar' in spec.values() for case in properties.datapoints
+        if ((any(['Ar' in spec for case in properties.datapoints
                   for spec in case.composition]
                   )
              and 'Ar' not in model_spec_key[model_name]
              ) or
-            (any(['He' in spec.values() for case in properties.datapoints
+            (any(['He' in spec for case in properties.datapoints
                   for spec in case.composition]
                   )
              and 'He' not in model_spec_key[model_name]
@@ -383,10 +383,10 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                  'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
                  'temperature': str(sim.properties.temperature),
                  'pressure': str(sim.properties.pressure),
-                 'composition': [{'InChI': comp['InChI'],
-                                  'species-name': comp['species-name'],
-                                  'amount': str(comp['amount'].magnitude),
-                                  } for comp in sim.properties.composition],
+                 'composition': [{'InChI': sim.properties.composition[spec].InChI,
+                                  'species-name': sim.properties.composition[spec].species_name,
+                                  'amount': str(sim.properties.composition[spec].amount.magnitude),
+                                  } for spec in sim.properties.composition],
                  'composition type': sim.properties.composition_type,
                  })
 

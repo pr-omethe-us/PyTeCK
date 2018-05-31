@@ -54,9 +54,9 @@ def get_file_metadata(root):
     """
     properties = {}
 
-    properties['file-author'] = {'name': '', 'ORCID': ''}
+    properties['file-authors'] = [{'name': '', 'ORCID': ''}]
     try:
-        properties['file-author']['name'] = root.find('fileAuthor').text
+        properties['file-authors'][0]['name'] = root.find('fileAuthor').text
     except AttributeError:
         print('Warning: no fileAuthor given')
 
@@ -453,9 +453,9 @@ def convert_XML_to_YAML(filename_xml, output='', file_author='',
 
     # apply any overrides
     if file_author:
-        properties['file-author']['name'] = file_author
+        properties['file-authors'][0]['name'] = file_author
     if file_author_orcid:
-        properties['file-author']['ORCID'] = file_author_orcid
+        properties['file-authors'][0]['ORCID'] = file_author_orcid
 
     apparatus = {'kind': 'shock tube' if properties['kind'] == 'ST'
                          else 'rapid compression machine',
@@ -572,7 +572,7 @@ def convert_XML_to_YAML(filename_xml, output='', file_author='',
 
         datapoints.append(datapoint)
 
-    new_properties = {'file-author': properties['file-author'],
+    new_properties = {'file-authors': [properties['file-author']],
                       'file-version': properties['file-version'],
                       'reference': properties['reference'],
                       'experiment-type': 'Ignition delay',

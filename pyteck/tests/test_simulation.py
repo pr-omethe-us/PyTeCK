@@ -15,7 +15,7 @@ except ImportError:
     print("Error: Cantera must be installed.")
     raise
 
-from pyked.chemked import ChemKED, DataPoint, VolumeHistory
+from pyked.chemked import ChemKED, DataPoint, TimeHistory
 
 # Taken from http://stackoverflow.com/a/22726782/1569494
 try:
@@ -164,7 +164,7 @@ class TestVolumeProfile:
         times = np.arange(0, tmax, 0.001)
         volumes = np.cos(times)
 
-        volume_history = VolumeHistory(time=times * units.second, volume=volumes * units.cm3)
+        volume_history = TimeHistory(time=times * units.second, quantity=volumes * units.cm3, type='volume')
         volume_profile = simulation.VolumeProfile(volume_history)
 
         assert volume_profile(tmax + 1.) == 0.
@@ -176,7 +176,7 @@ class TestVolumeProfile:
         times = np.arange(0, tmax, 0.001)
         volumes = np.cos(times)
 
-        volume_history = VolumeHistory(time=times * units.second, volume=volumes * units.cm3)
+        volume_history = TimeHistory(time=times * units.second, quantity=volumes * units.cm3, type='volume')
         velocity_profile = simulation.VolumeProfile(volume_history)
 
         assert np.allclose(velocity_profile(np.pi), -np.sin(np.pi),
