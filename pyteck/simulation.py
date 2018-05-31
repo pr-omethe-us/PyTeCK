@@ -328,11 +328,11 @@ class Simulation(object):
             spec = self.properties.ignition_type['target']
 
             # Try finding species in upper- and lower-case
-            try_list = [spec, spec.lower()]
+            try_list = [spec, spec.lower(), spec.upper()]
 
             # If excited radical, may need to fall back to nonexcited species
             if spec[-1] == '*':
-                try_list += [spec[:-1], spec[:-1].lower()]
+                try_list += [spec[:-1], spec[:-1].lower(), spec[:-1].upper()]
 
             ind = None
             for sp in try_list:
@@ -342,6 +342,7 @@ class Simulation(object):
                 except ValueError:
                     pass
 
+            # store index of target species
             if ind:
                 self.properties.ignition_target = ind
                 self.properties.ignition_type = self.properties.ignition_type['type']

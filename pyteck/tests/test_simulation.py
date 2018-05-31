@@ -674,3 +674,36 @@ class TestSimulation:
                                    )
 
     # TODO: add test for restart option
+
+    def test_capitalization_species_target(self):
+        """Test that species targets with capitalization not matching model works.
+        """
+        file_path = os.path.join('testfile_st2.yaml')
+        filename = pkg_resources.resource_filename(__name__, file_path)
+        properties = ChemKED(filename)
+
+        # ignition target is OH
+
+        # Now create list of Simulation objects
+        simulations = create_simulations(filename, properties)
+
+        file_path = os.path.join('h2o2-lowercase.cti')
+        mechanism_filename = pkg_resources.resource_filename(__name__, file_path)
+        SPEC_KEY = {'H2': 'h2', 'O2': 'o2', 'N2': 'n2', 'Ar': 'ar'}
+
+        sim = simulations[0]
+        sim.setup_case(mechanism_filename, SPEC_KEY)
+
+        # oh is species index 4
+        assert sim.properties.ignition_target == 4
+
+        # now try for uppercase in model and lowercase in file.
+        properties = ChemKED(filename)
+        properties.datapoints[0].ignition_type['target'] = 'oh'
+        SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
+        simulations = create_simulations(filename, properties)
+        sim = simulations[0]
+        sim.setup_case('h2o2.cti', SPEC_KEY)
+
+        # oh is species index 4
+        assert sim.properties.ignition_target == 4

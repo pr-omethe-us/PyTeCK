@@ -65,7 +65,7 @@ setup(
     packages=['pyteck', 'pyteck.tests'],
     package_dir={'pyteck': 'pyteck'},
     include_package_data=True,
-    package_data={'pyteck': ['tests/*.xml', 'tests/*.yaml', 'tests/dataset_file.txt']},
+    package_data={'pyteck': ['tests/*.xml', 'tests/*.yaml', 'tests/dataset_file.txt', 'tests/*.cti']},
     install_requires=install_requires,
     zip_safe=False,
 
