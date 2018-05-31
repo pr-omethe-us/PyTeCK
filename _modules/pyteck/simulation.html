@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.4a8 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.4a9 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -75,8 +75,8 @@
 <span class="sd">    :type y: numpy.ndarray</span>
 <span class="sd">    :return: First derivative, :math:`dy/dx`</span>
 <span class="sd">    :rtype: numpy.ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span></div>
-    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">edge_order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">edge_order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="sample_rising_pressure"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.sample_rising_pressure">[docs]</a><span class="k">def</span> <span class="nf">sample_rising_pressure</span><span class="p">(</span><span class="n">time_end</span><span class="p">,</span> <span class="n">init_pres</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">pressure_rise_rate</span><span class="p">):</span>
@@ -90,8 +90,8 @@
 <span class="sd">    :rtype: list of numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">times</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">time_end</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">freq</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">freq</span><span class="p">))</span>
-    <span class="n">pressures</span> <span class="o">=</span> <span class="n">init_pres</span> <span class="o">*</span> <span class="p">(</span><span class="n">pressure_rise_rate</span> <span class="o">*</span> <span class="n">times</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span></div>
-    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">pressures</span><span class="p">]</span>
+    <span class="n">pressures</span> <span class="o">=</span> <span class="n">init_pres</span> <span class="o">*</span> <span class="p">(</span><span class="n">pressure_rise_rate</span> <span class="o">*</span> <span class="n">times</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">pressures</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="create_volume_history"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.create_volume_history">[docs]</a><span class="k">def</span> <span class="nf">create_volume_history</span><span class="p">(</span><span class="n">mech</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">reactants</span><span class="p">,</span> <span class="n">pres_rise</span><span class="p">,</span> <span class="n">time_end</span><span class="p">):</span>
@@ -120,8 +120,8 @@
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pressures</span><span class="p">):</span>
         <span class="n">gas</span><span class="o">.</span><span class="n">SP</span> <span class="o">=</span> <span class="n">initial_entropy</span><span class="p">,</span> <span class="n">p</span>
         <span class="n">volumes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_density</span> <span class="o">/</span> <span class="n">gas</span><span class="o">.</span><span class="n">density</span>
-</div>
-    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="VolumeProfile"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.VolumeProfile">[docs]</a><span class="k">class</span> <span class="nc">VolumeProfile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -152,8 +152,8 @@
         <span class="c1"># properties dictionary. The volume is normalized by the first volume</span>
         <span class="c1"># element so that a unit area can be used to calculate the velocity.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">volume_history</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span>
-        <span class="n">volumes</span> <span class="o">=</span> <span class="p">(</span><span class="n">volume_history</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">magnitude</span> <span class="o">/</span>
-                   <span class="n">volume_history</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">magnitude</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">volumes</span> <span class="o">=</span> <span class="p">(</span><span class="n">volume_history</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">magnitude</span> <span class="o">/</span>
+                   <span class="n">volume_history</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">magnitude</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                    <span class="p">)</span>
 
         <span class="c1"># The velocity is calculated by the second-order central differences.</span>
@@ -165,8 +165,8 @@
 <span class="sd">        :param float time: Current simulation time in seconds</span>
 <span class="sd">        :return: Velocity in meters per second</span>
 <span class="sd">        :rtype: float</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PressureRiseProfile"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.PressureRiseProfile">[docs]</a><span class="k">class</span> <span class="nc">PressureRiseProfile</span><span class="p">(</span><span class="n">VolumeProfile</span><span class="p">):</span>
@@ -215,8 +215,8 @@
                     <span class="n">reactants</span><span class="p">,</span> <span class="n">pressure_rise</span><span class="p">,</span> <span class="n">time_end</span>
                     <span class="p">)</span>
 
-        <span class="c1"># Calculate velocity by second-order finite difference</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">)</span>
+        <span class="c1"># Calculate velocity by second-order finite difference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Simulation"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation">[docs]</a><span class="k">class</span> <span class="nc">Simulation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -265,7 +265,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;pascal&#39;</span><span class="p">)</span>
 
         <span class="c1"># convert reactant names to those needed for model</span>
-        <span class="n">reactants</span> <span class="o">=</span> <span class="p">[</span><span class="n">species_key</span><span class="p">[</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+        <span class="n">reactants</span> <span class="o">=</span> <span class="p">[</span><span class="n">species_key</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">species_name</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span>
+                     <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">amount</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
                      <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span>
                      <span class="p">]</span>
         <span class="n">reactants</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
@@ -388,8 +389,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
 
         <span class="c1"># Set file for later data file</span>
-        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.h5&#39;</span><span class="p">)</span></div>
-        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_path</span></div>
 
 <div class="viewcode-block" id="Simulation.run_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.run_case">[docs]</a>    <span class="k">def</span> <span class="nf">run_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run simulation case set up ``setup_case``.</span>
@@ -447,8 +448,8 @@
 
             <span class="c1"># Write ``table`` to disk</span>
             <span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-</div>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Simulation.process_results"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.process_results">[docs]</a>    <span class="k">def</span> <span class="nf">process_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process integration results to obtain ignition delay.</span>
@@ -489,11 +490,11 @@
 
             <span class="c1"># Will need to subtract compression time for RCM</span>
             <span class="n">time_comp</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
-                    <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="p">,</span> <span class="s1">&#39;compression_time&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+                    <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span><span class="o">.</span><span class="n">value</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">compression_time</span>
+                    <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span>
 
 
             <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">[</span><span class="n">ind</span> <span class="o">&lt;=</span> <span class="n">max_ind</span><span class="p">]]</span> <span class="o">-</span> <span class="n">time_comp</span><span class="p">)</span>
@@ -522,8 +523,8 @@
         <span class="c1"># First-stage ignition delay</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ign_delays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-first-stage-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ign_delays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span></div></div>
-            <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-first-stage-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-first-stage-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span></div></div>
 </pre></div>
 
           </div>
@@ -559,7 +560,7 @@
       &copy;2018, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
