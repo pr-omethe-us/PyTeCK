@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pyteck.simulation &#8212; PyTeCK 0.2.4 documentation</title>
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.5a1 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" src="../../_static/documentation_options.js"></script>
@@ -361,11 +361,11 @@
             <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span>
 
             <span class="c1"># Try finding species in upper- and lower-case</span>
-            <span class="n">try_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+            <span class="n">try_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">spec</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
 
             <span class="c1"># If excited radical, may need to fall back to nonexcited species</span>
             <span class="k">if</span> <span class="n">spec</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
-                <span class="n">try_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+                <span class="n">try_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
 
             <span class="n">ind</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">try_list</span><span class="p">:</span>
@@ -375,6 +375,7 @@
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="k">pass</span>
 
+            <span class="c1"># store index of target species</span>
             <span class="k">if</span> <span class="n">ind</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">=</span> <span class="n">ind</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
