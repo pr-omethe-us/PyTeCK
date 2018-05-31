@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Fixed
+
+### Changed
+
+
+## [0.2.4] - 2018-05-31
+### Fixed
 - Fixed ability to handle ChemKED files with uncertainty for various properties.
 - Updated handling of RCM volume history and compression time to PyKED v0.4.1
 - Fixed searching through composition dict for Ar and He
@@ -56,7 +62,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - First published version of PyTeCK.
 - Supports validation using both shock tube and RCM experimental data in ChemKED format, but RCM not fully functional.
 
- [Unreleased]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.3...HEAD
+ [Unreleased]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.4...HEAD
+ [0.2.4]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.3...0.2.4
  [0.2.3]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.2...0.2.3
  [0.2.2]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.1...0.2.2
  [0.2.1]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.0...0.2.1
