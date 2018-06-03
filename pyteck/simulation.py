@@ -456,7 +456,7 @@ class Simulation(object):
                 ind = detect_peaks(target)
 
             # something has gone wrong if there is still no peak
-            if ind == 0:
+            if len(ind == 0):
                 filename = 'target-data-' + self.meta['id'] + '.out'
                 warnings.warn('No peak found, dumping target data to ' +
                               filename + ' and continuing',
