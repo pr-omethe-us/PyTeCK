@@ -456,13 +456,13 @@ class Simulation(object):
                 ind = detect_peaks(target)
 
             # something has gone wrong if there is still no peak
-            if len(ind == 0):
+            if len(ind) == 0:
                 filename = 'target-data-' + self.meta['id'] + '.out'
                 warnings.warn('No peak found, dumping target data to ' +
                               filename + ' and continuing',
                               RuntimeWarning
                               )
-                numpy.savetxt(filename, (time,target),
+                numpy.savetxt(filename, numpy.c_[time.magnitude, target],
                               header=('time, target ('+self.properties.ignition_target+')')
                               )
                 self.meta['simulated-ignition-delay'] = 0.0 * units.second
