@@ -10,6 +10,7 @@ from __future__ import division
 # Standard libraries
 import os
 from collections import namedtuple
+import warnings
 import numpy
 
 # Related modules
@@ -347,9 +348,10 @@ class Simulation(object):
                 self.properties.ignition_target = ind
                 self.properties.ignition_type = self.properties.ignition_type['type']
             else:
-                print('Warning: ' + spec + ' not found in model; '
-                      'falling back on pressure.'
-                      )
+                warnings.warn(
+                    spec + ' not found in model; falling back on pressure.'
+                    RuntimeWarning
+                    )
                 self.properties.ignition_target = 'pressure'
                 self.properties.ignition_type = 'd/dt max'
         else:
@@ -452,6 +454,20 @@ class Simulation(object):
             if len(ind) == 0 and self.properties.ignition_type == 'max':
                 target = first_derivative(time.magnitude, target)
                 ind = detect_peaks(target)
+
+            # something has gone wrong if there is still no peak
+            if ind == 0:
+                filename = 'target-data-' + self.meta['id'] + '.out'
+                warnings.warn('No peak found, dumping target data to ' +
+                              filename + ' and continuing',
+                              RuntimeWarning
+                              )
+                numpy.savetxt(filename, (time,target),
+                              header=('time, target ('+self.properties.ignition_target+')')
+                              )
+                self.meta['simulated-ignition-delay'] = 0.0 * units.second
+                return
+
 
             # Get index of largest peak (overall ignition delay)
             max_ind = ind[numpy.argmax(target[ind])]

@@ -6,6 +6,7 @@ from __future__ import division
 import os
 from os.path import splitext, basename
 import multiprocessing
+import warnings
 
 import numpy
 from scipy.interpolate import UnivariateSpline
@@ -163,9 +164,10 @@ def get_changing_variable(cases):
             if not changing_var:
                 changing_var = var_name
             else:
-                print('Warning: multiple changing variables. '
-                      'Using temperature.'
-                      )
+                warnings.warn('Warning: multiple changing variables. '
+                              'Using temperature.',
+                              RuntimeWarning
+                              )
                 changing_var = 'temperature'
                 break
 
@@ -299,7 +301,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
              and 'He' not in model_spec_key[model_name]
              )
             ):
-            print('Warning: Ar or He in dataset, but not in model. Skipping.')
+            warnings.warn('Warning: Ar or He in dataset, but not in model. Skipping.',
+                          RuntimeWarning
+                          )
             error_func_sets[idx_set] = numpy.nan
             continue
 

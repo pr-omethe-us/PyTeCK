@@ -6,12 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Added handling of zero peaks detected
 
 ### Fixed
 - Fixed handling of uppercase/lowercase species target
 
 ### Changed
-
+- Using warnings module for messages
 
 ## [0.2.4] - 2018-05-31
 ### Fixed
