@@ -349,7 +349,7 @@ class Simulation(object):
                 self.properties.ignition_type = self.properties.ignition_type['type']
             else:
                 warnings.warn(
-                    spec + ' not found in model; falling back on pressure.'
+                    spec + ' not found in model; falling back on pressure.',
                     RuntimeWarning
                     )
                 self.properties.ignition_target = 'pressure'
