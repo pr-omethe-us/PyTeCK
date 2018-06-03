@@ -188,7 +188,10 @@ class TestGetChangingVariable:
                             })
             cases.append(dp)
 
-        variable = eval_model.get_changing_variable(cases)
+        with pytest.warns(RuntimeWarning,
+            match='Warning: multiple changing variables. Using temperature.'
+            ):
+            variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
         assert numpy.allclose(variable, [c.temperature.magnitude for c in cases])
