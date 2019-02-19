@@ -15,7 +15,6 @@ try:
 except ImportError:
     print("Error: Cantera must be installed.")
     raise
-
 try:
     import tables
 except ImportError:
@@ -24,7 +23,6 @@ except ImportError:
 
 # Local imports
 from .utils import units
-from .detect_peaks import detect_peaks
 
 class JSR_Simulation(object):
     """Class for jet-stirred reactor simulations."""
@@ -56,11 +54,16 @@ class JSR_Simulation(object):
         # Establishes the model
         self.gas = ct.Solution(model_file)
 
-        # Set end time of simulation to 100 times the experimental ignition delay
-        if hasattr(self.properties.ignition_delay, 'value'):
-            self.time_end = 100. * self.properties.ignition_delay.value.magnitude
-        else:
-            self.time_end = 100. * self.properties.ignition_delay.magnitude
+        # Set max simulation time, pressure valve coefficient, and max pressure rise
+        self.maxsimulationtime = 50
+        self.presvalco = 0.01
+        self.maxpresrise = 0.01
+        
+        # Reactor volume needed in m^3 for Cantera
+        self.apparatus.volume.ito('m^3')
+        
+        # Residence time needed in s for Cantera
+        self.apparatus.restime.ito('s')
 
         # Initial temperature needed in Kelvin for Cantera
         self.properties.temperature.ito('kelvin')
@@ -97,102 +100,21 @@ class JSR_Simulation(object):
         else:
             raise(BaseException('error: not supported'))
             return
+        
+        # Upstream and exhausts
+        self.fuelairmix = ct.Reservoir(self.gas)
+        self.exhaust = ct.Reservoir(self.gas)
 
-        # Create non-interacting ``Reservoir`` on other side of ``Wall``
-        env = ct.Reservoir(ct.Solution('air.xml'))
+        # Ideal gas reactor 
+        self.reactor = ct.IdealGasReactor(self.gas, energy='off', volume=self.volume)
+        self.massflowcontrol = ct.MassFlowController(upstream=self.fuelairmix,downstream=self.reactor,mdot=self.reactor.mass/self.restime)
 
-        # All reactors are ``IdealGasReactor`` objects
-        self.reac = ct.IdealGasReactor(self.gas)
-        if self.apparatus == 'shock tube' and self.properties.pressure_rise is None:
-            # Shock tube modeled by constant UV
-            self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
+        # Create reactor newtork
+        self.reac_net = ct.ReactorNet([self.reactor])
 
-        elif self.apparatus == 'shock tube' and self.properties.pressure_rise is not None:
-            # Shock tube modeled by constant UV with isentropic compression
+        
 
-            # Need to convert pressure rise units to seconds
-            self.properties.pressure_rise.ito('1 / second')
-            if hasattr(self.properties.pressure_rise, 'value'):
-                pres_rise = self.properties.pressure_rise.value.magnitude
-            else:
-                pres_rise = self.properties.pressure_rise.magnitude
-
-            self.wall = ct.Wall(self.reac, env, A=1.0,
-                                velocity=PressureRiseProfile(
-                                    model_file,
-                                    self.gas.T,
-                                    self.gas.P,
-                                    self.gas.X,
-                                    pres_rise,
-                                    self.time_end
-                                    )
-                                )
-
-        elif (self.apparatus == 'rapid compression machine' and
-              self.properties.volume_history is None
-              ):
-            # Rapid compression machine modeled by constant UV
-            self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
-
-        elif (self.apparatus == 'rapid compression machine' and
-              self.properties.volume_history is not None
-              ):
-            # Rapid compression machine modeled with volume-time history
-
-            # First convert time units if necessary
-            self.properties.volume_history.time.ito('second')
-
-            self.wall = ct.Wall(self.reac, env, A=1.0,
-                                velocity=VolumeProfile(self.properties.volume_history)
-                                )
-
-        # Number of solution variables is number of species + mass,
-        # volume, temperature
-        self.n_vars = self.reac.kinetics.n_species + 3
-
-        # Create ``ReactorNet`` newtork
-        self.reac_net = ct.ReactorNet([self.reac])
-
-        # Set maximum time step based on volume-time history, if present
-        if self.properties.volume_history is not None:
-            # Minimum difference between volume profile times
-            min_time = numpy.min(numpy.diff(self.properties.volume_history.time.magnitude))
-            self.reac_net.set_max_time_step(min_time)
-
-        # Check if species ignition target, that species is present.
-        if self.properties.ignition_type['target'] not in ['pressure', 'temperature']:
-            # Other targets are species
-            spec = self.properties.ignition_type['target']
-
-            # Try finding species in upper- and lower-case
-            try_list = [spec, spec.lower(), spec.upper()]
-
-            # If excited radical, may need to fall back to nonexcited species
-            if spec[-1] == '*':
-                try_list += [spec[:-1], spec[:-1].lower(), spec[:-1].upper()]
-
-            ind = None
-            for sp in try_list:
-                try:
-                    ind = self.gas.species_index(sp)
-                    break
-                except ValueError:
-                    pass
-
-            # store index of target species
-            if ind:
-                self.properties.ignition_target = ind
-                self.properties.ignition_type = self.properties.ignition_type['type']
-            else:
-                warnings.warn(
-                    spec + ' not found in model; falling back on pressure.',
-                    RuntimeWarning
-                    )
-                self.properties.ignition_target = 'pressure'
-                self.properties.ignition_type = 'd/dt max'
-        else:
-            self.properties.ignition_target = self.properties.ignition_type['target']
-            self.properties.ignition_type = self.properties.ignition_type['type']
+           
 
         # Set file for later data file
         file_path = os.path.join(path, self.meta['id'] + '.h5')
