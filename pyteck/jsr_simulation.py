@@ -1,3 +1,11 @@
+# run case work: needs to include all temperatures in file (or more?)
+# initalize 3 parameters in set-up??
+# run the actual simulation
+# store the data in hdf table??
+
+
+
+
 # Python 2 compatibility
 from __future__ import print_function
 from __future__ import division
@@ -55,9 +63,10 @@ class JSR_Simulation(object):
         self.gas = ct.Solution(model_file)
 
         # Set max simulation time, pressure valve coefficient, and max pressure rise
+        # These could be set to something in ChemKED file, but haven't seen these specified at all....
         self.maxsimulationtime = 50
-        self.presvalco = 0.01
-        self.maxpresrise = 0.01
+        self.pressurevalcof = 0.01
+        self.maxpressurerise = 0.01
         
         # Reactor volume needed in m^3 for Cantera
         self.apparatus.volume.ito('m^3')
@@ -78,7 +87,7 @@ class JSR_Simulation(object):
                      ]
         reactants = ','.join(reactants)
 
-        # need to extract values from Quantity or Measurement object
+        # need to extract values from quantity or measurement object
         if hasattr(self.properties.temperature, 'value'):
             temp = self.properties.temperature.value.magnitude
         elif hasattr(self.properties.temperature, 'nominal_value'):
@@ -88,7 +97,7 @@ class JSR_Simulation(object):
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
-            temp = self.properties.pressure.nominal_value
+            pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
 
@@ -101,20 +110,17 @@ class JSR_Simulation(object):
             raise(BaseException('error: not supported'))
             return
         
-        # Upstream and exhausts
+        # Upstream and exhaust
         self.fuelairmix = ct.Reservoir(self.gas)
         self.exhaust = ct.Reservoir(self.gas)
 
         # Ideal gas reactor 
         self.reactor = ct.IdealGasReactor(self.gas, energy='off', volume=self.volume)
         self.massflowcontrol = ct.MassFlowController(upstream=self.fuelairmix,downstream=self.reactor,mdot=self.reactor.mass/self.restime)
+        self.pressureregulator = ct.Valve(upstream=self.reactor,downstream=self.exhaust,K=self.pressurevalcof)
 
         # Create reactor newtork
         self.reac_net = ct.ReactorNet([self.reactor])
-
-        
-
-           
 
         # Set file for later data file
         file_path = os.path.join(path, self.meta['id'] + '.h5')
@@ -135,7 +141,7 @@ class JSR_Simulation(object):
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
-                     'mass_fractions': tables.Float64Col(
+                     'mole_fractions': tables.Float64Col(
                           shape=(self.reac.thermo.n_species), pos=4
                           ),
                      }
