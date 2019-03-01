@@ -120,7 +120,7 @@ class JSR_Simulation(object):
         self.pressureregulator = ct.Valve(upstream=self.reactor,downstream=self.exhaust,K=self.pressurevalcof)
 
         # Create reactor newtork
-        self.reac_net = ct.ReactorNet([self.reactor])
+        self.reactor_net = ct.ReactorNet([self.reactor])
 
         # Set file for later data file
         file_path = os.path.join(path, self.meta['id'] + '.h5')
@@ -142,7 +142,7 @@ class JSR_Simulation(object):
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
                      'mole_fractions': tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
+                          shape=(self.reactor.thermo.n_species), pos=4
                           ),
                      }
 
@@ -157,25 +157,25 @@ class JSR_Simulation(object):
             # Row instance to save timestep information to
             timestep = table.row
             # Save initial conditions
-            timestep['time'] = self.reac_net.time
-            timestep['temperature'] = self.reac.T
-            timestep['pressure'] = self.reac.thermo.P
-            timestep['volume'] = self.reac.volume
-            timestep['mass_fractions'] = self.reac.Y
+            timestep['time'] = self.reactor_net.time
+            timestep['temperature'] = self.reactor.T
+            timestep['pressure'] = self.reactor.thermo.P
+            timestep['volume'] = self.reactor.volume
+            timestep['mole_fractions'] = self.reactor.X
             # Add ``timestep`` to table
             timestep.append()
 
             # Main time integration loop; continue integration while time of
             # the ``ReactorNet`` is less than specified end time.
-            while self.reac_net.time < self.time_end:
-                self.reac_net.step()
+            while self.reac_net.time < self.maxsimulationtime:
+                self.reactor_net.step()
 
                 # Save new timestep information
-                timestep['time'] = self.reac_net.time
-                timestep['temperature'] = self.reac.T
-                timestep['pressure'] = self.reac.thermo.P
-                timestep['volume'] = self.reac.volume
-                timestep['mass_fractions'] = self.reac.Y
+                timestep['time'] = self.reactor_net.time
+                timestep['temperature'] = self.reactor.T
+                timestep['pressure'] = self.reactor.thermo.P
+                timestep['volume'] = self.reactor.volume
+                timestep['mass_fractions'] = self.reactor.X
 
                 # Add ``timestep`` to table
                 timestep.append()
