@@ -249,7 +249,7 @@ class Simulation(object):
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
-            temp = self.properties.pressure.nominal_value
+            pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
 

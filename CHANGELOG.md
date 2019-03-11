@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Fixed handling of uppercase/lowercase species target
+- Fixed bug setting pressure when setting simulation up (had `temp` instead of `pres`)
 
 ### Changed
 - Using warnings module for messages
