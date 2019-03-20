@@ -1,10 +1,4 @@
-# run case work: needs to include all temperatures in file (or more?)
-# initalize 3 parameters in set-up??
-# run the actual simulation
-# store the data in hdf table??
-
-
-
+"initalize 3 parameters in set-up??"
 
 # Python 2 compatibility
 from __future__ import print_function
@@ -32,7 +26,7 @@ except ImportError:
 # Local imports
 from .utils import units
 
-class JSR_Simulation(object):
+class JSRSimulation(object):
     """Class for jet-stirred reactor simulations."""
 
     def __init__(self, kind, apparatus, meta, properties):
@@ -62,7 +56,7 @@ class JSR_Simulation(object):
         # Establishes the model
         self.gas = ct.Solution(model_file)
 
-        # Set max simulation time, pressure valve coefficient, and max pressure rise
+        # Set max simulation time, pressure valve coefficient, and max pressure rise for Cantera
         # These could be set to something in ChemKED file, but haven't seen these specified at all....
         self.maxsimulationtime = 50
         self.pressurevalcof = 0.01
@@ -136,7 +130,7 @@ class JSR_Simulation(object):
             print('Skipped existing case ', self.meta['id'])
             return
 
-        # Save simulation results in hdf5 table format.
+        # Save simulation results in hdf5 table format
         table_def = {'time': tables.Float64Col(pos=0),
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
@@ -175,7 +169,7 @@ class JSR_Simulation(object):
                 timestep['temperature'] = self.reactor.T
                 timestep['pressure'] = self.reactor.thermo.P
                 timestep['volume'] = self.reactor.volume
-                timestep['mass_fractions'] = self.reactor.X
+                timestep['mole_fractions'] = self.reactor.X
 
                 # Add ``timestep`` to table
                 timestep.append()
@@ -186,8 +180,10 @@ class JSR_Simulation(object):
         print('Done with case ', self.meta['id'])
 
     def process_results(self):
-        """Process integration results to obtain ignition delay.
+        """Process integration results to obtain concentrations.
         """
+        
+        ## concentrations need to be compiled, maybe with species names??
 
         # Load saved integration results
         with tables.open_file(self.meta['save-file'], 'r') as h5file:
@@ -204,72 +200,3 @@ class JSR_Simulation(object):
 
         # add units to time
         time = time * units.second
-
-        # Analysis for ignition depends on type specified
-        if self.properties.ignition_type in ['max', 'd/dt max']:
-            if self.properties.ignition_type == 'd/dt max':
-                # Evaluate derivative
-                target = first_derivative(time.magnitude, target)
-
-            # Get indices of peaks
-            ind = detect_peaks(target)
-
-            # Fall back on derivative if max value doesn't work.
-            if len(ind) == 0 and self.properties.ignition_type == 'max':
-                target = first_derivative(time.magnitude, target)
-                ind = detect_peaks(target)
-
-            # something has gone wrong if there is still no peak
-            if len(ind) == 0:
-                filename = 'target-data-' + self.meta['id'] + '.out'
-                warnings.warn('No peak found, dumping target data to ' +
-                              filename + ' and continuing',
-                              RuntimeWarning
-                              )
-                numpy.savetxt(filename, numpy.c_[time.magnitude, target],
-                              header=('time, target ('+self.properties.ignition_target+')')
-                              )
-                self.meta['simulated-ignition-delay'] = 0.0 * units.second
-                return
-
-
-            # Get index of largest peak (overall ignition delay)
-            max_ind = ind[numpy.argmax(target[ind])]
-
-            # Will need to subtract compression time for RCM
-            time_comp = 0.0
-            if hasattr(self.properties.rcm_data, 'compression_time'):
-                if hasattr(self.properties.rcm_data.compression_time, 'value'):
-                    time_comp = self.properties.rcm_data.compression_time.value
-                else:
-                    time_comp = self.properties.rcm_data.compression_time
-
-
-            ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
-                                              > 0. * units.second
-                                             )]] - time_comp
-        elif self.properties.ignition_type == '1/2 max':
-            # maximum value, and associated index
-            max_val = numpy.max(target)
-            ind = detect_peaks(target)
-            max_ind = ind[numpy.argmax(target[ind])]
-
-            # TODO: interpolate for actual half-max value
-            # Find index associated with the 1/2 max value, but only consider
-            # points before the peak
-            half_idx = (numpy.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-            ign_delays = [time[half_idx]]
-
-            # TODO: detect two-stage ignition when 1/2 max type?
-
-        # Overall ignition delay
-        if len(ign_delays) > 0:
-            self.meta['simulated-ignition-delay'] = ign_delays[-1]
-        else:
-            self.meta['simulated-ignition-delay'] = 0.0 * units.second
-
-        # First-stage ignition delay
-        if len(ign_delays) > 1:
-            self.meta['simulated-first-stage-delay'] = ign_delays[0]
-        else:
-            self.meta['simulated-first-stage-delay'] = numpy.nan * units.second

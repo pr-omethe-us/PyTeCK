@@ -187,7 +187,7 @@ class PressureRiseProfile(VolumeProfile):
         self.velocity = first_derivative(self.times, volumes)
 
 
-class Simulation(object):
+class AutoignitionSimulation(object):
     """Class for ignition delay simulations."""
 
     def __init__(self, kind, apparatus, meta, properties):
