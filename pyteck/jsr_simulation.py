@@ -1,4 +1,4 @@
-"initalize 3 parameters in set-up??"
+#Documentation header!!!
 
 # Python 2 compatibility
 from __future__ import print_function
@@ -74,14 +74,14 @@ class JSRSimulation(object):
         # Initial pressure needed in Pa for Cantera
         self.properties.pressure.ito('pascal')
 
-        # convert reactant names to those needed for model
+        # Convert reactant names to those needed for model
         reactants = [species_key[self.properties.composition[spec].species_name] + ':' +
                      str(self.properties.composition[spec].amount.magnitude)
                      for spec in self.properties.composition
                      ]
         reactants = ','.join(reactants)
 
-        # need to extract values from quantity or measurement object
+        # Need to extract values from quantity or measurement object
         if hasattr(self.properties.temperature, 'value'):
             temp = self.properties.temperature.value.magnitude
         elif hasattr(self.properties.temperature, 'nominal_value'):
@@ -116,7 +116,7 @@ class JSRSimulation(object):
         # Create reactor newtork
         self.reactor_net = ct.ReactorNet([self.reactor])
 
-        # Set file for later data file
+        # Set file path
         file_path = os.path.join(path, self.meta['id'] + '.h5')
         self.meta['save-file'] = file_path
 
@@ -189,14 +189,5 @@ class JSRSimulation(object):
         with tables.open_file(self.meta['save-file'], 'r') as h5file:
             # Load Table with Group name simulation
             table = h5file.root.simulation
-
-            time = table.col('time')
-            if self.properties.ignition_target == 'pressure':
-                target = table.col('pressure')
-            elif self.properties.ignition_target == 'temperature':
-                target = table.col('temperature')
-            else:
-                target = table.col('mass_fractions')[:, self.properties.ignition_target]
-
-        # add units to time
-        time = time * units.second
+            
+        self.meta['simulated species profile'] = table.col('mole_fractions')
