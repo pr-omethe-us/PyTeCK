@@ -1,5 +1,3 @@
-#Documentation header!!!
-
 # Python 2 compatibility
 from __future__ import print_function
 from __future__ import division
@@ -182,8 +180,6 @@ class JSRSimulation(object):
     def process_results(self):
         """Process integration results to obtain concentrations.
         """
-        
-        ## concentrations need to be compiled, maybe with species names??
 
         # Load saved integration results
         with tables.open_file(self.meta['save-file'], 'r') as h5file:

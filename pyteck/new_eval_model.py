@@ -19,6 +19,8 @@ except ImportError:
 
 from pyked.chemked import ChemKED, DataPoint
 
+"would need to import Ben's pyked stuff"
+
 # Local imports
 from .utils import units
 from .autoignition_simulation import AutoignitionSimulation
@@ -26,6 +28,8 @@ from .jsr_simulation import JSRSimulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
+
+"decide between JSR/ID?"
 
 
 def create_simulations(dataset, properties):
