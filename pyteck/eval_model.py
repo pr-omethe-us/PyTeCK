@@ -21,7 +21,7 @@ from pyked.chemked import ChemKED, DataPoint
 
 # Local imports
 from .utils import units
-from .autoignition_simulation import Simulation
+from .autoignition_simulation import AutoignitionSimulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -40,7 +40,7 @@ def create_simulations(dataset, properties):
     Returns
     -------
     simulations : list
-        List of :class:`Simulation` objects for each simulation
+        List of :class:`AutoignitionSimulation` objects for each simulation
 
     """
 
@@ -51,7 +51,7 @@ def create_simulations(dataset, properties):
         sim_meta['data-file'] = dataset
         sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
 
-        simulations.append(Simulation(properties.experiment_type,
+        simulations.append(AutoignitionSimulation(properties.experiment_type,
                                       properties.apparatus.kind,
                                       sim_meta,
                                       case
@@ -65,13 +65,13 @@ def simulation_worker(sim_tuple):
     Parameters
     ----------
     sim_tuple : tuple
-        Contains Simulation object and other parameters needed to setup
+        Contains AutoignitionSimulation object and other parameters needed to setup
         and run case.
 
     Returns
     -------
-    sim : ``Simulation``
-        Simulation case with calculated ignition delay.
+    sim : ``AutoignitionSimulation``
+        AutoignitionSimulation case with calculated ignition delay.
 
     """
     sim, model_file, model_spec_key, path, restart = sim_tuple
@@ -79,7 +79,7 @@ def simulation_worker(sim_tuple):
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
 
-    sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    sim = AutoignitionSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
 
 
