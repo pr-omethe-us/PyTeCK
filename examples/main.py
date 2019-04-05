@@ -11,4 +11,4 @@ evaluate_model(model_name='h2o2.cti',
                data_path='data',
                model_path='models',
                results_path='results',
-               model_variant_file='model_variant.json')
+)
