@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added handling of zero peaks detected
 - Added handling of "d/dt max extrapolated" ignition type
+- Added some initial examples in `examples` directory
 
 ### Fixed
 - Fixed handling of uppercase/lowercase species target

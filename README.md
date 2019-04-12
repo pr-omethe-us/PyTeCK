@@ -1,13 +1,13 @@
 # PyTeCK
 
 [![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
-[![Build Status](https://travis-ci.org/kyleniemeyer/PyTeCK.svg?branch=master)](https://travis-ci.org/kyleniemeyer/PyTeCK)
-[![Build Status](https://ci.appveyor.com/api/projects/status/a7a3prqgvfg8rr5f?svg=true)](https://ci.appveyor.com/project/kyleniemeyer/pyteck)
-[![codecov](https://codecov.io/gh/kyleniemeyer/PyTeCK/branch/master/graph/badge.svg)](https://codecov.io/gh/kyleniemeyer/PyTeCK)
-[![Dependency Status](https://dependencyci.com/github/kyleniemeyer/PyTeCK/badge)](https://dependencyci.com/github/kyleniemeyer/PyTeCK)
+[![Build Status](https://travis-ci.org/pr-omethe-us/PyTeCK.svg?branch=master)](https://travis-ci.org/pr-omethe-us/PyTeCK)
+[![Build Status](https://ci.appveyor.com/api/projects/status/a7a3prqgvfg8rr5f?svg=true)](https://ci.appveyor.com/project/pr-omethe-us/pyteck)
+[![codecov](https://codecov.io/gh/pr-omethe-us/PyTeCK/branch/master/graph/badge.svg)](https://codecov.io/gh/pr-omethe-us/PyTeCK)
+[![Dependency Status](https://dependencyci.com/github//pr-omethe-us/PyTeCK/badge)](https://dependencyci.com/github/pr-omethe-us/PyTeCK)
 [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-contributor%20covenant-green.svg)](http://contributor-covenant.org/version/1/4/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Anaconda](https://anaconda.org/kyleniemeyer/pyteck/badges/version.svg)](https://anaconda.org/kyleniemeyer/pyteck)
+[![Anaconda](https://anaconda.org/pr-omethe-us/pyteck/badges/version.svg)](https://anaconda.org/pr-omethe-us/pyteck)
 
 This software package automatically evaluates the performance of a chemical kinetic
 model using experimental data given in a specified YAML format.
@@ -16,7 +16,7 @@ model using experimental data given in a specified YAML format.
 
 The easiest way to install PyTeCK is via `conda`. You can install to your environment with
 
-    > conda install -c kyleniemeyer pyteck
+    > conda install -c pr-omethe-us pyteck
 
 which will also handle all the dependencies. Alternatively, you can install from
 PyPI with
@@ -53,10 +53,10 @@ and we will address it as soon as possible.
 ## Citation
 
 If you use this package as part of a scholarly publication, please refer to
-[CITATION.md](https://github.com/kyleniemeyer/PyTeCK/blob/master/CITATION.md)
+[CITATION.md](https://github.com/pr-omethe-us/PyTeCK/blob/master/CITATION.md)
 for instructions on how to cite this resource directly.
 
 ## License
 
 PyTeCK is released under the MIT license; see
-[LICENSE](https://github.com/kyleniemeyer/PyTeCK/blob/master/LICENSE) for details.
+[LICENSE](https://github.com/pr-omethe-us/PyTeCK/blob/master/LICENSE) for details.
