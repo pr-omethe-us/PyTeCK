@@ -184,7 +184,7 @@ class TestVolumeProfile:
                            )
 
 
-class TestPressureRiseProfile:
+class TestPressureRiseProfile(object):
     """
     """
     def test_artificial_volume_profile(self):
@@ -220,6 +220,12 @@ class TestPressureRiseProfile:
                            )
 
         assert np.allclose(velocities, dvolumes, rtol=1e-3)
+
+
+class TestGetIgnitionDelay(object):
+    """Tests for `get_ignition_delay` function.
+    """
+    
 
 
 class TestSimulation:
