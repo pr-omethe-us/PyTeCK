@@ -93,27 +93,20 @@ def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
     return [times, volumes]
 
 
-def get_peak_max_extrapolated(time, target):
-    """Identify peak in signal using d/dt max extrapolated to the baseline.
-    """
-
-
-
-
 def get_ignition_delay(time, target, target_name, ignition_type):
     """Identify ignition delay based on time, target, and type of detection.
     """
     if ignition_type == 'max':
         # Get indices of peaks
-        peak_inds = detect_peaks(target)
+        peak_inds = detect_peaks(target, edge=None)
 
         # Fall back on derivative if max value doesn't work.
-        if not peak_inds:
+        if peak_inds.size == 0:
             warnings.warn('Unable to find ignition delay using maximum value; ' +
                           'falling back on maximum derivative and continuing', RuntimeWarning
                           )
             target = first_derivative(time, target)
-            peak_inds = detect_peaks(target)
+            peak_inds = detect_peaks(target, edge=None)
 
         # Get index of largest peak (overall ignition delay)
         max_ind = peak_inds[np.argmax(target[peak_inds])]
@@ -124,8 +117,9 @@ def get_ignition_delay(time, target, target_name, ignition_type):
 
     elif ignition_type == 'd/dt max':
         target = first_derivative(time, target)
-        # Get indices of peaks
-        peak_inds = detect_peaks(target)
+        # Get indices of peaks. Set a minimum peak height of 1e-7% of the
+        # maximum value to avoid noise peaks.
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
 
         # Get index of largest peak (overall ignition delay)
         max_ind = peak_inds[np.argmax(target[peak_inds])]
@@ -164,17 +158,17 @@ def get_ignition_delay(time, target, target_name, ignition_type):
 
 
     # something has gone wrong if there is still no peak
-    if not peak_inds:
+    if ign_delays.size == 0:
         filename = 'target-data-' + str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')) + '.out'
         warnings.warn('No peak found, dumping target data to ' +
                       filename + ' and continuing', RuntimeWarning
                       )
         np.savetxt(filename, np.c_[time, target],
-                      header=('time, target (' + target_name + ')')
-                      )
+                   header=('time, target (' + target_name + ')')
+                   )
         return 0.0
 
-    return ignition_delay
+    return ign_delays
 
 
 class VolumeProfile(object):
