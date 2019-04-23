@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added handling of zero peaks detected
 - Added handling of "d/dt max extrapolated" ignition type
 - Added some initial examples in `examples` directory
+- Added tests for ignition delay detection
 
 ### Fixed
 - Fixed handling of uppercase/lowercase species target
@@ -16,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Using warnings module for messages
+- updated `detect_peaks` module from source
+- Moved ignition delay detection to its own function
 
 ## [0.2.4] - 2018-05-31
 ### Fixed

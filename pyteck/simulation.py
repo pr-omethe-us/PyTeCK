@@ -98,15 +98,7 @@ def get_ignition_delay(time, target, target_name, ignition_type):
     """
     if ignition_type == 'max':
         # Get indices of peaks
-        peak_inds = detect_peaks(target, edge=None)
-
-        # Fall back on derivative if max value doesn't work.
-        if peak_inds.size == 0:
-            warnings.warn('Unable to find ignition delay using maximum value; ' +
-                          'falling back on maximum derivative and continuing', RuntimeWarning
-                          )
-            target = first_derivative(time, target)
-            peak_inds = detect_peaks(target, edge=None)
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
 
         # Get index of largest peak (overall ignition delay)
         max_ind = peak_inds[np.argmax(target[peak_inds])]
@@ -129,35 +121,36 @@ def get_ignition_delay(time, target, target_name, ignition_type):
     elif ignition_type == '1/2 max':
         # maximum value, and associated index
         max_val = np.max(target)
-        peak_inds = detect_peaks(target)
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
         max_ind = peak_inds[np.argmax(target[peak_inds])]
 
         # TODO: interpolate for actual half-max value
         # Find index associated with the 1/2 max value, but only consider
         # points before the peak
         half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-        ign_delays = [time[half_idx]]
+        ign_delays = np.array([time[half_idx]])
 
     elif ignition_type == 'd/dt max extrapolated':
         # First need to evaluate derivative of the target
         target_derivative = first_derivative(time, target)
 
-        # Get indices of peaks, and index of largest peak
-        peak_inds = detect_peaks(target_derivative)
+        # Get indices of peaks, and index of largest peak, which corresponds to
+        # the point of maximum deriative
+        peak_inds = detect_peaks(target_derivative, edge=None, mph=1.e-9*np.max(target))
         max_ind = peak_inds[np.argmax(target_derivative[peak_inds])]
 
         # use slope to extrapolate to intercept with baseline value (0 by default)
-        ign_delays = [target[max_ind] - target_derivative[max_ind] * time[max_ind]]
+        ign_delays = np.array([time[max_ind] - (target[max_ind] / target_derivative[max_ind])])
 
         # TODO: handle target with nonzero baseline?
     else:
-        warnings.warn('Unable to process ignition type ' + self.properties.ignition_type +
+        warnings.warn('Unable to process ignition type ' + ignition_type +
                       ', setting result to 0 and continuing', RuntimeWarning
                       )
-        return 0.0
+        return np.array([0.0])
 
 
-    # something has gone wrong if there is still no peak
+    # something has gone wrong if there is still no peak. This shouldn't be necessary.
     if ign_delays.size == 0:
         filename = 'target-data-' + str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')) + '.out'
         warnings.warn('No peak found, dumping target data to ' +
@@ -166,7 +159,7 @@ def get_ignition_delay(time, target, target_name, ignition_type):
         np.savetxt(filename, np.c_[time, target],
                    header=('time, target (' + target_name + ')')
                    )
-        return 0.0
+        return np.array([0.0])
 
     return ign_delays
 
@@ -516,6 +509,9 @@ class Simulation(object):
                 target = table.col('temperature')
             else:
                 target = table.col('mass_fractions')[:, self.properties.ignition_target]
+            # store initial and maximum temperatures as a gate for whether the case ignited
+            init_temperature = table.col('temperature')[0]
+            max_temperature = np.max(table.col('temperature'))
 
         # add units to time
         time = time * units.second
@@ -528,85 +524,19 @@ class Simulation(object):
             else:
                 time_comp = self.properties.rcm_data.compression_time
 
-        # Analysis for ignition depends on type specified
-        if self.properties.ignition_type in ['max', 'd/dt max']:
-            if self.properties.ignition_type == 'd/dt max':
-                # Evaluate derivative
-                target = first_derivative(time.magnitude, target)
-
-            # Get indices of peaks
-            ind = detect_peaks(target)
-
-            # Fall back on derivative if max value doesn't work.
-            if len(ind) == 0 and self.properties.ignition_type == 'max':
-                target = first_derivative(time.magnitude, target)
-                ind = detect_peaks(target)
-
-            # something has gone wrong if there is still no peak
-            if len(ind) == 0:
-                filename = 'target-data-' + self.meta['id'] + '.out'
-                warnings.warn('No peak found, dumping target data to ' +
-                              filename + ' and continuing',
-                              RuntimeWarning
-                              )
-                np.savetxt(filename, np.c_[time.magnitude, target],
-                              header=('time, target ('+self.properties.ignition_target+')')
-                              )
-                self.meta['simulated-ignition-delay'] = 0.0 * units.second
-                return
-
-
-            # Get index of largest peak (overall ignition delay)
-            max_ind = ind[np.argmax(target[ind])]
-
-            ign_delays = time[ind[np.where((time[ind[ind <= max_ind]] - time_comp)
-                                              > 0. * units.second
-                                             )]] - time_comp
-        elif self.properties.ignition_type == '1/2 max':
-            # maximum value, and associated index
-            max_val = np.max(target)
-            ind = detect_peaks(target)
-            max_ind = ind[np.argmax(target[ind])]
-
-            # TODO: interpolate for actual half-max value
-            # Find index associated with the 1/2 max value, but only consider
-            # points before the peak
-            half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-            ign_delays = [time[half_idx]]
-        elif self.properties.ignition_type == 'd/dt max extrapolated':
-            # Evaluate derivative
-            target_derivative = first_derivative(time.magnitude, target)
-
-            # Get indices of peaks, and index of largest peak
-            ind = detect_peaks(target_derivative)
-            max_ind = ind[np.argmax(target_derivative[ind])]
-
-            # use slope to extrapolate to intercept with baseline value (0 by default)
-            ign_delays = [target[max_ind] - target_derivative[max_ind] * time[max_ind]]
-
-            # TODO: handle target with nonzero baseline?
+        # First use basic check for ignition based on temperature increase of at least 400 K
+        if max_temperature >= init_temperature + 400.:
+            ignition_delays = get_ignition_delay(time.magnitude, target,
+                                                 self.properties.ignition_target,
+                                                 self.properties.ignition_type
+                                                 )
+            self.meta['simulated-ignition-delay'] = (ignition_delays[0] - time_comp) * units.second
         else:
-            warnings.warn('Unable to process ignition type ' +
-                          self.properties.ignition_type +
-                          ', setting result to 0 and continuing',
+            warnings.warn('No ignition for case ' + self.meta['id'] +
+                          ', setting value to 0.0 and continuing',
                           RuntimeWarning
                           )
             self.meta['simulated-ignition-delay'] = 0.0 * units.second
-            return
-        # TODO: detect two-stage ignition when 1/2 max type?
 
-        # This shouldn't be necessary.
-        try:
-            # Overall ignition delay
-            if len(ign_delays) > 0:
-                self.meta['simulated-ignition-delay'] = ign_delays[-1]
-            else:
-                self.meta['simulated-ignition-delay'] = 0.0 * units.second
-
-            # First-stage ignition delay
-            if len(ign_delays) > 1:
-                self.meta['simulated-first-stage-delay'] = ign_delays[0]
-            else:
-                self.meta['simulated-first-stage-delay'] = np.nan * units.second
-        except NameError:
-            self.meta['simulated-ignition-delay'] = 0.0 * units.second
+        # TODO: detect two-stage ignition.
+        self.meta['simulated-first-stage-delay'] = np.nan * units.second

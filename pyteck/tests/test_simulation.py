@@ -7,6 +7,7 @@ import pkg_resources
 import numpy as np
 import pytest
 import tables
+from scipy.special import erf
 
 # Related modules
 try:
@@ -236,7 +237,7 @@ class TestGetIgnitionDelay(object):
         mass_fraction = a * np.exp(-((times - b)/c)**2)
         # max value of this occurs when x == b
 
-        ignition_delays = get_ignition_delay(times, mass_fraction, 'species', 'max')
+        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'max')
 
         assert np.allclose(ignition_delays[0], b, rtol=1e-4)
 
@@ -249,9 +250,22 @@ class TestGetIgnitionDelay(object):
         temperature = -0.5 * np.sqrt(np.pi) * a * c * erf((b - times) / c) + d
         # max derivative of this occurs when x == b
 
-        ignition_delays = get_ignition_delay(times, temperature, 'temperature', 'd/dt max')
+        ignition_delays = simulation.get_ignition_delay(times, temperature, 'temperature', 'd/dt max')
 
         assert np.allclose(ignition_delays[0], b, rtol=1e-4)
+
+    def test_max_derivative_species(self):
+        """Test using max derivative of a species-looking profile.
+        """
+        a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
+        times = np.linspace(0, 1, 10000)
+        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        # first inflection point of Gaussian occurs at b - sqrt(1/2)*c
+        # so this is where the maximum derivative occurs
+
+        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max')
+        assert np.allclose(ignition_delays[0], b - np.sqrt(1/2)*c, rtol=1e-4)
+
 
     def test_half_max(self):
         """Test using half maximum value for ignition delay.
@@ -260,8 +274,42 @@ class TestGetIgnitionDelay(object):
         times = np.linspace(0, 1, 10000)
         mass_fraction = a * np.exp(-((times - b)/c)**2)
         # value of peak is `a`, so half max is `a/2`
+        # `mass_fraction = a/2` at `b - c*np.sqrt(np.log(2))`
+        # (peak minus half of the full width and half max, FWHM)
 
-        ignition_delays = get_ignition_delay(times, mass_fraction, 'species', 'max')
+        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', '1/2 max')
+
+        assert np.allclose(ignition_delays[0], b - c*np.sqrt(np.log(2)), rtol=1e-4)
+
+    def test_derivative_max_extrapolated(self):
+        """Test using d/dt max extrapolated value for ignition delay.
+        """
+        a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
+        times = np.linspace(0, 1, 10000)
+        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        # first inflection point of Gaussian occurs at b - sqrt(1/2)*c
+        # so this is where the maximum derivative occurs
+        # derivative:
+        # df_dt = (-2*a/c**2) * (times - b) * np.exp(-(b - times)**2 / c**2)
+
+        time_max_dfdt = b - np.sqrt(1/2)*c
+        dfdt_max = (-2*a/c**2) * (time_max_dfdt - b) * np.exp(-(b - time_max_dfdt)**2 / c**2)
+
+        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max extrapolated')
+        assert np.allclose(ignition_delays[0],
+                           time_max_dfdt - a * np.exp(-((time_max_dfdt - b)/c)**2) / dfdt_max,
+                           rtol=1e-4
+                           )
+
+    def test_not_supported_type(self):
+        """Test that a non-supported type raises a warning and returns zero.
+        """
+        with pytest.warns(RuntimeWarning,
+            match='Unable to process ignition type min, setting result to 0 and continuing'
+            ):
+            ignition_delays = simulation.get_ignition_delay(0.0, 0.0, 'emission', 'min')
+
+        assert ignition_delays[0] == 0.0
 
 
 class TestSimulation:
