@@ -189,8 +189,8 @@ class TestGetChangingVariable:
             cases.append(dp)
 
         with pytest.warns(RuntimeWarning,
-            match='Warning: multiple changing variables. Using temperature.'
-            ):
+                          match='Warning: multiple changing variables. Using temperature.'
+                          ):
             variable = eval_model.get_changing_variable(cases)
 
         assert len(variable) == num
@@ -200,23 +200,25 @@ class TestEvalModel:
     """
     """
     def relative_location(self, file):
+        """Give relative location in package."""
         file_path = os.path.join(file)
         return pkg_resources.resource_filename(__name__, file_path)
 
     def test(self):
-        """
+        """Test overall evaluation of model.
         """
 
         with TemporaryDirectory() as temp_dir:
             output = eval_model.evaluate_model(
-                                      'h2o2.cti',
-                                      self.relative_location('spec_keys.yaml'),
-                                      self.relative_location('dataset_file.txt'),
-                                      data_path=self.relative_location(''),
-                                      model_path='',
-                                      results_path=temp_dir,
-                                      num_threads=1
-                                      )
+                model_name='h2o2.cti',
+                spec_keys_file=self.relative_location('spec_keys.yaml'),
+                dataset_file=self.relative_location('dataset_file.txt'),
+                data_path=self.relative_location(''),
+                model_path='',
+                results_path=temp_dir,
+                num_threads=1,
+                skip_validation=True
+                )
             assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
             assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
             assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)
