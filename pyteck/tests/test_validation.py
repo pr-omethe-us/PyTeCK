@@ -14,33 +14,33 @@ class TestValidate_geq:
 
     def test_ge_wrong_type(self):
         with pytest.raises(TypeError):
-            validate_geq('testval', 'five', 0)
+            validate_geq('testval', 'five', 1)
 
     def test_ge_incompatible_units(self):
         with pytest.raises(DimensionalityError):
-            validate_geq('testval', 5 * units.second, 0 * units.meter)
+            validate_geq('testval', 5 * units.second, 1 * units.meter)
 
     def test_ge_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_geq('testval', 5, 0 * units.meter)
+            validate_geq('testval', 5, 1 * units.meter)
 
     def test_ge_units_when_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_geq('testval', 5 * units.meter, 0)
+            validate_geq('testval', 5 * units.meter, 1)
 
     def test_ge_right_type(self):
         value = 5
-        low_lim = 0
+        low_lim = 1
         assert validate_geq('testval', value, low_lim) == value
 
     def test_ge_Quantity_type(self):
         value = 5. * units.second
-        low_lim = 0. * units.second
+        low_lim = 1. * units.second
         assert validate_geq('testval', value, low_lim) == value
 
     def test_ge_too_small(self):
         with pytest.raises(RuntimeError):
-            validate_geq('testval', -10, 0)
+            validate_geq('testval', -10, 1)
 
     def test_ge_both_neg(self):
         value = -1.
@@ -54,33 +54,33 @@ class TestValidate_gt:
 
     def test_gt_wrong_type(self):
         with pytest.raises(TypeError):
-            validate_gt('testval', 'five', 0)
+            validate_gt('testval', 'five', 1)
 
     def test_gt_incompatible_units(self):
         with pytest.raises(DimensionalityError):
-            validate_gt('testval', 5 * units.second, 0 * units.meter)
+            validate_gt('testval', 5 * units.second, 1 * units.meter)
 
     def test_gt_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_gt('testval', 5, 0 * units.meter)
+            validate_gt('testval', 5, 1 * units.meter)
 
     def test_gt_units_when_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_gt('testval', 5 * units.meter, 0)
+            validate_gt('testval', 5 * units.meter, 1)
 
     def test_gt_right_type(self):
         value = 5
-        low_lim = 0
+        low_lim = 1
         assert validate_gt('testval', value, low_lim) == value
 
     def test_gt_Quantity_type(self):
         value = 5. * units.second
-        low_lim = 0. * units.second
+        low_lim = 1. * units.second
         assert validate_gt('testval', value, low_lim) == value
 
     def test_gt_too_small(self):
         with pytest.raises(RuntimeError):
-            validate_gt('testval', -10, 0)
+            validate_gt('testval', -10, 1)
 
     def test_gt_both_neg(self):
         value = -1.
@@ -105,33 +105,33 @@ class TestValidate_leq:
 
     def test_le_wrong_type(self):
         with pytest.raises(TypeError):
-            validate_leq('testval', 'ten', 0)
+            validate_leq('testval', 'ten', 1)
 
     def test_le_incompatible_units(self):
         with pytest.raises(DimensionalityError):
-            validate_leq('testval', 0 * units.second, 10 * units.meter)
+            validate_leq('testval', 1 * units.second, 10 * units.meter)
 
     def test_le_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_leq('testval', 0, 5 * units.meter)
+            validate_leq('testval', 1, 5 * units.meter)
 
     def test_le_units_when_unitless(self):
         with pytest.raises(DimensionalityError):
-            validate_leq('testval', 0 * units.meter, 5)
+            validate_leq('testval', 1 * units.meter, 5)
 
     def test_le_right_type(self):
-        value = 0
+        value = 1
         upp_lim = 10
         assert validate_leq('testval', value, upp_lim) == value
 
     def test_le_Quantity_type(self):
         value = -5 * units.second
-        upp_lim = 0 * units.second
+        upp_lim = 1 * units.second
         assert validate_leq('testval', value, upp_lim) == value
 
     def test_le_too_large(self):
         with pytest.raises(RuntimeError):
-            validate_leq('testval', 10, 0)
+            validate_leq('testval', 10, 1)
 
     def test_le_both_neg(self):
         value = -10.
