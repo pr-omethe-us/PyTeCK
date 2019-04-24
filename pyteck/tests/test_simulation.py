@@ -320,7 +320,7 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -381,7 +381,7 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         properties.datapoints[0].ignition_type['target'] = 'temperature'
         properties.datapoints[1].ignition_type['target'] = 'temperature'
@@ -409,7 +409,7 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -456,7 +456,7 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -533,7 +533,7 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_st.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -641,7 +641,7 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -704,7 +704,7 @@ class TestSimulation:
         # Read experiment XML file
         file_path = os.path.join('testfile_rcm.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # Now create list of Simulation objects
         simulations = create_simulations(filename, properties)
@@ -770,7 +770,7 @@ class TestSimulation:
         """
         file_path = os.path.join('testfile_st2.yaml')
         filename = pkg_resources.resource_filename(__name__, file_path)
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
 
         # ignition target is OH
 
@@ -788,7 +788,7 @@ class TestSimulation:
         assert sim.properties.ignition_target == 4
 
         # now try for uppercase in model and lowercase in file.
-        properties = ChemKED(filename)
+        properties = ChemKED(filename, skip_validation=True)
         properties.datapoints[0].ignition_type['target'] = 'oh'
         SPEC_KEY = {'H2': 'H2', 'O2': 'O2', 'N2': 'N2', 'Ar': 'AR'}
         simulations = create_simulations(filename, properties)
