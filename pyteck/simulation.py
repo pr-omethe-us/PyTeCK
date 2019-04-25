@@ -524,8 +524,8 @@ class Simulation(object):
             else:
                 time_comp = self.properties.rcm_data.compression_time
 
-        # First use basic check for ignition based on temperature increase of at least 400 K
-        if max_temperature >= init_temperature + 400.:
+        # First use basic check for ignition based on temperature increase of at least 50 K
+        if max_temperature >= init_temperature + 50.:
             ignition_delays = get_ignition_delay(time.magnitude, target,
                                                  self.properties.ignition_target,
                                                  self.properties.ignition_type
