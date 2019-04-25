@@ -86,9 +86,9 @@ after_success:
       bash <(curl -s https://codecov.io/bash);
     fi
 
-before_deploy:
-  - conda install pandoc
-  - pip install pypandoc
+#before_deploy:
+#  - conda install pandoc
+#  - pip install pypandoc
 
 deploy:
   provider: pypi

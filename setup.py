@@ -44,7 +44,7 @@ install_requires = [
 ]
 
 tests_require = [
-    'pytest>=3.0.1',
+    'pytest>=3.2.0',
     'pytest-cov',
 ]
 
