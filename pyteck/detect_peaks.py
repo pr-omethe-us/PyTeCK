@@ -17,7 +17,6 @@ __license__ = "MIT"
 
 def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
                  kpsh=False, valley=False, show=False, ax=None):
-
     """Detect peaks in data based on their amplitude and other features.
 
     Parameters
@@ -27,7 +26,7 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
     mph : {None, number}, optional (default = None)
         detect peaks that are greater than minimum peak height (if parameter
         `valley` is False) or peaks that are smaller than maximum peak height
-         (if parameter `valley` is True).
+        (if parameter `valley` is True).
     mpd : positive integer, optional (default = 1)
         detect peaks that are at least separated by minimum peak distance (in
         number of data).
@@ -165,7 +164,9 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
 
 
 def _plot(x, mph, mpd, threshold, edge, valley, ax, ind):
-    """Plot results of the detect_peaks function, see its help."""
+    """Plot results of the detect_peaks function, see its help.
+    """
+
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -192,4 +193,3 @@ def _plot(x, mph, mpd, threshold, edge, valley, ax, ind):
                      % (mode, str(mph), mpd, str(threshold), edge))
         # plt.grid()
         plt.show()
-        
