@@ -11,7 +11,8 @@ from __future__ import division
 import os
 from collections import namedtuple
 import warnings
-import numpy
+import numpy as np
+from datetime import datetime
 
 # Related modules
 try:
@@ -38,13 +39,13 @@ def first_derivative(x, y):
     one-sided difference at boundaries.
 
     :param x: Independent variable array
-    :type x: numpy.ndarray
+    :type x: np.ndarray
     :param y: Dependent variable array
-    :type y: numpy.ndarray
+    :type y: np.ndarray
     :return: First derivative, :math:`dy/dx`
-    :rtype: numpy.ndarray
+    :rtype: np.ndarray
     """
-    return numpy.gradient(y, x, edge_order=2)
+    return np.gradient(y, x, edge_order=2)
 
 
 def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
@@ -55,9 +56,9 @@ def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
     :param float freq: Frequency of sampling, in Hz
     :param float pressure_rise_rate: Pressure rise rate, in s^-1
     :return: List of times and pressures
-    :rtype: list of numpy.ndarray
+    :rtype: list of np.ndarray
     """
-    times = numpy.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
+    times = np.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
     pressures = init_pres * (pressure_rise_rate * times + 1.0)
     return [times, pressures]
 
@@ -72,7 +73,7 @@ def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
     :param float pres_rise: Pressure rise rate, in s^-1
     :param float time_end: End time of simulation in s
     :return: List of times and volumes
-    :rtype: list of numpy.ndarray
+    :rtype: list of np.ndarray
     """
     gas = ct.Solution(mech)
     gas.TPX = temp, pres, reactants
@@ -84,12 +85,83 @@ def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
     [times, pressures] = sample_rising_pressure(time_end, pres, freq, pres_rise)
 
     # Calculate volume profile based on pressure
-    volumes = numpy.zeros((len(pressures)))
+    volumes = np.zeros((len(pressures)))
     for i, p in enumerate(pressures):
         gas.SP = initial_entropy, p
         volumes[i] = initial_density / gas.density
 
     return [times, volumes]
+
+
+def get_ignition_delay(time, target, target_name, ignition_type):
+    """Identify ignition delay based on time, target, and type of detection.
+    """
+    if ignition_type == 'max':
+        # Get indices of peaks
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
+
+        # Get index of largest peak (overall ignition delay)
+        max_ind = peak_inds[np.argmax(target[peak_inds])]
+
+        #ign_delays = time[peak_inds[np.where((time[peak_inds[peak_inds <= max_ind]]) > 0.0)]]
+
+        ign_delays = time[peak_inds[peak_inds <= max_ind]]
+
+    elif ignition_type == 'd/dt max':
+        target = first_derivative(time, target)
+        # Get indices of peaks. Set a minimum peak height of 1e-7% of the
+        # maximum value to avoid noise peaks.
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
+
+        # Get index of largest peak (overall ignition delay)
+        max_ind = peak_inds[np.argmax(target[peak_inds])]
+
+        ign_delays = time[peak_inds[np.where((time[peak_inds[peak_inds <= max_ind]]) > 0.0)]]
+
+    elif ignition_type == '1/2 max':
+        # maximum value, and associated index
+        max_val = np.max(target)
+        peak_inds = detect_peaks(target, edge=None, mph=1.e-9*np.max(target))
+        max_ind = peak_inds[np.argmax(target[peak_inds])]
+
+        # TODO: interpolate for actual half-max value
+        # Find index associated with the 1/2 max value, but only consider
+        # points before the peak
+        half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
+        ign_delays = np.array([time[half_idx]])
+
+    elif ignition_type == 'd/dt max extrapolated':
+        # First need to evaluate derivative of the target
+        target_derivative = first_derivative(time, target)
+
+        # Get indices of peaks, and index of largest peak, which corresponds to
+        # the point of maximum deriative
+        peak_inds = detect_peaks(target_derivative, edge=None, mph=1.e-9*np.max(target))
+        max_ind = peak_inds[np.argmax(target_derivative[peak_inds])]
+
+        # use slope to extrapolate to intercept with baseline value (0 by default)
+        ign_delays = np.array([time[max_ind] - (target[max_ind] / target_derivative[max_ind])])
+
+        # TODO: handle target with nonzero baseline?
+    else:
+        warnings.warn('Unable to process ignition type ' + ignition_type +
+                      ', setting result to 0 and continuing', RuntimeWarning
+                      )
+        return np.array([0.0])
+
+
+    # something has gone wrong if there is still no peak. This shouldn't be necessary.
+    if ign_delays.size == 0:
+        filename = 'target-data-' + str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')) + '.out'
+        warnings.warn('No peak found, dumping target data to ' +
+                      filename + ' and continuing', RuntimeWarning
+                      )
+        np.savetxt(filename, np.c_[time, target],
+                   header=('time, target (' + target_name + ')')
+                   )
+        return np.array([0.0])
+
+    return ign_delays
 
 
 class VolumeProfile(object):
@@ -116,7 +188,7 @@ class VolumeProfile(object):
         :param VolumeHistory volume_history: time and volume history
         """
 
-        # The time and volume are each stored as a ``numpy.array`` in the
+        # The time and volume are each stored as a ``np.array`` in the
         # properties dictionary. The volume is normalized by the first volume
         # element so that a unit area can be used to calculate the velocity.
         self.times = volume_history.time.magnitude
@@ -134,7 +206,7 @@ class VolumeProfile(object):
         :return: Velocity in meters per second
         :rtype: float
         """
-        return numpy.interp(time, self.times, self.velocity, left=0., right=0.)
+        return np.interp(time, self.times, self.velocity, left=0., right=0.)
 
 
 class PressureRiseProfile(VolumeProfile):
@@ -320,7 +392,7 @@ class Simulation(object):
         # Set maximum time step based on volume-time history, if present
         if self.properties.volume_history is not None:
             # Minimum difference between volume profile times
-            min_time = numpy.min(numpy.diff(self.properties.volume_history.time.magnitude))
+            min_time = np.min(np.diff(self.properties.volume_history.time.magnitude))
             self.reac_net.set_max_time_step(min_time)
 
         # Check if species ignition target, that species is present.
@@ -437,6 +509,9 @@ class Simulation(object):
                 target = table.col('temperature')
             else:
                 target = table.col('mass_fractions')[:, self.properties.ignition_target]
+            # store initial and maximum temperatures as a gate for whether the case ignited
+            init_temperature = table.col('temperature')[0]
+            max_temperature = np.max(table.col('temperature'))
 
         # add units to time
         time = time * units.second
@@ -449,85 +524,19 @@ class Simulation(object):
             else:
                 time_comp = self.properties.rcm_data.compression_time
 
-        # Analysis for ignition depends on type specified
-        if self.properties.ignition_type in ['max', 'd/dt max']:
-            if self.properties.ignition_type == 'd/dt max':
-                # Evaluate derivative
-                target = first_derivative(time.magnitude, target)
-
-            # Get indices of peaks
-            ind = detect_peaks(target)
-
-            # Fall back on derivative if max value doesn't work.
-            if len(ind) == 0 and self.properties.ignition_type == 'max':
-                target = first_derivative(time.magnitude, target)
-                ind = detect_peaks(target)
-
-            # something has gone wrong if there is still no peak
-            if len(ind) == 0:
-                filename = 'target-data-' + self.meta['id'] + '.out'
-                warnings.warn('No peak found, dumping target data to ' +
-                              filename + ' and continuing',
-                              RuntimeWarning
-                              )
-                numpy.savetxt(filename, numpy.c_[time.magnitude, target],
-                              header=('time, target ('+self.properties.ignition_target+')')
-                              )
-                self.meta['simulated-ignition-delay'] = 0.0 * units.second
-                return
-
-
-            # Get index of largest peak (overall ignition delay)
-            max_ind = ind[numpy.argmax(target[ind])]
-
-            ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
-                                              > 0. * units.second
-                                             )]] - time_comp
-        elif self.properties.ignition_type == '1/2 max':
-            # maximum value, and associated index
-            max_val = numpy.max(target)
-            ind = detect_peaks(target)
-            max_ind = ind[numpy.argmax(target[ind])]
-
-            # TODO: interpolate for actual half-max value
-            # Find index associated with the 1/2 max value, but only consider
-            # points before the peak
-            half_idx = (numpy.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-            ign_delays = [time[half_idx]]
-        elif self.properties.ignition_type == 'd/dt max extrapolated':
-            # Evaluate derivative
-            target_derivative = first_derivative(time.magnitude, target)
-
-            # Get indices of peaks, and index of largest peak
-            ind = detect_peaks(target_derivative)
-            max_ind = ind[numpy.argmax(target_derivative[ind])]
-
-            # use slope to extrapolate to intercept with baseline value (0 by default)
-            ign_delays = [target[max_ind] - target_derivative[max_ind] * time[max_ind]]
-
-            # TODO: handle target with nonzero baseline?
+        # First use basic check for ignition based on temperature increase of at least 50 K
+        if max_temperature >= init_temperature + 50.:
+            ignition_delays = get_ignition_delay(time.magnitude, target,
+                                                 self.properties.ignition_target,
+                                                 self.properties.ignition_type
+                                                 )
+            self.meta['simulated-ignition-delay'] = (ignition_delays[0] - time_comp) * units.second
         else:
-            warnings.warn('Unable to process ignition type ' +
-                          self.properties.ignition_type +
-                          ', setting result to 0 and continuing',
+            warnings.warn('No ignition for case ' + self.meta['id'] +
+                          ', setting value to 0.0 and continuing',
                           RuntimeWarning
                           )
             self.meta['simulated-ignition-delay'] = 0.0 * units.second
-            return
-        # TODO: detect two-stage ignition when 1/2 max type?
 
-        # This shouldn't be necessary.
-        try:
-            # Overall ignition delay
-            if len(ign_delays) > 0:
-                self.meta['simulated-ignition-delay'] = ign_delays[-1]
-            else:
-                self.meta['simulated-ignition-delay'] = 0.0 * units.second
-
-            # First-stage ignition delay
-            if len(ign_delays) > 1:
-                self.meta['simulated-first-stage-delay'] = ign_delays[0]
-            else:
-                self.meta['simulated-first-stage-delay'] = numpy.nan * units.second
-        except NameError:
-            self.meta['simulated-ignition-delay'] = 0.0 * units.second
+        # TODO: detect two-stage ignition.
+        self.meta['simulated-first-stage-delay'] = np.nan * units.second
