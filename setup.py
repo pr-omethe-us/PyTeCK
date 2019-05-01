@@ -36,7 +36,7 @@ except (ImportError, OSError, IOError):
 
 install_requires = [
     'pyyaml>=3.12,<4.0',
-    'pint>=0.7.2',
+    'pint>=0.7.2,<0.9',
     'numpy>=1.13.0',
     'tables',
     'pyked>=0.4.1',
