@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed handling of uppercase/lowercase species target
 - Fixed bug setting pressure when setting simulation up (had `temp` instead of `pres`)
+- Made some fixes to documentation and Travis CI configuration
 
 ### Changed
 - Using warnings module for messages
