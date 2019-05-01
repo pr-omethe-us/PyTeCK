@@ -92,11 +92,6 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
     >>> # set threshold = 2
     >>> detect_peaks(x, threshold = 2, show=True)
 
-    Version history
-    ---------------
-    '1.0.5':
-        The sign of `mph` is inverted if parameter `valley` is True
-
     """
 
     x = np.atleast_1d(x).astype('float64')
