@@ -9,17 +9,11 @@
 ./_sources/simulation.rst.txt
 ./_sources/utils.rst.txt
 ./_static/README
-./_static/ajax-loader.gif
 ./_static/alabaster.css
 ./_static/basic.css
-./_static/comment-bright.png
-./_static/comment-close.png
-./_static/comment.png
 ./_static/custom.css
 ./_static/doctools.js
 ./_static/documentation_options.js
-./_static/down-pressed.png
-./_static/down.png
 ./_static/file.png
 ./_static/jquery-3.2.1.js
 ./_static/jquery.js
@@ -30,9 +24,6 @@
 ./_static/searchtools.js
 ./_static/underscore-1.3.1.js
 ./_static/underscore.js
-./_static/up-pressed.png
-./_static/up.png
-./_static/websupport.js
 ./detect_peaks.html
 ./eval_model.html
 ./genindex.html

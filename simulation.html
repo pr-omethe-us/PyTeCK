@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Simulation &#8212; PyTeCK 0.2.5a5 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -37,6 +35,10 @@
             
   <div class="section" id="module-pyteck.simulation">
 <span id="simulation"></span><h1>Simulation<a class="headerlink" href="#module-pyteck.simulation" title="Permalink to this headline">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">members</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
 <dl class="class">
 <dt id="pyteck.simulation.PressureRiseProfile">
 <em class="property">class </em><code class="descclassname">pyteck.simulation.</code><code class="descname">PressureRiseProfile</code><span class="sig-paren">(</span><em>mech_filename</em>, <em>initial_temp</em>, <em>initial_pres</em>, <em>reactants</em>, <em>pressure_rise</em>, <em>time_end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#PressureRiseProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.PressureRiseProfile" title="Permalink to this definition">¶</a></dt>
@@ -73,33 +75,26 @@ the <code class="docutils literal notranslate"><span class="pre">Wall</span></co
 <dt id="pyteck.simulation.Simulation.run_case">
 <code class="descname">run_case</code><span class="sig-paren">(</span><em>restart=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.run_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.run_case" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run simulation case set up <code class="docutils literal notranslate"><span class="pre">setup_case</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip if results file exists.</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip if results file exists.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="pyteck.simulation.Simulation.setup_case">
 <code class="descname">setup_case</code><span class="sig-paren">(</span><em>model_file</em>, <em>species_key</em>, <em>path=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#Simulation.setup_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.Simulation.setup_case" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets up the simulation case to be run.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Filename for Cantera-format model</li>
-<li><strong>species_key</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Dictionary with species names for <code class="xref py py-obj docutils literal notranslate"><span class="pre">model_file</span></code></li>
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path for data file</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Filename for Cantera-format model</p></li>
+<li><p><strong>species_key</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Dictionary with species names for <code class="xref py py-obj docutils literal notranslate"><span class="pre">model_file</span></code></p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path for data file</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -119,28 +114,24 @@ interface of Cantera.</p>
 <dt id="pyteck.simulation.create_volume_history">
 <code class="descclassname">pyteck.simulation.</code><code class="descname">create_volume_history</code><span class="sig-paren">(</span><em>mech</em>, <em>temp</em>, <em>pres</em>, <em>reactants</em>, <em>pres_rise</em>, <em>time_end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#create_volume_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.create_volume_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a volume profile based on intiial conditions and pressure rise.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mech</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Cantera-format mechanism file</li>
-<li><strong>temp</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial temperature in K</li>
-<li><strong>pres</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial pressure in Pa</li>
-<li><strong>reactants</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Reactants composition in mole fraction</li>
-<li><strong>pres_rise</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Pressure rise rate, in s^-1</li>
-<li><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – End time of simulation in s</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mech</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Cantera-format mechanism file</p></li>
+<li><p><strong>temp</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial temperature in K</p></li>
+<li><p><strong>pres</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial pressure in Pa</p></li>
+<li><p><strong>reactants</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Reactants composition in mole fraction</p></li>
+<li><p><strong>pres_rise</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Pressure rise rate, in s^-1</p></li>
+<li><p><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – End time of simulation in s</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of times and volumes</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of numpy.ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of times and volumes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -149,50 +140,48 @@ interface of Cantera.</p>
 <dd><p>Evaluates first derivative using second-order finite differences.</p>
 <p>Uses (second-order) centeral difference in interior and second-order
 one-sided difference at boundaries.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.16)"><em>numpy.ndarray</em></a>) – Independent variable array</li>
-<li><strong>y</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.16)"><em>numpy.ndarray</em></a>) – Dependent variable array</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Independent variable array</p></li>
+<li><p><strong>y</strong> (<em>np.ndarray</em>) – Dependent variable array</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">First derivative, <span class="math notranslate nohighlight">\(dy/dx\)</span></p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.16)">numpy.ndarray</a></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>First derivative, <span class="math notranslate nohighlight">\(dy/dx\)</span></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyteck.simulation.get_ignition_delay">
+<code class="descclassname">pyteck.simulation.</code><code class="descname">get_ignition_delay</code><span class="sig-paren">(</span><em>time</em>, <em>target</em>, <em>target_name</em>, <em>ignition_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#get_ignition_delay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.get_ignition_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify ignition delay based on time, target, and type of detection.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyteck.simulation.sample_rising_pressure">
 <code class="descclassname">pyteck.simulation.</code><code class="descname">sample_rising_pressure</code><span class="sig-paren">(</span><em>time_end</em>, <em>init_pres</em>, <em>freq</em>, <em>pressure_rise_rate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/simulation.html#sample_rising_pressure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.simulation.sample_rising_pressure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Samples pressure for particular frequency assuming linear rise.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – End time of simulation in s</li>
-<li><strong>init_pres</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial pressure</li>
-<li><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Frequency of sampling, in Hz</li>
-<li><strong>pressure_rise_rate</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Pressure rise rate, in s^-1</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – End time of simulation in s</p></li>
+<li><p><strong>init_pres</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Initial pressure</p></li>
+<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Frequency of sampling, in Hz</p></li>
+<li><p><strong>pressure_rise_rate</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Pressure rise rate, in s^-1</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of times and pressures</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of numpy.ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of times and pressures</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -244,8 +233,6 @@ one-sided difference at boundaries.</p>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -266,7 +253,7 @@ one-sided difference at boundaries.</p>
       &copy;2019, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
