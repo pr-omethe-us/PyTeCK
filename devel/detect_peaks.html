@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Detect Peaks &#8212; PyTeCK 0.2.5a8 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Simulation" href="simulation.html" />
+    <link rel="prev" title="Evaluate Model" href="eval_model.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pyteck.detect_peaks">
+<span id="detect-peaks"></span><h1>Detect Peaks<a class="headerlink" href="#module-pyteck.detect_peaks" title="Permalink to this headline">¶</a></h1>
+<p>Detect peaks in data based on their amplitude and other features.</p>
+<p>Citation:
+Duarte, Marcos. (2015) Notes on Scientific Computing for Biomechanics and
+Motor Control. GitHub repository, <a class="reference external" href="https://github.com/demotu/BMC">https://github.com/demotu/BMC</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">members</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<dl class="function">
+<dt id="pyteck.detect_peaks.detect_peaks">
+<code class="descclassname">pyteck.detect_peaks.</code><code class="descname">detect_peaks</code><span class="sig-paren">(</span><em>x</em>, <em>mph=None</em>, <em>mpd=1</em>, <em>threshold=0</em>, <em>edge='rising'</em>, <em>kpsh=False</em>, <em>valley=False</em>, <em>show=False</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/detect_peaks.html#detect_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.detect_peaks.detect_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect peaks in data based on their amplitude and other features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>1D array_like</em>) – data.</p></li>
+<li><p><strong>mph</strong> (<em>{None</em><em>, </em><em>number}</em><em>, </em><em>optional</em><em> (</em><em>default = None</em><em>)</em>) – detect peaks that are greater than minimum peak height (if parameter
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">valley</span></code> is False) or peaks that are smaller than maximum peak height
+(if parameter <code class="xref py py-obj docutils literal notranslate"><span class="pre">valley</span></code> is True).</p></li>
+<li><p><strong>mpd</strong> (<em>positive integer</em><em>, </em><em>optional</em><em> (</em><em>default = 1</em><em>)</em>) – detect peaks that are at least separated by minimum peak distance (in
+number of data).</p></li>
+<li><p><strong>threshold</strong> (<em>positive number</em><em>, </em><em>optional</em><em> (</em><em>default = 0</em><em>)</em>) – detect peaks (valleys) that are greater (smaller) than <code class="xref py py-obj docutils literal notranslate"><span class="pre">threshold</span></code>
+in relation to their immediate neighbors.</p></li>
+<li><p><strong>edge</strong> (<em>{None</em><em>, </em><em>'rising'</em><em>, </em><em>'falling'</em><em>, </em><em>'both'}</em><em>, </em><em>optional</em><em> (</em><em>default = 'rising'</em><em>)</em>) – for a flat peak, keep only the rising edge (‘rising’), only the
+falling edge (‘falling’), both edges (‘both’), or don’t detect a
+flat peak (None).</p></li>
+<li><p><strong>kpsh</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em><em> (</em><em>default = False</em><em>)</em>) – keep peaks with same height even if they are closer than <code class="xref py py-obj docutils literal notranslate"><span class="pre">mpd</span></code>.</p></li>
+<li><p><strong>valley</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em><em> (</em><em>default = False</em><em>)</em>) – if True (1), detect valleys (local minima) instead of peaks.</p></li>
+<li><p><strong>show</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em><em> (</em><em>default = False</em><em>)</em>) – if True (1), plot data in matplotlib figure.</p></li>
+<li><p><strong>ax</strong> (<em>a matplotlib.axes.Axes instance</em><em>, </em><em>optional</em><em> (</em><em>default = None</em><em>)</em><em></em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ind</strong> – indeces of the peaks in <code class="xref py py-obj docutils literal notranslate"><span class="pre">x</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>1D array_like</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The detection of valleys instead of peaks is performed internally by simply
+negating the data: <code class="xref py py-obj docutils literal notranslate"><span class="pre">ind_valleys</span> <span class="pre">=</span> <span class="pre">detect_peaks(-x)</span></code></p>
+<p>The function can handle NaN’s</p>
+<p>See this IPython Notebook <a class="footnote-reference brackets" href="#id2" id="id1">1</a>.</p>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p><a class="reference external" href="http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb">http://nbviewer.ipython.org/github/demotu/BMC/blob/master/notebooks/DetectPeaks.ipynb</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">detect_peaks</span> <span class="k">import</span> <span class="n">detect_peaks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">60</span><span class="p">:</span><span class="mi">81</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># detect all peaks and plot data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ind</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># set minimum peak height = 0 and minimum peak distance = 20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mph</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mpd</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># set minimum peak distance = 2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mpd</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">/</span><span class="mi">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># detection of valleys instead of peaks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mph</span><span class="o">=-</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">mpd</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">valley</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># detect both edges</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="s1">&#39;both&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># set threshold = 2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">detect_peaks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">PyTeCK</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="eval_model.html">Evaluate Model</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Detect Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="eval_model.html" title="previous chapter">Evaluate Model</a></li>
+      <li>Next: <a href="simulation.html" title="next chapter">Simulation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Kyle E. Niemeyer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/detect_peaks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
