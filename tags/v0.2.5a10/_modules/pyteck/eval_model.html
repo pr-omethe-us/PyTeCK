@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>pyteck.eval_model &#8212; PyTeCK 0.2.5a10 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pyteck.eval_model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Python 2 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+
+<span class="c1"># Standard libraries</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">splitext</span><span class="p">,</span> <span class="n">basename</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">UnivariateSpline</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">yaml</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: YAML must be installed to read input file.&#39;</span><span class="p">)</span>
+    <span class="k">raise</span>
+
+<span class="kn">from</span> <span class="nn">pyked.chemked</span> <span class="k">import</span> <span class="n">ChemKED</span><span class="p">,</span> <span class="n">DataPoint</span>
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">.simulation</span> <span class="k">import</span> <span class="n">Simulation</span>
+
+<span class="n">min_deviation</span> <span class="o">=</span> <span class="mf">0.10</span>
+<span class="sd">&quot;&quot;&quot;float: minimum allowable standard deviation for experimental data&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="create_simulations"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.create_simulations">[docs]</a><span class="k">def</span> <span class="nf">create_simulations</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set up individual simulations for each ignition delay value.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset :</span>
+
+<span class="sd">    properties : pyked.chemked.ChemKED</span>
+<span class="sd">        ChemKED object with full set of experimental properties</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    simulations : list</span>
+<span class="sd">        List of :class:`Simulation` objects for each simulation</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">simulations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span><span class="p">):</span>
+        <span class="n">sim_meta</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Common metadata</span>
+        <span class="n">sim_meta</span><span class="p">[</span><span class="s1">&#39;data-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="n">sim_meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">splitext</span><span class="p">(</span><span class="n">basename</span><span class="p">(</span><span class="n">dataset</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+        <span class="n">simulations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Simulation</span><span class="p">(</span><span class="n">properties</span><span class="o">.</span><span class="n">experiment_type</span><span class="p">,</span>
+                                      <span class="n">properties</span><span class="o">.</span><span class="n">apparatus</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+                                      <span class="n">sim_meta</span><span class="p">,</span>
+                                      <span class="n">case</span>
+                                      <span class="p">)</span>
+                           <span class="p">)</span>
+    <span class="k">return</span> <span class="n">simulations</span></div>
+
+<div class="viewcode-block" id="simulation_worker"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.simulation_worker">[docs]</a><span class="k">def</span> <span class="nf">simulation_worker</span><span class="p">(</span><span class="n">sim_tuple</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Worker for multiprocessing of simulation cases.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_tuple : tuple</span>
+<span class="sd">        Contains Simulation object and other parameters needed to setup</span>
+<span class="sd">        and run case.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sim : ``Simulation``</span>
+<span class="sd">        Simulation case with calculated ignition delay.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sim</span><span class="p">,</span> <span class="n">model_file</span><span class="p">,</span> <span class="n">model_spec_key</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">restart</span> <span class="o">=</span> <span class="n">sim_tuple</span>
+
+    <span class="n">sim</span><span class="o">.</span><span class="n">setup_case</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="n">model_spec_key</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">run_case</span><span class="p">(</span><span class="n">restart</span><span class="p">)</span>
+
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">apparatus</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sim</span></div>
+
+
+<div class="viewcode-block" id="estimate_std_dev"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.estimate_std_dev">[docs]</a><span class="k">def</span> <span class="nf">estimate_std_dev</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    indep_variable : ndarray, list(float)</span>
+<span class="sd">        Independent variable (e.g., temperature, pressure)</span>
+<span class="sd">    dep_variable : ndarray, list(float)</span>
+<span class="sd">        Dependent variable (e.g., ignition delay)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    standard_dev : float</span>
+<span class="sd">        Standard deviation of difference between data and best-fit line</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">),</span> \
+        <span class="s1">&#39;independent and dependent variables not the same length&#39;</span>
+
+    <span class="c1"># ensure no repetition of independent variable by taking average of associated dependent</span>
+    <span class="c1"># variables and removing duplicates</span>
+    <span class="n">vals</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">repeated</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">repeated</span><span class="p">:</span>
+        <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">indep_variable</span> <span class="o">==</span> <span class="n">val</span><span class="p">)</span>
+        <span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">dep_variable</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">dep_variable</span><span class="p">,</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">indep_variable</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+
+    <span class="c1"># ensure data sorted based on independent variable to avoid some problems</span>
+    <span class="n">sorted_vars</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">))</span>
+    <span class="n">indep_variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">sorted_vars</span><span class="p">]</span>
+    <span class="n">dep_variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">pt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">sorted_vars</span><span class="p">]</span>
+
+    <span class="c1"># spline fit of the data</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># Fit of data will be perfect</span>
+        <span class="k">return</span> <span class="n">min_deviation</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">,</span> <span class="n">dep_variable</span><span class="p">)</span>
+
+    <span class="n">standard_dev</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">dep_variable</span> <span class="o">-</span> <span class="n">spline</span><span class="p">(</span><span class="n">indep_variable</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">standard_dev</span> <span class="o">&lt;</span> <span class="n">min_deviation</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Standard deviation of </span><span class="si">{:.2f}</span><span class="s1"> too low, &#39;</span>
+              <span class="s1">&#39;using </span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">standard_dev</span><span class="p">,</span> <span class="n">min_deviation</span><span class="p">))</span>
+        <span class="n">standard_dev</span> <span class="o">=</span> <span class="n">min_deviation</span>
+
+    <span class="k">return</span> <span class="n">standard_dev</span></div>
+
+
+<div class="viewcode-block" id="get_changing_variable"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.get_changing_variable">[docs]</a><span class="k">def</span> <span class="nf">get_changing_variable</span><span class="p">(</span><span class="n">cases</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identify variable changing across multiple cases.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cases : list(pyked.chemked.DataPoint)</span>
+<span class="sd">        List of DataPoint with experimental case data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    variable : list(float)</span>
+<span class="sd">        List of floats representing changing experimental variable.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">changing_var</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">,</span> <span class="s1">&#39;pressure&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">var_name</span> <span class="o">==</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span> <span class="o">==</span> <span class="n">variable</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">variable</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">changing_var</span><span class="p">:</span>
+                <span class="n">changing_var</span> <span class="o">=</span> <span class="n">var_name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Warning: multiple changing variables. &#39;</span>
+                              <span class="s1">&#39;Using temperature.&#39;</span><span class="p">,</span>
+                              <span class="ne">RuntimeWarning</span>
+                              <span class="p">)</span>
+                <span class="n">changing_var</span> <span class="o">=</span> <span class="s1">&#39;temperature&#39;</span>
+                <span class="k">break</span>
+
+    <span class="c1"># Temperature is default</span>
+    <span class="k">if</span> <span class="n">changing_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">changing_var</span> <span class="o">=</span> <span class="s1">&#39;temperature&#39;</span>
+
+    <span class="k">if</span> <span class="n">changing_var</span> <span class="o">==</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span>
+                    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
+                    <span class="p">]</span>
+    <span class="k">elif</span> <span class="n">changing_var</span> <span class="o">==</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span>
+                    <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span>
+                    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">variable</span></div>
+
+
+<div class="viewcode-block" id="evaluate_model"><a class="viewcode-back" href="../../eval_model.html#pyteck.eval_model.evaluate_model">[docs]</a><span class="k">def</span> <span class="nf">evaluate_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">spec_keys_file</span><span class="p">,</span> <span class="n">dataset_file</span><span class="p">,</span>
+                   <span class="n">data_path</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="s1">&#39;models&#39;</span><span class="p">,</span>
+                   <span class="n">results_path</span><span class="o">=</span><span class="s1">&#39;results&#39;</span><span class="p">,</span> <span class="n">model_variant_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">num_threads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">print_results</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">skip_validation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Evaluates the ignition delay error of a model for a given dataset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        Chemical kinetic model filename</span>
+<span class="sd">    spec_keys_file : str</span>
+<span class="sd">        Name of YAML file identifying important species</span>
+<span class="sd">    dataset_file : str</span>
+<span class="sd">        Name of file with list of data files</span>
+<span class="sd">    data_path : str</span>
+<span class="sd">        Local path for data files. Optional; default = &#39;data&#39;</span>
+<span class="sd">    model_path : str</span>
+<span class="sd">        Local path for model file. Optional; default = &#39;models&#39;</span>
+<span class="sd">    results_path : str</span>
+<span class="sd">        Local path for creating results files. Optional; default = &#39;results&#39;</span>
+<span class="sd">    model_variant_file : str</span>
+<span class="sd">        Name of YAML file identifying ranges of conditions for variants of the</span>
+<span class="sd">        kinetic model. Optional; default = ``None``</span>
+<span class="sd">    num_threads : int</span>
+<span class="sd">        Number of CPU threads to use for performing simulations in parallel.</span>
+<span class="sd">        Optional; default = ``None``, in which case the available number of</span>
+<span class="sd">        cores minus one is used.</span>
+<span class="sd">    print_results : bool</span>
+<span class="sd">        If ``True``, print results of the model evaluation to screen.</span>
+<span class="sd">    restart : bool</span>
+<span class="sd">        If ``True``, process saved results. Mainly intended for testing/development.</span>
+<span class="sd">    skip_validation : bool</span>
+<span class="sd">        If ``True``, skips validation of ChemKED files.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : dict</span>
+<span class="sd">        Dictionary with all information about model evaluation results.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create results_path if it doesn&#39;t exist</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">results_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">results_path</span><span class="p">)</span>
+
+    <span class="c1"># Dict to translate species names into those used by models</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">spec_keys_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">model_spec_key</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># Keys for models with variants depending on pressure or bath gas</span>
+    <span class="n">model_variant</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">model_variant_file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_variant_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">model_variant</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># Read dataset list</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataset_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">dataset_list</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+
+    <span class="n">error_func_sets</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">))</span>
+    <span class="n">dev_func_sets</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">))</span>
+
+    <span class="c1"># Dictionary with all output data</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span> <span class="s1">&#39;datasets&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+
+    <span class="c1"># If number of threads not specified, use either max number of available</span>
+    <span class="c1"># cores minus 1, or use 1 if multiple cores not available.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">num_threads</span><span class="p">:</span>
+        <span class="n">num_threads</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="mi">1</span>
+
+    <span class="c1"># Loop through all datasets</span>
+    <span class="k">for</span> <span class="n">idx_set</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">):</span>
+
+        <span class="n">dataset_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;dataset&#39;</span><span class="p">:</span> <span class="n">dataset</span><span class="p">,</span> <span class="s1">&#39;dataset_id&#39;</span><span class="p">:</span> <span class="n">idx_set</span><span class="p">}</span>
+
+        <span class="c1"># Create individual simulation cases for each datapoint in this set</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="n">ChemKED</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">),</span> <span class="n">skip_validation</span><span class="o">=</span><span class="n">skip_validation</span><span class="p">)</span>
+        <span class="n">simulations</span> <span class="o">=</span> <span class="n">create_simulations</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span>
+
+        <span class="n">ignition_delays_exp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">simulations</span><span class="p">))</span>
+        <span class="n">ignition_delays_sim</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">simulations</span><span class="p">))</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Determine standard deviation of the dataset</span>
+        <span class="c1">#############################################</span>
+        <span class="n">ign_delay</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+                     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span>
+                     <span class="k">else</span> <span class="n">case</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+                     <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span>
+                     <span class="p">]</span>
+
+        <span class="c1"># get variable that is changing across datapoints</span>
+        <span class="n">variable</span> <span class="o">=</span> <span class="n">get_changing_variable</span><span class="p">(</span><span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span><span class="p">)</span>
+        <span class="c1"># for ignition delay, use logarithm of values</span>
+        <span class="n">standard_dev</span> <span class="o">=</span> <span class="n">estimate_std_dev</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ign_delay</span><span class="p">))</span>
+        <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;standard deviation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">standard_dev</span><span class="p">)</span>
+
+        <span class="c1">#######################################################</span>
+        <span class="c1"># Need to check if Ar or He in reactants but not model,</span>
+        <span class="c1"># and if so skip this dataset (for now).</span>
+        <span class="c1">#######################################################</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nb">any</span><span class="p">([</span><span class="s1">&#39;Ar&#39;</span> <span class="ow">in</span> <span class="n">spec</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span>
+                  <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">composition</span><span class="p">]</span>
+                  <span class="p">)</span>
+             <span class="ow">and</span> <span class="s1">&#39;Ar&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model_spec_key</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+             <span class="p">)</span> <span class="ow">or</span>
+            <span class="p">(</span><span class="nb">any</span><span class="p">([</span><span class="s1">&#39;He&#39;</span> <span class="ow">in</span> <span class="n">spec</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">datapoints</span>
+                  <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">composition</span><span class="p">]</span>
+                  <span class="p">)</span>
+             <span class="ow">and</span> <span class="s1">&#39;He&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model_spec_key</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+             <span class="p">)</span>
+            <span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Warning: Ar or He in dataset, but not in model. Skipping.&#39;</span><span class="p">,</span>
+                          <span class="ne">RuntimeWarning</span>
+                          <span class="p">)</span>
+            <span class="n">error_func_sets</span><span class="p">[</span><span class="n">idx_set</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Use available number of processors minus one,</span>
+        <span class="c1"># or one process if single core.</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">num_threads</span><span class="p">)</span>
+
+        <span class="c1"># setup all cases</span>
+        <span class="n">jobs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simulations</span><span class="p">):</span>
+            <span class="c1"># special treatment based on pressure for Princeton model (and others)</span>
+
+            <span class="k">if</span> <span class="n">model_variant</span> <span class="ow">and</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">:</span>
+                <span class="n">model_mod</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="s1">&#39;bath gases&#39;</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">]:</span>
+                    <span class="c1"># find any bath gases requiring special treatment</span>
+                    <span class="n">bath_gases</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;bath gases&#39;</span><span class="p">])</span>
+                    <span class="n">gases</span> <span class="o">=</span> <span class="n">bath_gases</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                        <span class="nb">set</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;species-name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">])</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># If only one bath gas present, use that. If multiple, use the</span>
+                    <span class="c1"># predominant species. If none of the designated bath gases</span>
+                    <span class="c1"># are present, just use the first one (shouldn&#39;t matter.)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gases</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">max_mole</span> <span class="o">=</span> <span class="mf">0.</span>
+                        <span class="n">sp</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gases</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="s1">&#39;composition&#39;</span><span class="p">][</span><span class="n">g</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">max_mole</span><span class="p">:</span>
+                                <span class="n">sp</span> <span class="o">=</span> <span class="n">g</span>
+                    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">gases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">sp</span> <span class="o">=</span> <span class="n">gases</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># If no designated bath gas present, use any.</span>
+                        <span class="n">sp</span> <span class="o">=</span> <span class="n">bath_gases</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="n">model_mod</span> <span class="o">+=</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;bath gases&#39;</span><span class="p">][</span><span class="n">sp</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s1">&#39;pressures&#39;</span> <span class="ow">in</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">]:</span>
+                    <span class="c1"># pressure to atm</span>
+                    <span class="n">pres</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;atm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+                    <span class="c1"># choose closest pressure</span>
+                    <span class="c1"># better way to do this?</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;pressures&#39;</span><span class="p">])</span>
+                         <span class="p">]</span>
+                        <span class="p">)</span> <span class="o">-</span> <span class="n">pres</span><span class="p">))</span>
+                    <span class="n">pres</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;pressures&#39;</span><span class="p">])[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">model_mod</span> <span class="o">+=</span> <span class="n">model_variant</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="s1">&#39;pressures&#39;</span><span class="p">][</span><span class="n">pres</span><span class="p">]</span>
+
+                <span class="n">model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">model_name</span> <span class="o">+</span> <span class="n">model_mod</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)</span>
+
+            <span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">sim</span><span class="p">,</span> <span class="n">model_file</span><span class="p">,</span> <span class="n">model_spec_key</span><span class="p">[</span><span class="n">model_name</span><span class="p">],</span> <span class="n">results_path</span><span class="p">,</span> <span class="n">restart</span><span class="p">])</span>
+
+        <span class="c1"># run all cases</span>
+        <span class="n">jobs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">simulation_worker</span><span class="p">,</span> <span class="n">jobs</span><span class="p">)</span>
+
+        <span class="c1"># not adding more proceses, and ensure all finished</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">process_results</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+                <span class="n">ignition_delay</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignition_delay</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;nominal_value&#39;</span><span class="p">):</span>
+                <span class="n">ignition_delay</span> <span class="o">=</span> <span class="n">ignition_delay</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+
+            <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;datapoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;experimental ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">ignition_delay</span><span class="p">),</span>
+                 <span class="s1">&#39;simulated ignition delay&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]),</span>
+                 <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="p">),</span>
+                 <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="p">),</span>
+                 <span class="s1">&#39;composition&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;InChI&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">InChI</span><span class="p">,</span>
+                                  <span class="s1">&#39;species-name&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">species_name</span><span class="p">,</span>
+                                  <span class="s1">&#39;amount&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">amount</span><span class="o">.</span><span class="n">magnitude</span><span class="p">),</span>
+                                  <span class="p">}</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">],</span>
+                 <span class="s1">&#39;composition type&#39;</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span><span class="p">,</span>
+                 <span class="p">})</span>
+
+            <span class="n">ignition_delays_exp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
+            <span class="n">ignition_delays_sim</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span>
+
+        <span class="c1"># calculate error function for this dataset</span>
+        <span class="n">error_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">power</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_sim</span><span class="p">)</span> <span class="o">-</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_exp</span><span class="p">))</span> <span class="o">/</span> <span class="n">standard_dev</span><span class="p">,</span> <span class="mi">2</span>
+             <span class="p">)</span>
+        <span class="n">error_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">error_func</span><span class="p">)</span>
+        <span class="n">error_func_sets</span><span class="p">[</span><span class="n">idx_set</span><span class="p">]</span> <span class="o">=</span> <span class="n">error_func</span>
+        <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;error function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">error_func</span><span class="p">)</span>
+
+        <span class="n">dev_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_sim</span><span class="p">)</span> <span class="o">-</span>
+                    <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ignition_delays_exp</span><span class="p">)</span>
+                    <span class="p">)</span> <span class="o">/</span> <span class="n">standard_dev</span>
+        <span class="n">dev_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">dev_func</span><span class="p">)</span>
+        <span class="n">dev_func_sets</span><span class="p">[</span><span class="n">idx_set</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_func</span>
+        <span class="n">dataset_meta</span><span class="p">[</span><span class="s1">&#39;absolute deviation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dev_func</span><span class="p">)</span>
+
+        <span class="n">output</span><span class="p">[</span><span class="s1">&#39;datasets&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataset_meta</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">print_results</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with &#39;</span> <span class="o">+</span> <span class="n">dataset</span><span class="p">)</span>
+
+    <span class="c1"># Overall error function</span>
+    <span class="n">error_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">error_func_sets</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">print_results</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;overall error function: &#39;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">error_func</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;error standard deviation: &#39;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">error_func_sets</span><span class="p">)))</span>
+
+    <span class="c1"># Absolute deviation function</span>
+    <span class="n">abs_dev_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">dev_func_sets</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">print_results</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;absolute deviation function: &#39;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">abs_dev_func</span><span class="p">))</span>
+
+    <span class="n">output</span><span class="p">[</span><span class="s1">&#39;average error function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">error_func</span><span class="p">)</span>
+    <span class="n">output</span><span class="p">[</span><span class="s1">&#39;error function standard deviation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">error_func_sets</span><span class="p">))</span>
+    <span class="n">output</span><span class="p">[</span><span class="s1">&#39;average deviation function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">abs_dev_func</span><span class="p">)</span>
+
+    <span class="c1"># Write data to YAML file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">splitext</span><span class="p">(</span><span class="n">basename</span><span class="p">(</span><span class="n">model_name</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-results.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">PyTeCK</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../eval_model.html">Evaluate Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../detect_peaks.html">Detect Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utilities</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Kyle E. Niemeyer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
