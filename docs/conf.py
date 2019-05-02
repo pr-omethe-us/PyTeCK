@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-autodoc_default_options = ['members']
+autodoc_default_options = {'members': True}
 autoclass_content = 'class'
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
