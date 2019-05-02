@@ -1,0 +1,658 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>pyteck.simulation &#8212; PyTeCK 0.2.5a11 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pyteck.simulation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">.. moduleauthor:: Kyle Niemeyer &lt;kyle.niemeyer@gmail.com&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Python 2 compatibility</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+
+<span class="c1"># Standard libraries</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+
+<span class="c1"># Related modules</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">cantera</span> <span class="k">as</span> <span class="nn">ct</span>
+    <span class="n">ct</span><span class="o">.</span><span class="n">suppress_thermo_warnings</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: Cantera must be installed.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">tables</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;PyTables must be installed&#39;</span><span class="p">)</span>
+    <span class="k">raise</span>
+
+<span class="c1"># Local imports</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">.detect_peaks</span> <span class="k">import</span> <span class="n">detect_peaks</span>
+
+<div class="viewcode-block" id="first_derivative"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.first_derivative">[docs]</a><span class="k">def</span> <span class="nf">first_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Evaluates first derivative using second-order finite differences.</span>
+
+<span class="sd">    Uses (second-order) centeral difference in interior and second-order</span>
+<span class="sd">    one-sided difference at boundaries.</span>
+
+<span class="sd">    :param x: Independent variable array</span>
+<span class="sd">    :type x: np.ndarray</span>
+<span class="sd">    :param y: Dependent variable array</span>
+<span class="sd">    :type y: np.ndarray</span>
+<span class="sd">    :return: First derivative, :math:`dy/dx`</span>
+<span class="sd">    :rtype: np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">edge_order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sample_rising_pressure"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.sample_rising_pressure">[docs]</a><span class="k">def</span> <span class="nf">sample_rising_pressure</span><span class="p">(</span><span class="n">time_end</span><span class="p">,</span> <span class="n">init_pres</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">pressure_rise_rate</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Samples pressure for particular frequency assuming linear rise.</span>
+
+<span class="sd">    :param float time_end: End time of simulation in s</span>
+<span class="sd">    :param float init_pres: Initial pressure</span>
+<span class="sd">    :param float freq: Frequency of sampling, in Hz</span>
+<span class="sd">    :param float pressure_rise_rate: Pressure rise rate, in s^-1</span>
+<span class="sd">    :return: List of times and pressures</span>
+<span class="sd">    :rtype: list of np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">time_end</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">freq</span><span class="p">),</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">freq</span><span class="p">))</span>
+    <span class="n">pressures</span> <span class="o">=</span> <span class="n">init_pres</span> <span class="o">*</span> <span class="p">(</span><span class="n">pressure_rise_rate</span> <span class="o">*</span> <span class="n">times</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">pressures</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="create_volume_history"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.create_volume_history">[docs]</a><span class="k">def</span> <span class="nf">create_volume_history</span><span class="p">(</span><span class="n">mech</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">reactants</span><span class="p">,</span> <span class="n">pres_rise</span><span class="p">,</span> <span class="n">time_end</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constructs a volume profile based on intiial conditions and pressure rise.</span>
+
+<span class="sd">    :param str mech: Cantera-format mechanism file</span>
+<span class="sd">    :param float temp: Initial temperature in K</span>
+<span class="sd">    :param float pres: Initial pressure in Pa</span>
+<span class="sd">    :param str reactants: Reactants composition in mole fraction</span>
+<span class="sd">    :param float pres_rise: Pressure rise rate, in s^-1</span>
+<span class="sd">    :param float time_end: End time of simulation in s</span>
+<span class="sd">    :return: List of times and volumes</span>
+<span class="sd">    :rtype: list of np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gas</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Solution</span><span class="p">(</span><span class="n">mech</span><span class="p">)</span>
+    <span class="n">gas</span><span class="o">.</span><span class="n">TPX</span> <span class="o">=</span> <span class="n">temp</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">reactants</span>
+    <span class="n">initial_entropy</span> <span class="o">=</span> <span class="n">gas</span><span class="o">.</span><span class="n">entropy_mass</span>
+    <span class="n">initial_density</span> <span class="o">=</span> <span class="n">gas</span><span class="o">.</span><span class="n">density</span>
+
+    <span class="c1"># Sample pressure at 20 kHz</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="mf">2.0e4</span>
+    <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">pressures</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_rising_pressure</span><span class="p">(</span><span class="n">time_end</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">pres_rise</span><span class="p">)</span>
+
+    <span class="c1"># Calculate volume profile based on pressure</span>
+    <span class="n">volumes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pressures</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pressures</span><span class="p">):</span>
+        <span class="n">gas</span><span class="o">.</span><span class="n">SP</span> <span class="o">=</span> <span class="n">initial_entropy</span><span class="p">,</span> <span class="n">p</span>
+        <span class="n">volumes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_density</span> <span class="o">/</span> <span class="n">gas</span><span class="o">.</span><span class="n">density</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_ignition_delay"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.get_ignition_delay">[docs]</a><span class="k">def</span> <span class="nf">get_ignition_delay</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">target_name</span><span class="p">,</span> <span class="n">ignition_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identify ignition delay based on time, target, and type of detection.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
+        <span class="c1"># Get indices of peaks</span>
+        <span class="n">peak_inds</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mph</span><span class="o">=</span><span class="mf">1.e-9</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+
+        <span class="c1"># Get index of largest peak (overall ignition delay)</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="n">peak_inds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">])]</span>
+
+        <span class="c1">#ign_delays = time[peak_inds[np.where((time[peak_inds[peak_inds &lt;= max_ind]]) &gt; 0.0)]]</span>
+
+        <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">[</span><span class="n">peak_inds</span> <span class="o">&lt;=</span> <span class="n">max_ind</span><span class="p">]]</span>
+
+    <span class="k">elif</span> <span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;d/dt max&#39;</span><span class="p">:</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="c1"># Get indices of peaks. Set a minimum peak height of 1e-7% of the</span>
+        <span class="c1"># maximum value to avoid noise peaks.</span>
+        <span class="n">peak_inds</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mph</span><span class="o">=</span><span class="mf">1.e-9</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+
+        <span class="c1"># Get index of largest peak (overall ignition delay)</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="n">peak_inds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">])]</span>
+
+        <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">time</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">[</span><span class="n">peak_inds</span> <span class="o">&lt;=</span> <span class="n">max_ind</span><span class="p">]])</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)]]</span>
+
+    <span class="k">elif</span> <span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;1/2 max&#39;</span><span class="p">:</span>
+        <span class="c1"># maximum value, and associated index</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">peak_inds</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mph</span><span class="o">=</span><span class="mf">1.e-9</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="n">peak_inds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">])]</span>
+
+        <span class="c1"># TODO: interpolate for actual half-max value</span>
+        <span class="c1"># Find index associated with the 1/2 max value, but only consider</span>
+        <span class="c1"># points before the peak</span>
+        <span class="n">half_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">max_val</span><span class="p">))</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+        <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">time</span><span class="p">[</span><span class="n">half_idx</span><span class="p">]])</span>
+
+    <span class="k">elif</span> <span class="n">ignition_type</span> <span class="o">==</span> <span class="s1">&#39;d/dt max extrapolated&#39;</span><span class="p">:</span>
+        <span class="c1"># First need to evaluate derivative of the target</span>
+        <span class="n">target_derivative</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="c1"># Get indices of peaks, and index of largest peak, which corresponds to</span>
+        <span class="c1"># the point of maximum deriative</span>
+        <span class="n">peak_inds</span> <span class="o">=</span> <span class="n">detect_peaks</span><span class="p">(</span><span class="n">target_derivative</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mph</span><span class="o">=</span><span class="mf">1.e-9</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="n">peak_inds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">target_derivative</span><span class="p">[</span><span class="n">peak_inds</span><span class="p">])]</span>
+
+        <span class="c1"># use slope to extrapolate to intercept with baseline value (0 by default)</span>
+        <span class="n">ign_delays</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">time</span><span class="p">[</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">max_ind</span><span class="p">]</span> <span class="o">/</span> <span class="n">target_derivative</span><span class="p">[</span><span class="n">max_ind</span><span class="p">])])</span>
+
+        <span class="c1"># TODO: handle target with nonzero baseline?</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Unable to process ignition type &#39;</span> <span class="o">+</span> <span class="n">ignition_type</span> <span class="o">+</span>
+                      <span class="s1">&#39;, setting result to 0 and continuing&#39;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span>
+                      <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+
+
+    <span class="c1"># something has gone wrong if there is still no peak. This shouldn&#39;t be necessary.</span>
+    <span class="k">if</span> <span class="n">ign_delays</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;target-data-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y_%m_</span><span class="si">%d</span><span class="s1">_%H_%M_%S&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;.out&#39;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;No peak found, dumping target data to &#39;</span> <span class="o">+</span>
+                      <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39; and continuing&#39;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span>
+                      <span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">time</span><span class="p">,</span> <span class="n">target</span><span class="p">],</span>
+                   <span class="n">header</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;time, target (&#39;</span> <span class="o">+</span> <span class="n">target_name</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">)</span>
+                   <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">ign_delays</span></div>
+
+
+<div class="viewcode-block" id="VolumeProfile"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.VolumeProfile">[docs]</a><span class="k">class</span> <span class="nc">VolumeProfile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Set the velocity of reactor moving wall via specified volume profile.</span>
+
+<span class="sd">    The initialization and calling of this class are handled by the</span>
+<span class="sd">    `Func1</span>
+<span class="sd">    &lt;http://cantera.github.io/docs/sphinx/html/cython/zerodim.html#cantera.Func1&gt;`_</span>
+<span class="sd">    interface of Cantera.</span>
+
+<span class="sd">    Based on ``VolumeProfile`` implemented in Bryan W. Weber&#39;s</span>
+<span class="sd">    `CanSen &lt;http://bryanwweber.github.io/CanSen/&gt;`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume_history</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the initial values of the arrays from the input keywords.</span>
+
+<span class="sd">        The time and volume are read from the input file and stored in an</span>
+<span class="sd">        ``VolumeHistory`` object. The velocity is calculated by</span>
+<span class="sd">        assuming a unit area and using central differences. This function is</span>
+<span class="sd">        only called once when the class is initialized at the beginning of a</span>
+<span class="sd">        problem so it is efficient.</span>
+
+<span class="sd">        :param VolumeHistory volume_history: time and volume history</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># The time and volume are each stored as a ``np.array`` in the</span>
+        <span class="c1"># properties dictionary. The volume is normalized by the first volume</span>
+        <span class="c1"># element so that a unit area can be used to calculate the velocity.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">volume_history</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">volumes</span> <span class="o">=</span> <span class="p">(</span><span class="n">volume_history</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">magnitude</span> <span class="o">/</span>
+                   <span class="n">volume_history</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">magnitude</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                   <span class="p">)</span>
+
+        <span class="c1"># The velocity is calculated by the second-order central differences.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return (interpolated) velocity when called during a time step.</span>
+
+<span class="sd">        :param float time: Current simulation time in seconds</span>
+<span class="sd">        :return: Velocity in meters per second</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PressureRiseProfile"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.PressureRiseProfile">[docs]</a><span class="k">class</span> <span class="nc">PressureRiseProfile</span><span class="p">(</span><span class="n">VolumeProfile</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Set the velocity of reactor moving wall via specified pressure rise.</span>
+
+<span class="sd">    The initialization and calling of this class are handled by the</span>
+<span class="sd">    `Func1 &lt;http://cantera.github.io/docs/sphinx/html/cython/zerodim.html#cantera.Func1&gt;`_</span>
+<span class="sd">    interface of Cantera.</span>
+
+<span class="sd">    The approach used here is based on that discussed by Chaos and Dryer,</span>
+<span class="sd">    &quot;Chemical-kinetic modeling of ignition delay: Considerations in</span>
+<span class="sd">    interpreting shock tube data&quot;, *Int J Chem Kinet* 2010 42:143-150,</span>
+<span class="sd">    `doi:10.1002/kin.20471 &lt;http://dx.doi.org/10.1002/kin.20471`.</span>
+<span class="sd">    A time-dependent polytropic state change is emulated by determining volume</span>
+<span class="sd">    as a function of time, via a constant linear pressure rise :math:`A`</span>
+<span class="sd">    (given as a percentage of the initial pressure):</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">       \frac{dv}{dt} &amp;= -\frac{1}{\gamma} \frac{v(t)}{P(t)} \frac{dP}{dt} \\</span>
+<span class="sd">       v(t) &amp;= \frac{1}{\rho} \left[ \frac{P(t)}{P_0} \right]^{-1 / \gamma}</span>
+
+<span class="sd">       \frac{dP}{dt} &amp;= A P_0 \\</span>
+<span class="sd">       \therefore P(t) &amp;= P_0 (A t + 1)</span>
+
+<span class="sd">       \frac{dv}{dt} = -A \frac{1}{\rho \gamma} (A t + 1)^{-1 / \gamma}</span>
+
+<span class="sd">    The expression for :math:`\frac{dv}{dt}` can then be used directly for</span>
+<span class="sd">    the ``Wall`` velocity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mech_filename</span><span class="p">,</span> <span class="n">initial_temp</span><span class="p">,</span> <span class="n">initial_pres</span><span class="p">,</span>
+                 <span class="n">reactants</span><span class="p">,</span> <span class="n">pressure_rise</span><span class="p">,</span> <span class="n">time_end</span>
+                 <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the initial values of properties needed for velocity.</span>
+
+<span class="sd">        :param str mech_filename: Cantera-format mechanism</span>
+<span class="sd">        :param float initial_temp: Initial temperature in K</span>
+<span class="sd">        :param float initial_pres: Initial pressure in Pa</span>
+<span class="sd">        :param str reactants: Reactants composition in mole fraction</span>
+<span class="sd">        :param float pres_rise: Pressure rise rate in s^-1</span>
+<span class="sd">        :param float time_end: End time of simulation in s</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_volume_history</span><span class="p">(</span>
+                    <span class="n">mech_filename</span><span class="p">,</span> <span class="n">initial_temp</span><span class="p">,</span> <span class="n">initial_pres</span><span class="p">,</span>
+                    <span class="n">reactants</span><span class="p">,</span> <span class="n">pressure_rise</span><span class="p">,</span> <span class="n">time_end</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Calculate velocity by second-order finite difference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">first_derivative</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">volumes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Simulation"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation">[docs]</a><span class="k">class</span> <span class="nc">Simulation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class for ignition delay simulations.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">apparatus</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize simulation case.</span>
+
+<span class="sd">        :param kind: Kind of experiment (e.g., &#39;ignition delay&#39;)</span>
+<span class="sd">        :type kind: str</span>
+<span class="sd">        :param apparatus: Type of apparatus (&#39;shock tube&#39; or &#39;rapid compression machine&#39;)</span>
+<span class="sd">        :type apparatus: str</span>
+<span class="sd">        :param meta: some metadata for this case</span>
+<span class="sd">        :type meta: dict</span>
+<span class="sd">        :param properties: set of properties for this case</span>
+<span class="sd">        :type properties: pyked.chemked.DataPoint</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="n">kind</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apparatus</span> <span class="o">=</span> <span class="n">apparatus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">meta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span>
+
+<div class="viewcode-block" id="Simulation.setup_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.setup_case">[docs]</a>    <span class="k">def</span> <span class="nf">setup_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_file</span><span class="p">,</span> <span class="n">species_key</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets up the simulation case to be run.</span>
+
+<span class="sd">        :param str model_file: Filename for Cantera-format model</span>
+<span class="sd">        :param dict species_key: Dictionary with species names for `model_file`</span>
+<span class="sd">        :param str path: Path for data file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gas</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Solution</span><span class="p">(</span><span class="n">model_file</span><span class="p">)</span>
+
+        <span class="c1"># Convert ignition delay to seconds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Set end time of simulation to 100 times the experimental ignition delay</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span> <span class="o">=</span> <span class="mf">100.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span> <span class="o">=</span> <span class="mf">100.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_delay</span><span class="o">.</span><span class="n">magnitude</span>
+
+        <span class="c1"># Initial temperature needed in Kelvin for Cantera</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;kelvin&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Initial pressure needed in Pa for Cantera</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;pascal&#39;</span><span class="p">)</span>
+
+        <span class="c1"># convert reactant names to those needed for model</span>
+        <span class="n">reactants</span> <span class="o">=</span> <span class="p">[</span><span class="n">species_key</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">species_name</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span>
+                     <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">spec</span><span class="p">]</span><span class="o">.</span><span class="n">amount</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+                     <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition</span>
+                     <span class="p">]</span>
+        <span class="n">reactants</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span>
+
+        <span class="c1"># need to extract values from Quantity or Measurement object</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="s1">&#39;nominal_value&#39;</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">nominal_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+            <span class="n">pres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="p">,</span> <span class="s1">&#39;nominal_value&#39;</span><span class="p">):</span>
+            <span class="n">pres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">nominal_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">magnitude</span>
+
+        <span class="c1"># Reactants given in format for Cantera</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mole fraction&#39;</span><span class="p">,</span> <span class="s1">&#39;mole percent&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPX</span> <span class="o">=</span> <span class="n">temp</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">reactants</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">composition_type</span> <span class="o">==</span> <span class="s1">&#39;mass fraction&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">TPY</span> <span class="o">=</span> <span class="n">temp</span><span class="p">,</span> <span class="n">pres</span><span class="p">,</span> <span class="n">reactants</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span><span class="p">(</span><span class="ne">BaseException</span><span class="p">(</span><span class="s1">&#39;error: not supported&#39;</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Create non-interacting ``Reservoir`` on other side of ``Wall``</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Reservoir</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">Solution</span><span class="p">(</span><span class="s1">&#39;air.xml&#39;</span><span class="p">))</span>
+
+        <span class="c1"># All reactors are ``IdealGasReactor`` objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reac</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">IdealGasReactor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apparatus</span> <span class="o">==</span> <span class="s1">&#39;shock tube&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Shock tube modeled by constant UV</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wall</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Wall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">apparatus</span> <span class="o">==</span> <span class="s1">&#39;shock tube&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Shock tube modeled by constant UV with isentropic compression</span>
+
+            <span class="c1"># Need to convert pressure rise units to seconds</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;1 / second&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+                <span class="n">pres_rise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">magnitude</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pres_rise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pressure_rise</span><span class="o">.</span><span class="n">magnitude</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">wall</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Wall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                                <span class="n">velocity</span><span class="o">=</span><span class="n">PressureRiseProfile</span><span class="p">(</span>
+                                    <span class="n">model_file</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">P</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">X</span><span class="p">,</span>
+                                    <span class="n">pres_rise</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span>
+                                    <span class="p">)</span>
+                                <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apparatus</span> <span class="o">==</span> <span class="s1">&#39;rapid compression machine&#39;</span> <span class="ow">and</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span> <span class="ow">is</span> <span class="kc">None</span>
+              <span class="p">):</span>
+            <span class="c1"># Rapid compression machine modeled by constant UV</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wall</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Wall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apparatus</span> <span class="o">==</span> <span class="s1">&#39;rapid compression machine&#39;</span> <span class="ow">and</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+              <span class="p">):</span>
+            <span class="c1"># Rapid compression machine modeled with volume-time history</span>
+
+            <span class="c1"># First convert time units if necessary</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">ito</span><span class="p">(</span><span class="s1">&#39;second&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">wall</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Wall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                                <span class="n">velocity</span><span class="o">=</span><span class="n">VolumeProfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span><span class="p">)</span>
+                                <span class="p">)</span>
+
+        <span class="c1"># Number of solution variables is number of species + mass,</span>
+        <span class="c1"># volume, temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">kinetics</span><span class="o">.</span><span class="n">n_species</span> <span class="o">+</span> <span class="mi">3</span>
+
+        <span class="c1"># Create ``ReactorNet`` newtork</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">ReactorNet</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="p">])</span>
+
+        <span class="c1"># Set maximum time step based on volume-time history, if present</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Minimum difference between volume profile times</span>
+            <span class="n">min_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">volume_history</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">set_max_time_step</span><span class="p">(</span><span class="n">min_time</span><span class="p">)</span>
+
+        <span class="c1"># Check if species ignition target, that species is present.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">,</span> <span class="s1">&#39;temperature&#39;</span><span class="p">]:</span>
+            <span class="c1"># Other targets are species</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span>
+
+            <span class="c1"># Try finding species in upper- and lower-case</span>
+            <span class="n">try_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">spec</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+
+            <span class="c1"># If excited radical, may need to fall back to nonexcited species</span>
+            <span class="k">if</span> <span class="n">spec</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+                <span class="n">try_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">spec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+
+            <span class="n">ind</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">try_list</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas</span><span class="o">.</span><span class="n">species_index</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="c1"># store index of target species</span>
+            <span class="k">if</span> <span class="n">ind</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">=</span> <span class="n">ind</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="n">spec</span> <span class="o">+</span> <span class="s1">&#39; not found in model; falling back on pressure.&#39;</span><span class="p">,</span>
+                    <span class="ne">RuntimeWarning</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">=</span> <span class="s1">&#39;pressure&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="s1">&#39;d/dt max&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Set file for later data file</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.h5&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_path</span></div>
+
+<div class="viewcode-block" id="Simulation.run_case"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.run_case">[docs]</a>    <span class="k">def</span> <span class="nf">run_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run simulation case set up ``setup_case``.</span>
+
+<span class="sd">        :param bool restart: If ``True``, skip if results file exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">restart</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Skipped existing case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Save simulation results in hdf5 table format.</span>
+        <span class="n">table_def</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                     <span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                     <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                     <span class="s1">&#39;volume&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                     <span class="s1">&#39;mass_fractions&#39;</span><span class="p">:</span> <span class="n">tables</span><span class="o">.</span><span class="n">Float64Col</span><span class="p">(</span>
+                          <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">n_species</span><span class="p">),</span> <span class="n">pos</span><span class="o">=</span><span class="mi">4</span>
+                          <span class="p">),</span>
+                     <span class="p">}</span>
+
+        <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                              <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                              <span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+
+            <span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">where</span><span class="o">=</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+                                        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;simulation&#39;</span><span class="p">,</span>
+                                        <span class="n">description</span><span class="o">=</span><span class="n">table_def</span>
+                                        <span class="p">)</span>
+            <span class="c1"># Row instance to save timestep information to</span>
+            <span class="n">timestep</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">row</span>
+            <span class="c1"># Save initial conditions</span>
+            <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span>
+            <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span>
+            <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span>
+            <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span>
+            <span class="c1"># Add ``timestep`` to table</span>
+            <span class="n">timestep</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
+
+            <span class="c1"># Main time integration loop; continue integration while time of</span>
+            <span class="c1"># the ``ReactorNet`` is less than specified end time.</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_end</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="c1"># Save new timestep information</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac_net</span><span class="o">.</span><span class="n">time</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">thermo</span><span class="o">.</span><span class="n">P</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">volume</span>
+                <span class="n">timestep</span><span class="p">[</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reac</span><span class="o">.</span><span class="n">Y</span>
+
+                <span class="c1"># Add ``timestep`` to table</span>
+                <span class="n">timestep</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
+
+            <span class="c1"># Write ``table`` to disk</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done with case &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Simulation.process_results"><a class="viewcode-back" href="../../simulation.html#pyteck.simulation.Simulation.process_results">[docs]</a>    <span class="k">def</span> <span class="nf">process_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process integration results to obtain ignition delay.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Load saved integration results</span>
+        <span class="k">with</span> <span class="n">tables</span><span class="o">.</span><span class="n">open_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;save-file&#39;</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">h5file</span><span class="p">:</span>
+            <span class="c1"># Load Table with Group name simulation</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">simulation</span>
+
+            <span class="n">time</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">==</span> <span class="s1">&#39;pressure&#39;</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;pressure&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span> <span class="o">==</span> <span class="s1">&#39;temperature&#39;</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;mass_fractions&#39;</span><span class="p">)[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span><span class="p">]</span>
+            <span class="c1"># store initial and maximum temperatures as a gate for whether the case ignited</span>
+            <span class="n">init_temperature</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">max_temperature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;temperature&#39;</span><span class="p">))</span>
+
+        <span class="c1"># add units to time</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">time</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+
+        <span class="c1"># Will need to subtract compression time for RCM</span>
+        <span class="n">time_comp</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="p">,</span> <span class="s1">&#39;compression_time&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+                <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">time_comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rcm_data</span><span class="o">.</span><span class="n">compression_time</span>
+
+        <span class="c1"># First use basic check for ignition based on temperature increase of at least 50 K</span>
+        <span class="k">if</span> <span class="n">max_temperature</span> <span class="o">&gt;=</span> <span class="n">init_temperature</span> <span class="o">+</span> <span class="mf">50.</span><span class="p">:</span>
+            <span class="n">ignition_delays</span> <span class="o">=</span> <span class="n">get_ignition_delay</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span>
+                                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_target</span><span class="p">,</span>
+                                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">ignition_type</span>
+                                                 <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ignition_delays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_comp</span><span class="p">)</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;No ignition for case &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">+</span>
+                          <span class="s1">&#39;, setting value to 0.0 and continuing&#39;</span><span class="p">,</span>
+                          <span class="ne">RuntimeWarning</span>
+                          <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-ignition-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span>
+
+        <span class="c1"># TODO: detect two-stage ignition.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;simulated-first-stage-delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">second</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">PyTeCK</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../eval_model.html">Evaluate Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../detect_peaks.html">Detect Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utilities</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Kyle E. Niemeyer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
