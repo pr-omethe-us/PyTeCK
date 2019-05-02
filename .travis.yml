@@ -68,7 +68,7 @@ script:
     else
       if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
         conda build conda.recipe;
-        anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda/conda-bld/*/pyked*.tar.bz2;
+        anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda/conda-bld/*/pyteck*.tar.bz2;
         python setup.py install;
         cd docs;
         make html SPHINXOPTS="-W";
