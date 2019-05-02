@@ -9,15 +9,17 @@ source:
 
 build:
   number: 0
-  script: python setup.py install --single-version-externally-managed --record=record.txt
+  script: python -m pip install --no-deps --ignore-installed .
+  noarch: python
 
 requirements:
   build:
-    - python >=3.5,{{PY_VER}}*
+    - python >=3.5
     - setuptools
+    - pip
 
   run:
-    - python {{PY_VER}}*
+    - python
     - pyyaml >=3.12,<4.0
     - numpy >=1.13.1
     - scipy >=1.0.0
@@ -29,6 +31,7 @@ requirements:
 test:
   imports:
     - pyked
+    - cantera
 
   requires:
     - pytest >=3.0.1
