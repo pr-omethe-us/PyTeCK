@@ -1,35 +1,29 @@
 version: 1.0.{build}
 environment:
-  ANACONDA_KEY:
-    secure: QRB7xAxIYmN+iZnmWh2gwaP5XNc2IVPM3f5dPXsZ3oqsyd3x1AQg0Y3T54Zkx6p/
+  PYTHON_LOC: "C:\\Miniconda36-x64"
 
-  matrix:
-#    - PYTHON_LOC: "C:\\Miniconda-x64"
-#      PYTHON_VERSION: "2.7"
-
-    - PYTHON_LOC: "C:\\Miniconda36-x64"
-      PYTHON_VERSION: "3.5"
-
-    - PYTHON_LOC: "C:\\Miniconda36-x64"
-      PYTHON_VERSION: "3.6"
+skip_tags: true
 
 install:
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda config --append channels conda-forge
-  - cmd: conda config --append channels cantera
-  - cmd: conda config --append channels pr-omethe-us
-  - cmd: conda update -q conda
-  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}",$env:PYTHON_VERSION} | set-content test-environment.yaml
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="false" conda env create -qf test-environment.yaml
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="false" call %PYTHON_LOC%\Scripts\activate.bat test-environment
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="true" conda install -yq anaconda-client conda-build
+  - cmd: conda update conda
+  - cmd: conda update -q --all
+  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.5"} | set-content test-environment.yaml
+  - cmd: conda env create -qf test-environment.yaml
+  - cmd: git checkout -- test-environment.yaml
+  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.6"} | set-content test-environment.yaml
+  - cmd: conda env create -qf test-environment.yaml
   - cmd: conda info -a
-  - cmd: conda list
+  - ps: Write-Host "Packages in py3.5 Environment:"
+  - cmd: conda list -n py3.5
+  - ps: Write-Host "Packages in py3.6 Environment:"
+  - cmd: conda list -n py3.6
 
 build_script:
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="false" python setup.py test
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="true" conda build conda.recipe --python=%PYTHON_VERSION%
-
-deploy_script:
-  - cmd: IF "%APPVEYOR_REPO_TAG%"=="true" anaconda -t %ANACONDA_KEY% upload "%PYTHON_LOC%\conda-bld\win-64\pyteck*.tar.bz2"
+  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.5
+  - cmd: pytest -vv --cov=./ --cov-append
+  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.6
+  - cmd: pytest -vv --cov=./ --cov-append
+  - cmd: codecov -X gcov

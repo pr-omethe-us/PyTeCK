@@ -4,9 +4,7 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
+from setuptools import setup
 from codecs import open
 from os import path
 import sys
@@ -25,22 +23,16 @@ with open(path.join(here, 'CHANGELOG.md')) as changelog_file:
 with open(path.join(here, 'CITATION.md')) as citation_file:
     citation = citation_file.read()
 
-desc = readme + '\n\n' + changelog + '\n\n' + citation
-try:
-    import pypandoc
-    long_description = pypandoc.convert_text(desc, 'rst', format='md')
-    with open(path.join(here, 'README.rst'), 'w') as rst_readme:
-        rst_readme.write(long_description)
-except (ImportError, OSError, IOError):
-    long_description = desc
+long_description = readme + '\n\n' + changelog + '\n\n' + citation
 
 install_requires = [
     'pyyaml>=3.12,<4.0',
     'pint>=0.7.2,<0.9',
-    'numpy>=1.13.0',
+    'numpy>=1.13.0,<2.0',
     'tables',
     'pyked>=0.4.1',
-    'scipy>=0.19.0',
+    'scipy>=1.0.0',
+    'cantera>=2.3.0'
 ]
 
 tests_require = [
@@ -57,7 +49,7 @@ setup(
 
     description='Evaluation of chemical kinetic models with experimental data',
     long_description=long_description,
-    url='https://github.com/kyleniemeyer/PyTeCK',
+    url='https://github.com/pr-omethe-us/PyTeCK',
 
     author='Kyle E. Niemeyer',
     author_email='kyle.niemeyer@gmail.com',

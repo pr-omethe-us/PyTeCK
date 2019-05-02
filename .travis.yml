@@ -24,31 +24,32 @@ matrix:
 
 # Install packages
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - rm miniconda.sh
+  - source $HOME/miniconda/etc/profile.d/conda.sh && conda activate
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda update -q --all
+  - conda config --append channels conda-forge
+  - conda config --append channels cantera
+  - conda config --append channels pr-omethe-us
+  - if [[ -z "$TRAVIS_TAG" ]]; then
+      sed -i -e "s/\${PYTHON}/"${PYTHON}"/" test-environment.yaml;
+      conda env create -qf test-environment.yaml;
+      conda activate py${PYTHON};
+    else
+      if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+        conda env update -qn base -f build-environment.yaml;
       fi
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - source $HOME/miniconda/etc/profile.d/conda.sh && conda activate
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    - conda update -q --all
-    - conda config --append channels conda-forge
-    - conda config --append channels cantera
-    - conda config --append channels pr-omethe-us
-    - if [[ -z "$TRAVIS_TAG" ]]; then
-        sed -i -e "s/\${PYTHON}/"${PYTHON}"/" test-environment.yaml;
-        conda env create -qf test-environment.yaml;
-        conda activate test-environment;
-      else
-        if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
-          conda env update -qn base -f build-environment.yaml;
-        fi
-      fi
-      # Useful for debugging any issues with conda
-    - conda info -a
-    - conda list
+    fi
+    # Useful for debugging any issues with conda
+  - conda info -a
+  - conda list
 
 # command to run tests
 script:
@@ -57,17 +58,24 @@ script:
       pytest -vv --cov=./;
       if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
         git checkout -- test-environment.yaml;
-        conda install -q sphinx doctr;
+        conda install -q sphinx doctr nbsphinx ipython;
         python setup.py install;
         cd docs;
         make html SPHINXOPTS="-W";
         cd ..;
-        doctr deploy .;
+        doctr deploy devel;
       fi
     else
-      conda install -yq anaconda-client conda-build
-      conda build conda.recipe --python=${PYTHON};
-      anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda/conda-bld/*/pyteck*.tar.bz2;
+      if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
+        conda build conda.recipe;
+        anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda/conda-bld/*/pyked*.tar.bz2;
+        python setup.py install;
+        cd docs;
+        make html SPHINXOPTS="-W";
+        cd ..;
+        doctr deploy --build-tags .;
+        doctr deploy --build-tags "tags/${TRAVIS_TAG}";
+      fi
     fi
   - set +e
 
@@ -75,10 +83,6 @@ after_success:
   - if [[ -z "$TRAVIS_TAG" ]]; then
       bash <(curl -s https://codecov.io/bash);
     fi
-
-#before_deploy:
-#  - conda install pandoc
-#  - pip install pypandoc
 
 deploy:
   provider: pypi

@@ -1,18 +1,20 @@
-name: py${PYTHON}
+name: build-env
 channels:
 - defaults
 - conda-forge
 - cantera
 - pr-omethe-us
 dependencies:
-  - python=${PYTHON}
   - numpy>=1.13.1,<2.0
   - scipy>=1.0.0
   - pyyaml>=3.12,<4.0
-  - pytest>=3.2.0
-  - pytest-cov>=2.3.1
   - pint>=0.7.2,<0.9
   - pytables
   - cantera>=2.3.0
   - pyked>=0.4.1
-  - codecov
+  - sphinx
+  - nbsphinx
+  - ipython
+  - conda-build
+  - anaconda-client
+  - doctr
