@@ -24,7 +24,7 @@ from pyked.chemked import ChemKED, DataPoint
 # Local imports
 from .utils import units
 from .autoignition_simulation import AutoignitionSimulation
-from .jsr_simulation import JSRSimulation
+#from .jsr_simulation import JSRSimulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -56,7 +56,7 @@ def create_simulations(dataset, properties):
         sim_meta['data-file'] = dataset
         sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
 
-        simulations.append(Simulation(properties.experiment_type,
+        simulations.append(JSRSimulation(properties.experiment_type,
                                       properties.apparatus.kind,
                                       sim_meta,
                                       case
@@ -84,7 +84,7 @@ def simulation_worker(sim_tuple):
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
 
-    sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
 
 
@@ -199,7 +199,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                    num_threads=None, print_results=False, restart=False,
                    skip_validation=False,
                    ):
-    """Evaluates the ignition delay error of a model for a given dataset.
+    """Evaluates the species profile error of a model for a given dataset.
 
     Parameters
     ----------
@@ -273,8 +273,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
         simulations = create_simulations(dataset, properties)
 
-        ignition_delays_exp = numpy.zeros(len(simulations))
-        ignition_delays_sim = numpy.zeros(len(simulations))
+        species_profile_exp = numpy.zeros(len(simulations))
+        species_profile_sim = numpy.zeros(len(simulations))
 
         #############################################
         # Determine standard deviation of the dataset
