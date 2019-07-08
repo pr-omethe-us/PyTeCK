@@ -17,11 +17,11 @@ except ImportError:
     print('Warning: YAML must be installed to read input file.')
     raise
 
-from pyked.chemked import ChemKED, DataPoint
+from pyked.chemked import ChemKED, SpeciesProfileDataPoint  
 
 # Local imports
 from .utils import units
-from .jsr_simulation import JSRSimulation as Simulation
+from .jsr_simulation import JSRSimulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -38,7 +38,7 @@ def create_simulations(dataset, properties):
 
     Returns
     -------
-    simulations : list
+    simulations : listsim
         List of :class:`Simulation` objects for each simulation
 
     """
@@ -90,7 +90,7 @@ def estimate_std_dev(indep_variable, dep_variable):
     indep_variable : ndarray, list(float)
         Independent variable (e.g., temperature, pressure)
     dep_variable : ndarray, list(float)
-        Dependent variable (e.g., ignition delay)
+        Dependent variable (e.g., species profile)
 
     Returns
     -------
@@ -140,67 +140,45 @@ def estimate_std_dev(indep_variable, dep_variable):
 
 "Not sure this def is needed as only concentration/temperature changes? @ below"
 
-def get_changing_variable(cases):
-    """Identify variable changing across multiple cases.
+def get_changing_variables(case,species_name):
+    """Identify variable changing across multiple cases. #ToDo: Do it for multiple cases
+    e.g. Inlet temperature, inlet composition and target species 
 
     Parameters
     ----------
-    cases : list(pyked.chemked.DataPoint)
-        List of DataPoint with experimental case data.
+    case : pyked.chemked.SpeciesProfileDataPoint
+         SpeciesProfileDataPoint with experimental case data.
 
     Returns
     -------
-    variable : list(float)
-        List of floats representing changing experimental variable.
+    variables : tuple(list(float))
+       Tuple of list of floats representing changing experimental variable.
 
     """
-    changing_var = None
 
-    for var_name in ['temperature', 'pressure']:
-        if var_name == 'temperature':
-            variable = [case.temperature for case in cases]
-        elif var_name == 'pressure':
-            variable = [case.pressure for case in cases]
-
-        if not all([x == variable[0] for x in variable]):
-            if not changing_var:
-                changing_var = var_name
-            else:
-                warnings.warn('Warning: multiple changing variables. '
-                              'Using temperature.',
-                              RuntimeWarning
-                              )
-                changing_var = 'temperature'
-                break
-
-    # Temperature is default
-    if changing_var is None:
-        changing_var = 'temperature'
-
-    if changing_var == 'temperature':
-        variable = [case.temperature.value.magnitude if hasattr(case.temperature, 'value')
-                    else case.temperature.magnitude
-                    for case in cases
-                    ]
-    elif changing_var == 'pressure':
-        variable = [case.pressure.value.magnitude if hasattr(case.pressure, 'value')
-                    else case.pressure.magnitude
-                    for case in cases
-                    ]
-    return variable
+    inlet_composition = {}
+    for k,v in case.inlet_composition.items():
+        inlet_composition[k] = v.amount.magnitude.nominal_value
+    target_species_profile = [quantity.magnitude for quantity in case.outlet_composition[species_name].amount]
+    inlet_temperature = [quantity for quantity in case.temperature]
+    variables = {'target_species_profile':target_species_profile,
+                'inlet_temperature':inlet_temperature,
+                }
+    
+    return variables
 
 
 
 """thoughts: 
-
-1. ideally inchi/species identifies are listed in yaml file/csv? so spec_keys_file may be unnecessary
+1. ideally inchi/species identifies are listed in yaml file/csv? so spec_keys_file may be unnecessary: Anthony
+    But I think we need spec key file : Krishna
 2."""
 
 def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=False, restart=False,
-                   skip_validation=False,
+                   skip_validation=True,
                    ):
     """Evaluates the species profile error of a model for a given dataset.
 
@@ -280,24 +258,22 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         species_profile_sim = numpy.zeros(len(simulations))
 
         #############################################
-        # Determine standard deviation of the dataset
+        # Determine standard deviation of the dataset and get variables
+        # Krishna: not doing standard deviation for now 
         #############################################
-        species_profile = [case.ignition_delay.to('second').value.magnitude
-                     if hasattr(case.ignition_delay, 'value')
-                     else case.ignition_delay.to('second').magnitude
-                     for case in properties.datapoints
-                     ]
 
         # get variable that is changing across datapoints
-        variable = get_changing_variable(properties.datapoints)
-        # for ignition delay, use logarithm of values
-        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
-        dataset_meta['standard deviation'] = float(standard_dev)
+        variables = [get_changing_variables(dp) for dp in properties.datapoints]
+        
+        #standard_dev = estimate_std_dev(variable, numpy.log(species_profile))
+        #dataset_meta['standard deviation'] = float(standard_dev)
 
         #######################################################
         # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
         #######################################################
+        """
+        I don't think we need this for JSR simulations 
         if ((any(['Ar' in spec for case in properties.datapoints
                   for spec in case.composition]
                   )
@@ -314,7 +290,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                           )
             error_func_sets[idx_set] = numpy.nan
             continue
-
+        """
         # Use available number of processors minus one,
         # or one process if single core.
         pool = multiprocessing.Pool(processes=num_threads)
@@ -322,52 +298,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         # setup all cases
         jobs = []
         for idx, sim in enumerate(simulations):
-            # special treatment based on pressure for Princeton model (and others)
-
-            if model_variant and model_name in model_variant:
-                model_mod = ''
-                if 'bath gases' in model_variant[model_name]:
-                    # find any bath gases requiring special treatment
-                    bath_gases = set(model_variant[model_name]['bath gases'])
-                    gases = bath_gases.intersection(
-                        set([c['species-name'] for c in sim.properties.composition])
-                        )
-
-                    # If only one bath gas present, use that. If multiple, use the
-                    # predominant species. If none of the designated bath gases
-                    # are present, just use the first one (shouldn't matter.)
-                    if len(gases) > 1:
-                        max_mole = 0.
-                        sp = ''
-                        for g in gases:
-                            if float(sim.properties['composition'][g]) > max_mole:
-                                sp = g
-                    elif len(gases) == 1:
-                        sp = gases.pop()
-                    else:
-                        # If no designated bath gas present, use any.
-                        sp = bath_gases.pop()
-                    model_mod += model_variant[model_name]['bath gases'][sp]
-
-                if 'pressures' in model_variant[model_name]:
-                    # pressure to atm
-                    pres = sim.properties.pressure.to('atm').magnitude
-
-                    # choose closest pressure
-                    # better way to do this?
-                    i = numpy.argmin(numpy.abs(numpy.array(
-                        [float(n)
-                         for n in list(model_variant[model_name]['pressures'])
-                         ]
-                        ) - pres))
-                    pres = list(model_variant[model_name]['pressures'])[i]
-                    model_mod += model_variant[model_name]['pressures'][pres]
-
-                model_file = os.path.join(model_path, model_name + model_mod)
-            else:
-                model_file = os.path.join(model_path, model_name)
-
+            model_file = os.path.join(model_path, model_name)
             jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
+
 
         # run all cases
         jobs = tuple(jobs)

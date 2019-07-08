@@ -61,62 +61,62 @@ class JSRSimulation(object):
         self.maxpressurerise = 0.01
         
         # Reactor volume needed in m^3 for Cantera
-        self.apparatus.volume.ito('m^3')
+        self.volume = self.properties.reactor_volume.ito('m^3')
         
         # Residence time needed in s for Cantera
-        self.apparatus.restime.ito('s')
-
-        # Initial temperature needed in Kelvin for Cantera
-        self.properties.temperature.ito('kelvin')
-
-        # Initial pressure needed in Pa for Cantera
-        self.properties.pressure.ito('pascal')
+        self.restime = self.properties.residence_time.ito('s')
 
         # Convert reactant names to those needed for model
-        reactants = [species_key[self.properties.composition[spec].species_name] + ':' +
-                     str(self.properties.composition[spec].amount.magnitude)
+        reactants = [species_key[self.properties.inlet_composition[spec].species_name] + ':' +
+                     str(self.properties.inlet_composition[spec].amount.magnitude)
                      for spec in self.properties.composition
                      ]
         reactants = ','.join(reactants)
 
         # Need to extract values from quantity or measurement object
-        if hasattr(self.properties.temperature, 'value'):
-            temp = self.properties.temperature.value.magnitude
-        elif hasattr(self.properties.temperature, 'nominal_value'):
-            temp = self.properties.temperature.nominal_value
-        else:
-            temp = self.properties.temperature.magnitude
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
             pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
-
+        temperatures = []
+        for measurement in self.pressure.temperature:
+            if hasattr(measurement, 'value'):
+                temperatures.append(measurement.value.magnitude)
+            elif hasattr(measurement, 'nominal_value'):
+                temperatures.append(measurement.nominal_value)
+            else:
+                temperatures.append(measurement.magnitude)
         # Reactants given in format for Cantera
-        if self.properties.composition_type in ['mole fraction', 'mole percent']:
-            self.gas.TPX = temp, pres, reactants
-        elif self.properties.composition_type == 'mass fraction':
-            self.gas.TPY = temp, pres, reactants
-        else:
-            raise(BaseException('error: not supported'))
-            return
-        
-        # Upstream and exhaust
-        self.fuelairmix = ct.Reservoir(self.gas)
-        self.exhaust = ct.Reservoir(self.gas)
+        for temp in temperatures:
+            if self.properties.composition_type in ['mole fraction', 'mole percent']:
+                self.gas.T = temp
+                self.gas.P = pres
+                self.gas.X = reactants 
+            elif self.properties.composition_type == 'mass fraction':
+                self.gas.T = temp
+                self.gas.P = pres
+                self.gas.X = reactants 
+            else:
+                raise(BaseException('error: not supported'))
+                return
+            
+            # Upstream and exhaust
+            self.fuelairmix = ct.Reservoir(self.gas)
+            self.exhaust = ct.Reservoir(self.gas)
 
-        # Ideal gas reactor 
-        self.reactor = ct.IdealGasReactor(self.gas, energy='off', volume=self.volume)
-        self.massflowcontrol = ct.MassFlowController(upstream=self.fuelairmix,downstream=self.reactor,mdot=self.reactor.mass/self.restime)
-        self.pressureregulator = ct.Valve(upstream=self.reactor,downstream=self.exhaust,K=self.pressurevalcof)
+            # Ideal gas reactor 
+            self.reactor = ct.IdealGasReactor(self.gas, energy='off', volume=self.volume)
+            self.massflowcontrol = ct.MassFlowController(upstream=self.fuelairmix,downstream=self.reactor,mdot=self.reactor.mass/self.restime)
+            self.pressureregulator = ct.Valve(upstream=self.reactor,downstream=self.exhaust,K=self.pressurevalcof)
 
-        # Create reactor newtork
-        self.reactor_net = ct.ReactorNet([self.reactor])
+            # Create reactor newtork
+            self.reactor_net = ct.ReactorNet([self.reactor])
 
-        # Set file path
-        file_path = os.path.join(path, self.meta['id'] + '.h5')
-        self.meta['save-file'] = file_path
+            # Set file path
+            file_path = os.path.join(path, self.meta['id'] + '.h5')
+            self.meta['save-file'] = file_path
 
     def run_case(self, restart=False):
         """Run simulation case set up ``setup_case``.
@@ -159,7 +159,7 @@ class JSRSimulation(object):
 
             # Main time integration loop; continue integration while time of
             # the ``ReactorNet`` is less than specified end time.
-            while self.reac_net.time < self.maxsimulationtime:
+            while self.reactors_net.time < self.maxsimulationtime:
                 self.reactor_net.step()
 
                 # Save new timestep information
@@ -186,4 +186,4 @@ class JSRSimulation(object):
             # Load Table with Group name simulation
             table = h5file.root.simulation
             
-        self.meta['simulated species profile'] = table.col('mole_fractions')
+        self.meta['simulated_species_profiles'] = table.col('mole_fractions')
