@@ -18,7 +18,7 @@ except ImportError:
     raise
 
 from pyked.chemked import ChemKED, SpeciesProfileDataPoint  
-
+from pyked.chemked import Composition # Added import to resolve picking error?
 # Local imports
 from .utils import units
 from .jsr_simulation import JSRSimulation
@@ -26,7 +26,7 @@ from .jsr_simulation import JSRSimulation
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
 
-def create_simulations(dataset, properties):
+def create_simulations(dataset, properties,target_species_name):
     """Set up individual simulations for each ignition delay value.
 
     Parameters
@@ -53,7 +53,7 @@ def create_simulations(dataset, properties):
         simulations.append(JSRSimulation(properties.experiment_type,
                                       properties.apparatus.kind,
                                       sim_meta,
-                                      case
+                                      case,target_species_name
                                       )
                            )
     return simulations
@@ -62,7 +62,7 @@ def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
 
     Parameters
-    ----------
+    ----------s
     sim_tuple : tuple
         Contains Simulation object and other parameters needed to setup
         and run case.
@@ -78,7 +78,7 @@ def simulation_worker(sim_tuple):
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
 
-    sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties,sim.target_species_name)
     return sim
 
 
@@ -159,11 +159,11 @@ def get_changing_variables(case,species_name):
     inlet_composition = {}
     for k,v in case.inlet_composition.items():
         inlet_composition[k] = v.amount.magnitude.nominal_value
-    target_species_profile = [quantity.magnitude for quantity in case.outlet_composition[species_name].amount]
+    target_species_profile = [quantity for quantity in case.outlet_composition[species_name].amount]
     inlet_temperature = [quantity for quantity in case.temperature]
-    variables = {'target_species_profile':target_species_profile,
-                'inlet_temperature':inlet_temperature,
-                }
+    variables = [target_species_profile,
+                inlet_temperature,
+    ]
     
     return variables
 
@@ -174,7 +174,8 @@ def get_changing_variables(case,species_name):
     But I think we need spec key file : Krishna
 2."""
 
-def evaluate_model(model_name, spec_keys_file, dataset_file,
+def evaluate_model(model_name, spec_keys_file, species_name,
+                   dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=False, restart=False,
@@ -252,7 +253,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
         # Create individual simulation cases for each datapoint in this set
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
-        simulations = create_simulations(dataset, properties)
+        simulations = create_simulations(dataset, properties,target_species_name=species_name)
 
         species_profile_exp = numpy.zeros(len(simulations))
         species_profile_sim = numpy.zeros(len(simulations))
@@ -263,7 +264,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         #############################################
 
         # get variable that is changing across datapoints
-        variables = [get_changing_variables(dp) for dp in properties.datapoints]
+        variables = [get_changing_variables(dp,species_name=species_name) for dp in properties.datapoints]
         
         #standard_dev = estimate_std_dev(variable, numpy.log(species_profile))
         #dataset_meta['standard deviation'] = float(standard_dev)
@@ -303,76 +304,45 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
 
         # run all cases
+        """
+        Deleting this for now because of weird picking error
         jobs = tuple(jobs)
         results = pool.map(simulation_worker, jobs)
 
         # not adding more proceses, and ensure all finished
         pool.close()
         pool.join()
+        """
+        results = []
+        for job in jobs:
+            results.append(simulation_worker(job))
 
         dataset_meta['datapoints'] = []
-
+        expt_target_species_profiles = {}
+        simulated_species_profiles  = {}
         for idx, sim in enumerate(results):
             sim.process_results()
+            
 
-            if hasattr(sim.properties.ignition_delay, 'value'):
-                ignition_delay = sim.properties.ignition_delay.value
-            else:
-                ignition_delay = sim.properties.ignition_delay
-
-            if hasattr(ignition_delay, 'nominal_value'):
-                ignition_delay = ignition_delay.nominal_value * units.second
-
+            expt_target_species_profile, intlet_temperature = get_changing_variables(properties.datapoints[0],species_name=species_name)
+            #Only assumes you have one csv : Krishna
             dataset_meta['datapoints'].append(
-                {'experimental ignition delay': str(ignition_delay),
-                 'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
+                {'experimental species profile': str(expt_target_species_profile),
+                 'simulated species profile': str(sim.meta['simulated_species_profiles']),
                  'temperature': str(sim.properties.temperature),
                  'pressure': str(sim.properties.pressure),
-                 'composition': [{'InChI': sim.properties.composition[spec].InChI,
-                                  'species-name': sim.properties.composition[spec].species_name,
-                                  'amount': str(sim.properties.composition[spec].amount.magnitude),
-                                  } for spec in sim.properties.composition],
-                 'composition type': sim.properties.composition_type,
                  })
 
-            ignition_delays_exp[idx] = ignition_delay.magnitude
-            ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
+            expt_target_species_profiles[str(idx)] = [quantity.magnitude for quantity in expt_target_species_profile]
+            simulated_species_profiles[str(idx)] = sim.meta['simulated_species_profiles']
+            #assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
 
         # calculate error function for this dataset
-        error_func = numpy.power(
-            (numpy.log(ignition_delays_sim) -
-             numpy.log(ignition_delays_exp)) / standard_dev, 2
-             )
-        error_func = numpy.nanmean(error_func)
-        error_func_sets[idx_set] = error_func
-        dataset_meta['error function'] = float(error_func)
-
-        dev_func = (numpy.log(ignition_delays_sim) -
-                    numpy.log(ignition_delays_exp)
-                    ) / standard_dev
-        dev_func = numpy.nanmean(dev_func)
-        dev_func_sets[idx_set] = dev_func
-        dataset_meta['absolute deviation'] = float(dev_func)
-
-        output['datasets'].append(dataset_meta)
-
+        experimental_trapz = numpy.trapz(intlet_temperature,expt_target_species_profile)
+        print (sim.meta['simulated_species_profiles'])
+        simulated_trapz = numpy.trapz(intlet_temperature,sim.meta['simulated_species_profiles'])
         if print_results:
-            print('Done with ' + dataset)
-
-    # Overall error function
-    error_func = numpy.nanmean(error_func_sets)
-    if print_results:
-        print('overall error function: ' + repr(error_func))
-        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
-
-    # Absolute deviation function
-    abs_dev_func = numpy.nanmean(dev_func_sets)
-    if print_results:
-        print('absolute deviation function: ' + repr(abs_dev_func))
-
-    output['average error function'] = float(error_func)
-    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
-    output['average deviation function'] = float(abs_dev_func)
+            print ("Difference between AUC:{}".format(experimental_trapz,simulated_trapz))
 
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
