@@ -95,15 +95,6 @@ class JSRSimulation(object):
         if restart and os.path.isfile(self.meta['save-file']):
             print('Skipped existing case ', self.meta['id'])
             return
-        # Save simulation results in hdf5 table format
-        table_def = {'time': tables.Float64Col(pos=0),
-                     'temperature': tables.Float64Col(pos=1),
-                     'pressure': tables.Float64Col(pos=2),
-                     'volume': tables.Float64Col(pos=3),
-                     'mole_fractions': tables.Float64Col(
-                          shape=(self.reactor.thermo.n_species), pos=4
-                          ),
-                     }
 
         # Convert reactant names to those needed for model
         reactants = [self.species_key[self.properties.inlet_composition[spec].species_name] + ':' +
@@ -113,7 +104,6 @@ class JSRSimulation(object):
         #Krishna: Need to double check these numbers
         reactants = ','.join(reactants)
         print (reactants)
-
         temperatures = []
         for measurement in self.properties.temperature:
             if hasattr(measurement, 'value'):
@@ -122,16 +112,25 @@ class JSRSimulation(object):
                 temperatures.append(measurement.nominal_value)
             else:
                 temperatures.append(measurement.magnitude)
-        
+        mole_fractions_stack = numpy.zeros([len(temperatures),self.reactor.thermo.n_species])
+        print (mole_fractions_stack.shape)
          # Need to extract values from quantity or measurement object
-
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
             pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
-        for temp in temperatures:
+        # Save simulation results in hdf5 table format
+        table_def = {'time': tables.Float64Col(pos=0),
+                     'temperature': tables.Float64Col(pos=1),
+                     'pressure': tables.Float64Col(pos=2),
+                     'volume': tables.Float64Col(pos=3),
+                     'mole_fractions': tables.Float64Col(
+                          shape=(len(temperatures),self.reactor.thermo.n_species), pos=4
+                          ),
+                     }
+        for idx,temp in enumerate(temperatures):
             if self.properties.inlet_composition_type in ['mole fraction', 'mole percent']:
                 self.gas.TPX = temp,pres,reactants
             elif self.properties.inlet_composition_type == 'mass fraction':
@@ -154,7 +153,8 @@ class JSRSimulation(object):
                 timestep['temperature'] = self.reactor.T
                 timestep['pressure'] = self.reactor.thermo.P
                 timestep['volume'] = self.reactor.volume
-                timestep['mole_fractions'] = self.reactor.thermo.X
+                mole_fractions_stack[idx:] = self.reactor.thermo.X
+                timestep['mole_fractions'] = mole_fractions_stack
                 # Add ``timestep`` to table
                 timestep.append()
 
@@ -187,5 +187,4 @@ class JSRSimulation(object):
             # Load Table with Group name simulation
             table = h5file.root.simulation
             concentrations = table.col('mole_fractions')
-        print (concentrations)
-        self.meta['simulated_species_profiles'] = concentrations[:,self.meta['target-species-index']]
+        self.meta['simulated_species_profiles'] = concentrations[self.meta['target-species-index']:]
