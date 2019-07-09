@@ -178,7 +178,7 @@ def evaluate_model(model_name, spec_keys_file, species_name,
                    dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
-                   num_threads=None, print_results=False, restart=False,
+                   num_threads=None, print_results=True, restart=False,
                    skip_validation=True,
                    ):
     """Evaluates the species profile error of a model for a given dataset.
@@ -324,7 +324,7 @@ def evaluate_model(model_name, spec_keys_file, species_name,
             sim.process_results()
             
 
-            expt_target_species_profile, intlet_temperature = get_changing_variables(properties.datapoints[0],species_name=species_name)
+            expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0],species_name=species_name)
             #Only assumes you have one csv : Krishna
             dataset_meta['datapoints'].append(
                 {'experimental species profile': str(expt_target_species_profile),
@@ -338,9 +338,9 @@ def evaluate_model(model_name, spec_keys_file, species_name,
             #assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
 
         # calculate error function for this dataset
-        experimental_trapz = numpy.trapz(intlet_temperature,expt_target_species_profile)
+        experimental_trapz = numpy.trapz(inlet_temperature,expt_target_species_profile)
         print (sim.meta['simulated_species_profiles'])
-        simulated_trapz = numpy.trapz(intlet_temperature,sim.meta['simulated_species_profiles'])
+        simulated_trapz = numpy.trapz(inlet_temperature,sim.meta['simulated_species_profiles'])
         if print_results:
             print ("Difference between AUC:{}".format(experimental_trapz,simulated_trapz))
 

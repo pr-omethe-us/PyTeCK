@@ -113,6 +113,7 @@ class JSRSimulation(object):
             else:
                 temperatures.append(measurement.magnitude)
         mole_fractions_stack = numpy.zeros([len(temperatures),self.reactor.thermo.n_species])
+        self.meta['reshape-size'] = [len(temperatures),self.reactor.thermo.n_species]
         print (mole_fractions_stack.shape)
          # Need to extract values from quantity or measurement object
         if hasattr(self.properties.pressure, 'value'):
@@ -168,7 +169,8 @@ class JSRSimulation(object):
                     timestep['temperature'] = self.reactor.T
                     timestep['pressure'] = self.reactor.thermo.P
                     timestep['volume'] = self.reactor.volume
-                    timestep['mole_fractions'] = self.reactor.thermo.X
+                    mole_fractions_stack[idx:] = self.reactor.thermo.X
+                    timestep['mole_fractions'] = mole_fractions_stack
 
                     # Add ``timestep`` to table
                     timestep.append()
@@ -187,4 +189,5 @@ class JSRSimulation(object):
             # Load Table with Group name simulation
             table = h5file.root.simulation
             concentrations = table.col('mole_fractions')
-        self.meta['simulated_species_profiles'] = concentrations[self.meta['target-species-index']:]
+        print (self.meta['target-species-index'])
+        self.meta['simulated_species_profiles'] = concentrations.reshape(self.meta['reshape-size'][0],self.meta['reshape-size'][1])[:,self.meta['target-species-index']]
