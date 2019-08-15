@@ -38,12 +38,15 @@ class JSRSimulation(object):
         :type meta: dict
         :param properties: set of properties for this case
         :type properties: pyked.chemked.DataPoint
+        :param target_species_name: target outlet species name as given ChemKED files
+        :type target_species_name:: str
         """
         self.kind = kind
         self.apparatus = apparatus
         self.meta = meta
         self.properties = properties
         self.target_species_name = target_species_name
+
     def setup_case(self, model_file, species_key, path=''):
         """Sets up the simulation case to be run.
 
@@ -56,20 +59,49 @@ class JSRSimulation(object):
         self.species_key = species_key
         # Set max simulation time, pressure valve coefficient, and max pressure rise for Cantera
         # These could be set to something in ChemKED file, but haven't seen these specified at all....
-        self.maxsimulationtime = 50
+        self.maxsimulationtime = 60
         self.pressurevalcof = 0.01
         self.maxpressurerise = 0.01
-        
         # Reactor volume needed in m^3 for Cantera
         self.volume = self.properties.reactor_volume.magnitude
         print (self.properties.reactor_volume.units)
         print (self.volume)
-        
         # Residence time needed in s for Cantera
         self.restime = self.properties.residence_time.magnitude
         print (self.properties.residence_time.units)
         print (self.restime)
-
+        #Create reactants from chemked file
+        reactants = [self.species_key[self.properties.inlet_composition[spec].species_name] + ':' +
+                     str(self.properties.inlet_composition[spec].amount.magnitude.nominal_value)
+                     for spec in self.properties.inlet_composition
+                     ]
+        #Krishna: Need to double check these numbers
+        reactants = ','.join(reactants)
+        print (reactants)
+        self.properties.pressure.ito('pascal') 
+         # Need to extract values from quantity or measurement object
+        if hasattr(self.properties.pressure, 'value'):
+            pres = self.properties.pressure.value.magnitude
+        elif hasattr(self.properties.pressure, 'nominal_value'):
+            pres = self.properties.pressure.nominal_value
+        else:
+            pres = self.properties.pressure.magnitude
+        temperature = self.properties.temperature[int(self.meta['id'].split('_')[2])]
+        temperature.ito('kelvin')
+        if hasattr(temperature, 'value'):
+            temp = temperature.value.magnitude
+        elif hasattr(temperature, 'nominal_value'):
+            temp = temperature.nominal_value
+        else:
+            temp = temperature.magnitude
+        print (temp,pres)
+        if self.properties.inlet_composition_type in ['mole fraction', 'mole percent']:
+            self.gas.TPX = temp,pres,reactants
+        elif self.properties.inlet_composition_type == 'mass fraction':
+            self.gas.TPY = temp,pres,reactants
+        else:
+            raise(BaseException('error: not supported'))
+            return
         # Upstream and exhaust
         self.fuelairmix = ct.Reservoir(self.gas)
         self.exhaust = ct.Reservoir(self.gas)
@@ -81,11 +113,9 @@ class JSRSimulation(object):
 
         # Create reactor newtork
         self.reactor_net = ct.ReactorNet([self.reactor])
-
-        # Set file path
         file_path = os.path.join(path, self.meta['id'] + '.h5')
         self.meta['save-file'] = file_path
-        self.meta['target-species-index'] = self.gas.species_index(self.gas.species_index(species_key[self.target_species_name]))
+        self.meta['target-species-index'] = self.gas.species_index(species_key[self.target_species_name])
     def run_case(self, restart=False):
         """Run simulation case set up ``setup_case``.
 
@@ -96,98 +126,62 @@ class JSRSimulation(object):
             print('Skipped existing case ', self.meta['id'])
             return
 
-        # Convert reactant names to those needed for model
-        reactants = [self.species_key[self.properties.inlet_composition[spec].species_name] + ':' +
-                     str(self.properties.inlet_composition[spec].amount.magnitude.nominal_value)
-                     for spec in self.properties.inlet_composition
-                     ]
-        #Krishna: Need to double check these numbers
-        reactants = ','.join(reactants)
-        print (reactants)
-        temperatures = []
-        for measurement in self.properties.temperature:
-            if hasattr(measurement, 'value'):
-                temperatures.append(measurement.value.magnitude)
-            elif hasattr(measurement, 'nominal_value'):
-                temperatures.append(measurement.nominal_value)
-            else:
-                temperatures.append(measurement.magnitude)
-        mole_fractions_stack = numpy.zeros([len(temperatures),self.reactor.thermo.n_species])
-        self.meta['reshape-size'] = [len(temperatures),self.reactor.thermo.n_species]
-        print (mole_fractions_stack.shape)
-         # Need to extract values from quantity or measurement object
-        if hasattr(self.properties.pressure, 'value'):
-            pres = self.properties.pressure.value.magnitude
-        elif hasattr(self.properties.pressure, 'nominal_value'):
-            pres = self.properties.pressure.nominal_value
-        else:
-            pres = self.properties.pressure.magnitude
+       
         # Save simulation results in hdf5 table format
         table_def = {'time': tables.Float64Col(pos=0),
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
                      'mole_fractions': tables.Float64Col(
-                          shape=(len(temperatures),self.reactor.thermo.n_species), pos=4
+                          shape=(self.reactor.thermo.n_species), pos=4
                           ),
                      }
-        for idx,temp in enumerate(temperatures):
-            if self.properties.inlet_composition_type in ['mole fraction', 'mole percent']:
-                self.gas.TPX = temp,pres,reactants
-            elif self.properties.inlet_composition_type == 'mass fraction':
-                self.gas.TPY = temp,pres,reactants
-            else:
-                raise(BaseException('error: not supported'))
-                return
-            with tables.open_file(self.meta['save-file'], mode='w',
-                              title=self.meta['id']
-                              ) as h5file:
+        
+        with tables.open_file(self.meta['save-file'], mode='w',
+                            title=self.meta['id']
+                            ) as h5file:
 
-                table = h5file.create_table(where=h5file.root,
-                                            name='simulation',
-                                            description=table_def
-                                            )
+            table = h5file.create_table(where=h5file.root,
+                                        name='simulation',
+                                        description=table_def
+                                        )
             # Row instance to save timestep information to
-                timestep = table.row
-                # Save initial conditions
+            timestep = table.row
+            # Save initial conditions
+            timestep['time'] = self.reactor_net.time
+            timestep['temperature'] = self.reactor.T
+            timestep['pressure'] = self.reactor.thermo.P
+            timestep['volume'] = self.reactor.volume
+            timestep['mole_fractions'] = self.reactor.thermo.X
+            # Add ``timestep`` to table
+            timestep.append()
+
+        # Main time integration loop; continue integration while time of
+        # the ``ReactorNet`` is less than specified end time.
+            while self.reactor_net.time < self.maxsimulationtime:
+                self.reactor_net.step()
+                # Save new timestep information
                 timestep['time'] = self.reactor_net.time
                 timestep['temperature'] = self.reactor.T
                 timestep['pressure'] = self.reactor.thermo.P
                 timestep['volume'] = self.reactor.volume
-                mole_fractions_stack[idx:] = self.reactor.thermo.X
-                timestep['mole_fractions'] = mole_fractions_stack
+                timestep['mole_fractions'] = self.reactor.thermo.X
                 # Add ``timestep`` to table
                 timestep.append()
 
-            # Main time integration loop; continue integration while time of
-            # the ``ReactorNet`` is less than specified end time.
-                while self.reactor_net.time < self.maxsimulationtime:
-                    self.reactor_net.step()
-
-                    # Save new timestep information
-                    timestep['time'] = self.reactor_net.time
-                    timestep['temperature'] = self.reactor.T
-                    timestep['pressure'] = self.reactor.thermo.P
-                    timestep['volume'] = self.reactor.volume
-                    mole_fractions_stack[idx:] = self.reactor.thermo.X
-                    timestep['mole_fractions'] = mole_fractions_stack
-
-                    # Add ``timestep`` to table
-                    timestep.append()
-
-                # Write ``table`` to disk
-                table.flush()
+            # Write ``table`` to disk
+            table.flush()
 
         print('Done with case ', self.meta['id'])
 
     def process_results(self):
-        """Process integration results to obtain concentrations.
         """
-
+        Process integration results to obtain concentrations.
+        """
         # Load saved integration results
         with tables.open_file(self.meta['save-file'], 'r') as h5file:
             # Load Table with Group name simulation
             table = h5file.root.simulation
-            concentrations = table.col('mole_fractions')
-        print (self.meta['target-species-index'])
-        self.meta['simulated_species_profiles'] = concentrations.reshape(self.meta['reshape-size'][0],self.meta['reshape-size'][1])[:,self.meta['target-species-index']]
+            concentration = table.col('mole_fractions')[:,self.meta['target-species-index']]
+        return concentration[-1]
+            

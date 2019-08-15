@@ -44,18 +44,19 @@ def create_simulations(dataset, properties,target_species_name):
     """
 
     simulations = []
-    for idx, case in enumerate(properties.datapoints):
-        sim_meta = {}
-        # Common metadata
-        sim_meta['data-file'] = dataset
-        sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+    for case in properties.datapoints:
+        for idx,temp in enumerate(case.temperature):
+            sim_meta = {}
+            # Common metadata
+            sim_meta['data-file'] = dataset
+            sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
 
-        simulations.append(JSRSimulation(properties.experiment_type,
-                                      properties.apparatus.kind,
-                                      sim_meta,
-                                      case,target_species_name
-                                      )
-                           )
+            simulations.append(JSRSimulation(properties.experiment_type,
+                                        properties.apparatus.kind,
+                                        sim_meta,
+                                        case,target_species_name
+                                        )
+                            )
     return simulations
 
 def simulation_worker(sim_tuple):
@@ -77,9 +78,10 @@ def simulation_worker(sim_tuple):
 
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
+    concentration = sim.process_results()
 
     sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties,sim.target_species_name)
-    return sim
+    return sim,concentration
 
 
 def estimate_std_dev(indep_variable, dep_variable):
@@ -319,30 +321,30 @@ def evaluate_model(model_name, spec_keys_file, species_name,
 
         dataset_meta['datapoints'] = []
         expt_target_species_profiles = {}
-        simulated_species_profiles  = {}
-        for idx, sim in enumerate(results):
-            sim.process_results()
+        simulated_species_profiles  = []
+        for idx, sim_tuple in enumerate(results):
+            sim,concentration = sim_tuple
             
 
             expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0],species_name=species_name)
             #Only assumes you have one csv : Krishna
             dataset_meta['datapoints'].append(
                 {'experimental species profile': str(expt_target_species_profile),
-                 'simulated species profile': str(sim.meta['simulated_species_profiles']),
+                 'simulated species profile': str(concentration),
                  'temperature': str(sim.properties.temperature),
                  'pressure': str(sim.properties.pressure),
                  })
 
             expt_target_species_profiles[str(idx)] = [quantity.magnitude for quantity in expt_target_species_profile]
-            simulated_species_profiles[str(idx)] = sim.meta['simulated_species_profiles']
+            simulated_species_profiles.append(concentration)
             #assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
 
         # calculate error function for this dataset
         experimental_trapz = numpy.trapz(inlet_temperature,expt_target_species_profile)
-        print (sim.meta['simulated_species_profiles'])
-        simulated_trapz = numpy.trapz(inlet_temperature,sim.meta['simulated_species_profiles'])
+        print (simulated_species_profiles)
+        simulated_trapz = numpy.trapz(inlet_temperature,simulated_species_profiles)
         if print_results:
-            print ("Difference between AUC:{}".format(experimental_trapz,simulated_trapz))
+            print ("Difference between AUC:{}".format(experimental_trapz-simulated_trapz))
 
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
