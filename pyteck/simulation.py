@@ -272,10 +272,15 @@ class Simulation(object):
                      'temperature': tables.Float64Col(pos=1),
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
-                     'mass_fractions': tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
-                          ),
                      }
+        if self.kind =='ignition delay':
+            table_def['mass_fractions']=tables.Float64Col(
+                          shape=(self.reac.thermo.n_species), pos=4
+                          )
+        elif self.kind == 'species profile':
+            table_def['mole_fractions']=tables.Float64Col(
+                          shape=(self.reac.thermo.n_species), pos=4
+                          )
 
         with tables.open_file(self.meta['save-file'], mode='w',
                               title=self.meta['id']
@@ -526,7 +531,7 @@ class JSRSimulation(Simulation):
     
     def jsr(self,model_file,species_key,path=''):
         self.gas = super(JSRSimulation,self).setup_case(model_file,species_key,path)
-        self.maxsimulationtime = 60
+        self.time_end = 60
         self.pressurevalcof = 0.01
         self.maxpressurerise = 0.01
         # Reactor volume needed in m^3 for Cantera
@@ -550,7 +555,8 @@ class JSRSimulation(Simulation):
         file_path = os.path.join(path, self.meta['id'] + '.h5')
         self.meta['save-file'] = file_path
         self.meta['target-species-index'] = self.gas.species_index(species_key[self.target_species_name])
-    
+    def run(self,restart=False):
+        super(self.__class__,self).run_case(restart=restart)
     def process_jsr(self):
         table = super(JSRSimulation,self).process_results()
         return table.col('mole_fractions')[:,self.meta['target-species-index']][-1]
