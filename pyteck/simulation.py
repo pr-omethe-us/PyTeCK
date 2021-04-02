@@ -12,7 +12,6 @@ import os
 from collections import namedtuple
 import warnings
 import numpy as np
-from numpy.core.numeric import NaN
 from datetime import datetime
 
 # Related modules
@@ -534,10 +533,10 @@ class Simulation(object):
             self.meta['simulated-ignition-delay'] = (ignition_delays[0] - time_comp) * units.second
         else:
             warnings.warn('No ignition for case ' + self.meta['id'] +
-                          ', setting value to NaN and continuing',
+                          ', setting value to nan and continuing',
                           RuntimeWarning
                           )
-            self.meta['simulated-ignition-delay'] = NaN * units.second
+            self.meta['simulated-ignition-delay'] = np.nan * units.second
 
         # TODO: detect two-stage ignition.
         self.meta['simulated-first-stage-delay'] = np.nan * units.second
