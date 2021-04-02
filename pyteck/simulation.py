@@ -533,10 +533,10 @@ class Simulation(object):
             self.meta['simulated-ignition-delay'] = (ignition_delays[0] - time_comp) * units.second
         else:
             warnings.warn('No ignition for case ' + self.meta['id'] +
-                          ', setting value to 0.0 and continuing',
+                          ', setting value to nan and continuing',
                           RuntimeWarning
                           )
-            self.meta['simulated-ignition-delay'] = 0.0 * units.second
+            self.meta['simulated-ignition-delay'] = np.nan * units.second
 
         # TODO: detect two-stage ignition.
         self.meta['simulated-first-stage-delay'] = np.nan * units.second
