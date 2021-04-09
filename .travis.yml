@@ -55,7 +55,7 @@ install:
 script:
   - set -e
   - if [[ -z "$TRAVIS_TAG" ]]; then
-      pytest -vv -P --cov=./;
+      pytest -vv -rP --cov=./;
       if [[ "$PYTHON" == "3.6" && "$TRAVIS_OS_NAME" == "linux" ]]; then
         git checkout -- test-environment.yaml;
         conda install -q sphinx doctr nbsphinx ipython;
