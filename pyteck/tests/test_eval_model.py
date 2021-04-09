@@ -219,6 +219,7 @@ class TestEvalModel:
                 num_threads=1,
                 skip_validation=True
                 )
+            print(output)
             assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
             assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
             assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)
