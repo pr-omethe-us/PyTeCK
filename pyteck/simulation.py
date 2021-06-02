@@ -410,10 +410,13 @@ class Simulation(object):
             ind = None
             for sp in try_list:
                 try:
-                    ind = self.gas.species_index(sp)
+                    ind = self.gas.species_index(species_key[sp])
                     break
                 except ValueError:
                     pass
+                except KeyError:
+                    pass
+
 
             # store index of target species
             if ind:
