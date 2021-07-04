@@ -8,7 +8,6 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-
 def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, data_path, plot_path):
 
     """Generates plots of steady-state concentration over temperature for each species in the species key.
@@ -30,39 +29,43 @@ def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, dat
 
     """
 
-    sol = ct.Solution(os.path.join(model_path,model_name))
+    sol = ct.Solution(os.path.join(model_path, model_name))
     h5_list = os.listdir(results_path)
     experimental_files = os.listdir(data_path)
 
     spec_names_model = (sol.species_names)
 
     for file in experimental_files:
-        if os.path.splitext(file)[-1] == ".yaml":   ## Any none .yaml files are skipped over
+        if os.path.splitext(file)[-1] == ".yaml":   # Any none .yaml files are skipped over
             if os.path.exists(os.path.join(data_path, file)):
                 print(f"Loading {file}")
-                with open(os.path.join(data_path,file), 'r') as f:
+                with open(os.path.join(data_path, file), 'r') as f:
                     data = yaml.load(f, Loader=yaml.SafeLoader)
-                
+
             else:
                 raise OSError(f"Couldn't find {os.path.join(data_path,file)}")
         else:
             print(f"Ignoring none .yaml file {file}")
-            
+            continue
+
         if os.path.exists(spec_keys_file):
-            with open(spec_keys_file,'r') as k:
+            with open(spec_keys_file, 'r') as k:
                 key = yaml.load(k, Loader=yaml.SafeLoader)
         else:
             raise OSError(f"Couldn't find {spec_keys_file}")
-            
+
         species = data['datapoints'][0]['outlet-composition']['species']
-        ## experimental file should contain the path to the corresponding csv file
+        # experimental file should contain the path to the corresponding csv file
         csvfile = data['datapoints'][0]['csvfile']
 
         if os.path.exists(csvfile):
             exp = pd.read_csv(csvfile)
             print(f"Loading {csvfile}")
+        elif os.path.exists(os.path.join('data', csvfile)):
+            exp = pd.read_csv(os.path.join('data', csvfile))
+            print(f"Loading {os.path.join('data', csvfile)}")
         else:
-            print(f"Couldn't find {csvfile}")
+            raise OSError(f"Couldn't find {csvfile}")
 
         with PdfPages(os.path.join(plot_path, 'jsr_plots') + '-' + model_name + '.pdf') as plot_pdf:
             for sp in species:
@@ -71,21 +74,21 @@ def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, dat
                 if name_in_data in key[model_name].keys():
 
                     name_in_model = key[model_name][sp['species-name']]
-                    print('Plotting concentration for '+ name_in_model)
-                    
+                    print('Plotting concentration for ' + name_in_model)
+
                     temps = []
                     concs = []
-                
-                    ## get the position in which this species is listed in the model
+
+                    # get the position in which this species is listed in the model
                     i = 0
                     for name in spec_names_model:
                         if(name == name_in_model):
                             break
                         else:
                             i = i + 1
-                    ## iterate through all results files (each for a single temp)
+                    # iterate through all results files (each for a single temp)
                     for h5 in h5_list:
-                        f = h5py.File(os.path.join(results_path, h5),'r')
+                        f = h5py.File(os.path.join(results_path, h5), 'r')
                         dset = f['simulation']
 
                         temp = dset[1][1]
@@ -95,17 +98,17 @@ def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, dat
                         temps.append(temp)
 
                         f.close()
-                        
-                    temps, concs = zip(*sorted(zip(temps,concs))) ## sort both lists   
-                        
+
+                    temps, concs = zip(*sorted(zip(temps, concs)))  # sort both lists
+
                     plt.figure()
                     plt.plot(temps, concs, linestyle='solid')
                     plt.title(sp['species-name'] + ' concentration')
-                        
+
                     temps = exp['Temperature']
                     concs = exp[sp['species-name']]
 
-                    plt.scatter(temps,concs)
+                    plt.scatter(temps, concs)
                     plt.legend(['simulated', 'experimental'])
                     plt.xlabel('Temperature (K)')
                     plt.ylabel('Mole Fraction')
