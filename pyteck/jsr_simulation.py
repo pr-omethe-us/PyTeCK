@@ -86,7 +86,7 @@ class JSRSimulation(object):
             pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
-        temperature = self.properties.temperature[int(self.meta['id'].split('_')[2])]
+        temperature = self.properties.temperature[int(self.meta['id'].split('_')[-1])]
         temperature.ito('kelvin')
         if hasattr(temperature, 'value'):
             temp = temperature.value.magnitude
