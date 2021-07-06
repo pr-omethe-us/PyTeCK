@@ -181,8 +181,8 @@ def evaluate_model(model_name, spec_keys_file, species_name,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=True, restart=False,
-                   skip_validation=True,
-                   ):
+                   skip_validation=True, create_plots=True, plot_path='jsr_plots'):
+
     """Evaluates the species profile error of a model for a given dataset.
 
     Parameters
@@ -212,6 +212,10 @@ def evaluate_model(model_name, spec_keys_file, species_name,
         If ``True``, process saved results. Mainly intended for testing/development.
     skip_validation : bool
         If ``True``, skips validation of ChemKED files.
+    create_plots : bool
+        If ``True``, generates plots for all species in species key.
+    plot_path : bool
+        Local path for creating the plots pdf. Optional; default = 'jsr_plots'
 
     Returns
     -------
@@ -349,5 +353,9 @@ def evaluate_model(model_name, spec_keys_file, species_name,
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
         yaml.dump(output, f)
+
+    # Geneter species concentration plots
+    if (create_plots):
+        generate_plots(model_name, model_path, results_path, spec_keys_file, data_path, plot_path)
 
     return output

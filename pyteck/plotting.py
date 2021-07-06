@@ -32,12 +32,14 @@ def generate_plots(model_name, model_path, results_path, spec_keys_file, data_pa
             print(f"Couldn't find {spec_keys_file}")
             
         species = data['datapoints'][0]['outlet-composition']['species']
+        ## experimental file should contain the path to the corresponding csv file
         csvfile = data['datapoints'][0]['csvfile']
 
-        with PdfPages(plot_path+'jsr_plots.pdf') as plot_pdf:
+        with PdfPages(plot_path + 'jsr_plots' + model_name + '.pdf') as plot_pdf:
             for sp in species:
                 try:
                     name_in_model = key[model_name][sp['species-name']]
+                    print('Plotting concentration for '+ name_in_model)
                     
                     temps = []
                     concs = []
@@ -68,7 +70,12 @@ def generate_plots(model_name, model_path, results_path, spec_keys_file, data_pa
                     plt.plot(temps, concs, linestyle='solid')
                     plt.title(sp['species-name'] + ' concentration')
 
-                    exp = pd.read_csv(csvfile)
+                    if os.path.exists(csvfile):
+                        exp = pd.read_csv(csvfile)
+                        print(f"Loading {csvfile}"")
+                    else:
+                        print(f"Couldn't find {csvfile}")
+                        
                     temps = exp['Temperature']
                     concs = exp[sp['species-name']]
 
