@@ -9,12 +9,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def generate_plots(model_name, model_path, results_path, spec_keys_file, data_path, plot_path):
 
-    #model_name = 'chem_annotated_Final.cti'
-    #model_path = '/Users/sam/research/nHeptane/test_performance/models/'
     sol = ct.Solution(model_path + model_name)
 
     h5_list = os.listdir(results_path)
-    #spec_keys_file = '/Users/sam/research/notebooks/species-keys.yaml'
     experimental_files = os.listdir(data_path)
 
     spec_names_model = (sol.species_names)
@@ -41,7 +38,6 @@ def generate_plots(model_name, model_path, results_path, spec_keys_file, data_pa
             for sp in species:
                 try:
                     name_in_model = key[model_name][sp['species-name']]
-                    print(name_in_model)
                     
                     temps = []
                     concs = []
