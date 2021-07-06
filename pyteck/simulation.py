@@ -410,10 +410,13 @@ class Simulation(object):
             ind = None
             for sp in try_list:
                 try:
-                    ind = self.gas.species_index(sp)
+                    ind = self.gas.species_index(species_key[sp])
                     break
                 except ValueError:
                     pass
+                except KeyError:
+                    pass
+
 
             # store index of target species
             if ind:
@@ -530,7 +533,7 @@ class Simulation(object):
                                                  self.properties.ignition_target,
                                                  self.properties.ignition_type
                                                  )
-            self.meta['simulated-ignition-delay'] = (ignition_delays[0] - time_comp) * units.second
+            self.meta['simulated-ignition-delay'] = (ignition_delays[-1] - time_comp) * units.second
         else:
             warnings.warn('No ignition for case ' + self.meta['id'] +
                           ', setting value to 0.0 and continuing',
