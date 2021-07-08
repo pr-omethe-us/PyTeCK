@@ -22,6 +22,7 @@ from pyked.chemked import Composition # Added import to resolve picking error?
 # Local imports
 from .utils import units
 from .jsr_simulation import JSRSimulation
+from .plotting import generate_plots_jsr
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -354,8 +355,8 @@ def evaluate_model(model_name, spec_keys_file, species_name,
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
         yaml.dump(output, f)
 
-    # Geneter species concentration plots
+    # Generate species concentration plots
     if (create_plots):
-        generate_plots(model_name, model_path, results_path, spec_keys_file, data_path, plot_path)
+        generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, data_path, plot_path)
 
     return output
