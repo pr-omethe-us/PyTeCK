@@ -1,7 +1,8 @@
 """
 
-.. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>, 
+.. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>,
                   Sai Krishna Sirumalla <sirumalla.s@husky.neu.edu>
+                  Sevy Harris <sevy.harris@gmail.com>
 
 """
 
@@ -34,6 +35,7 @@ except ImportError:
 # Local imports
 from .utils import units
 from .detect_peaks import detect_peaks
+
 
 def first_derivative(x, y):
     """Evaluates first derivative using second-order finite differences.
@@ -124,9 +126,10 @@ class VolumeProfile(object):
         # properties dictionary. The volume is normalized by the first volume
         # element so that a unit area can be used to calculate the velocity.
         self.times = volume_history.time.magnitude
-        volumes = (volume_history.quantity.magnitude /
-                   volume_history.quantity.magnitude[0]
-                   )
+        volumes = (
+            volume_history.quantity.magnitude
+            / volume_history.quantity.magnitude[0]
+        )
 
         # The velocity is calculated by the second-order central differences.
         self.velocity = first_derivative(self.times, volumes)
@@ -183,9 +186,9 @@ class PressureRiseProfile(VolumeProfile):
         """
 
         [self.times, volumes] = create_volume_history(
-                    mech_filename, initial_temp, initial_pres,
-                    reactants, pressure_rise, time_end
-                    )
+            mech_filename, initial_temp, initial_pres,
+            reactants, pressure_rise, time_end
+        )
 
         # Calculate velocity by second-order finite difference
         self.velocity = first_derivative(self.times, volumes)
@@ -229,8 +232,7 @@ class AutoIgnitionSimulation(Simulation):
 
     def __init__(self, *args):
         super(self.__class__, self).__init__(*args)
-    
-    
+
     def setup_case(self, model_file, species_key, path=''):
         """Sets up the simulation case to be run.
 
@@ -257,10 +259,11 @@ class AutoIgnitionSimulation(Simulation):
         self.properties.pressure.ito('pascal')
 
         # convert reactant names to those needed for model
-        reactants = [species_key[self.properties.composition[spec].species_name] + ':'
-                     + str(self.properties.composition[spec].amount.magnitude)
-                     for spec in self.properties.composition
-                     ]
+        reactants = [
+            species_key[self.properties.composition[spec].species_name] + ':'
+            + str(self.properties.composition[spec].amount.magnitude)
+            for spec in self.properties.composition
+        ]
         reactants = ','.join(reactants)
 
         # need to extract values from Quantity or Measurement object
@@ -273,7 +276,7 @@ class AutoIgnitionSimulation(Simulation):
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
-            temp = self.properties.pressure.nominal_value  # TODO don't fix this, delete this file
+            temp = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
 
@@ -284,7 +287,6 @@ class AutoIgnitionSimulation(Simulation):
             self.gas.TPY = temp, pres, reactants
         else:
             raise(BaseException('error: not supported'))
-            return
 
         # Create non-interacting ``Reservoir`` on other side of ``Wall``
         env = ct.Reservoir(ct.Solution('air.xml'))
@@ -305,34 +307,38 @@ class AutoIgnitionSimulation(Simulation):
             else:
                 pres_rise = self.properties.pressure_rise.magnitude
 
-            self.wall = ct.Wall(self.reac, env, A=1.0,
-                                velocity=PressureRiseProfile(
-                                    model_file,
-                                    self.gas.T,
-                                    self.gas.P,
-                                    self.gas.X,
-                                    pres_rise,
-                                    self.time_end
-                                    )
-                                )
+            self.wall = ct.Wall(
+                self.reac, env, A=1.0,
+                velocity=PressureRiseProfile(
+                    model_file,
+                    self.gas.T,
+                    self.gas.P,
+                    self.gas.X,
+                    pres_rise,
+                    self.time_end
+                )
+            )
 
-        elif (self.apparatus == 'rapid compression machine' and
-              self.properties.volume_history is None
-              ):
+        elif (
+            self.apparatus == 'rapid compression machine'
+            and self.properties.volume_history is None
+        ):
             # Rapid compression machine modeled by constant UV
             self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
 
-        elif (self.apparatus == 'rapid compression machine' and
-              self.properties.volume_history is not None
-              ):
+        elif (
+            self.apparatus == 'rapid compression machine'
+            and self.properties.volume_history is not None
+        ):
             # Rapid compression machine modeled with volume-time history
 
             # First convert time units if necessary
             self.properties.volume_history.time.ito('second')
 
-            self.wall = ct.Wall(self.reac, env, A=1.0,
-                                velocity=VolumeProfile(self.properties.volume_history)
-                                )
+            self.wall = ct.Wall(
+                self.reac, env, A=1.0,
+                velocity=VolumeProfile(self.properties.volume_history)
+            )
 
         # Number of solution variables is number of species + mass,
         # volume, temperature
@@ -375,7 +381,7 @@ class AutoIgnitionSimulation(Simulation):
                 warnings.warn(
                     spec + ' not found in model; falling back on pressure.',
                     RuntimeWarning
-                    )
+                )
                 self.properties.ignition_target = 'pressure'
                 self.properties.ignition_type = 'd/dt max'
         else:
@@ -386,7 +392,6 @@ class AutoIgnitionSimulation(Simulation):
         file_path = os.path.join(path, self.meta['id'] + '.h5')
         self.meta['save-file'] = file_path
 
-    
     def run_case(self, restart=False):
         """Run simulation case set up ``setup_case``.
 
@@ -398,23 +403,27 @@ class AutoIgnitionSimulation(Simulation):
             return
 
         # Save simulation results in hdf5 table format.
-        table_def = {'time': tables.Float64Col(pos=0),
-                     'temperature': tables.Float64Col(pos=1),
-                     'pressure': tables.Float64Col(pos=2),
-                     'volume': tables.Float64Col(pos=3),
-                     'mass_fractions': tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
-                          ),
-                     }
+        table_def = {
+            'time': tables.Float64Col(pos=0),
+            'temperature': tables.Float64Col(pos=1),
+            'pressure': tables.Float64Col(pos=2),
+            'volume': tables.Float64Col(pos=3),
+            'mass_fractions': tables.Float64Col(
+                shape=(self.reac.thermo.n_species), pos=4
+            ),
+        }
 
-        with tables.open_file(self.meta['save-file'], mode='w',
-                              title=self.meta['id']
-                              ) as h5file:
+        with tables.open_file(
+            self.meta['save-file'], mode='w',
+            title=self.meta['id']
+        ) as h5file:
 
-            table = h5file.create_table(where=h5file.root,
-                                        name='simulation',
-                                        description=table_def
-                                        )
+            table = h5file.create_table(
+                where=h5file.root,
+                name='simulation',
+                description=table_def
+            )
+
             # Row instance to save timestep information to
             timestep = table.row
             # Save initial conditions
@@ -483,16 +492,17 @@ class AutoIgnitionSimulation(Simulation):
             # something has gone wrong if there is still no peak
             if len(ind) == 0:
                 filename = 'target-data-' + self.meta['id'] + '.out'
-                warnings.warn('No peak found, dumping target data to ' +
-                              filename + ' and continuing',
-                              RuntimeWarning
-                              )
-                numpy.savetxt(filename, numpy.c_[time.magnitude, target],
-                              header=('time, target ('+self.properties.ignition_target+')')
-                              )
+                warnings.warn(
+                    'No peak found, dumping target data to '
+                    + filename + ' and continuing',
+                    RuntimeWarning
+                )
+                numpy.savetxt(
+                    filename, numpy.c_[time.magnitude, target],
+                    header=('time, target (' + self.properties.ignition_target + ')')
+                )
                 self.meta['simulated-ignition-delay'] = 0.0 * units.second
                 return
-
 
             # Get index of largest peak (overall ignition delay)
             max_ind = ind[numpy.argmax(target[ind])]
@@ -505,10 +515,11 @@ class AutoIgnitionSimulation(Simulation):
                 else:
                     time_comp = self.properties.rcm_data.compression_time
 
+            ign_delays = time[ind[numpy.where(
+                (time[ind[ind <= max_ind]] - time_comp)
+                > 0. * units.second
+            )]] - time_comp
 
-            ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
-                                              > 0. * units.second
-                                             )]] - time_comp
         elif self.properties.ignition_type == '1/2 max':
             # maximum value, and associated index
             max_val = numpy.max(target)
@@ -558,22 +569,24 @@ class JSRSimulation(Simulation):
         self.maxpressurerise = 0.01
         # Reactor volume needed in m^3 for Cantera
         self.volume = self.properties.reactor_volume.magnitude
-        print (self.properties.reactor_volume.units)
-        print (self.volume)
+        print(self.properties.reactor_volume.units)
+        print(self.volume)
         # Residence time needed in s for Cantera
         self.restime = self.properties.residence_time.magnitude
-        print (self.properties.residence_time.units)
-        print (self.restime)
-        #Create reactants from chemked file
-        reactants = [self.species_key[self.properties.inlet_composition[spec].species_name] + ':' +
-                     str(self.properties.inlet_composition[spec].amount.magnitude.nominal_value)
-                     for spec in self.properties.inlet_composition
-                     ]
-        #Krishna: Need to double check these numbers
+        print(self.properties.residence_time.units)
+        print(self.restime)
+        # Create reactants from chemked file
+        reactants = [
+            self.species_key[self.properties.inlet_composition[spec].species_name] + ':'
+            + str(self.properties.inlet_composition[spec].amount.magnitude.nominal_value)
+            for spec in self.properties.inlet_composition
+        ]
+
+        # Krishna: Need to double check these numbers
         reactants = ','.join(reactants)
-        print (reactants)
-        self.properties.pressure.ito('pascal') 
-         # Need to extract values from quantity or measurement object
+        print(reactants)
+        self.properties.pressure.ito('pascal')
+        # Need to extract values from quantity or measurement object
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
@@ -588,11 +601,11 @@ class JSRSimulation(Simulation):
             temp = temperature.nominal_value
         else:
             temp = temperature.magnitude
-        print (temp,pres)
+        print(temp, pres)
         if self.properties.inlet_composition_type in ['mole fraction', 'mole percent']:
-            self.gas.TPX = temp,pres,reactants
+            self.gas.TPX = temp, pres, reactants
         elif self.properties.inlet_composition_type == 'mass fraction':
-            self.gas.TPY = temp,pres,reactants
+            self.gas.TPY = temp, pres, reactants
         else:
             raise(BaseException('error: not supported'))
             return
@@ -600,10 +613,18 @@ class JSRSimulation(Simulation):
         self.fuelairmix = ct.Reservoir(self.gas)
         self.exhaust = ct.Reservoir(self.gas)
 
-        # Ideal gas reactor 
+        # Ideal gas reactor
         self.reactor = ct.IdealGasReactor(self.gas, energy='off', volume=self.volume)
-        self.massflowcontrol = ct.MassFlowController(upstream=self.fuelairmix,downstream=self.reactor,mdot=self.reactor.mass/self.restime)
-        self.pressureregulator = ct.Valve(upstream=self.reactor,downstream=self.exhaust,K=self.pressurevalcof)
+        self.massflowcontrol = ct.MassFlowController(
+            upstream=self.fuelairmix,
+            downstream=self.reactor,
+            mdot=self.reactor.mass / self.restime
+        )
+        self.pressureregulator = ct.Valve(
+            upstream=self.reactor,
+            downstream=self.exhaust,
+            K=self.pressurevalcof
+        )
 
         # Create reactor newtork
         self.reactor_net = ct.ReactorNet([self.reactor])
@@ -619,30 +640,31 @@ class JSRSimulation(Simulation):
 
         :param bool restart: If ``True``, skip if results file exists.
         """
-        
+
         if restart and os.path.isfile(self.meta['save-file']):
             print('Skipped existing case ', self.meta['id'])
             return
 
-       
         # Save simulation results in hdf5 table format
-        table_def = {'time': tables.Float64Col(pos=0),
-                     'temperature': tables.Float64Col(pos=1),
-                     'pressure': tables.Float64Col(pos=2),
-                     'volume': tables.Float64Col(pos=3),
-                     'mole_fractions': tables.Float64Col(
-                          shape=(self.reactor.thermo.n_species), pos=4
-                          ),
-                     }
-        
-        with tables.open_file(self.meta['save-file'], mode='w',
-                            title=self.meta['id']
-                            ) as h5file:
+        table_def = {
+            'time': tables.Float64Col(pos=0),
+            'temperature': tables.Float64Col(pos=1),
+            'pressure': tables.Float64Col(pos=2),
+            'volume': tables.Float64Col(pos=3),
+            'mole_fractions': tables.Float64Col(shape=(self.reactor.thermo.n_species), pos=4),
+        }
 
-            table = h5file.create_table(where=h5file.root,
-                                        name='simulation',
-                                        description=table_def
-                                        )
+        with tables.open_file(
+            self.meta['save-file'], mode='w',
+            title=self.meta['id']
+        ) as h5file:
+
+            table = h5file.create_table(
+                where=h5file.root,
+                name='simulation',
+                description=table_def
+            )
+
             # Row instance to save timestep information to
             timestep = table.row
             # Save initial conditions
@@ -682,6 +704,5 @@ class JSRSimulation(Simulation):
         with tables.open_file(self.meta['save-file'], 'r') as h5file:
             # Load Table with Group name simulation
             table = h5file.root.simulation
-            concentration = table.col('mole_fractions')[:,self.meta['target-species-index']]
+            concentration = table.col('mole_fractions')[:, self.meta['target-species-index']]
         return concentration[-1]
-            
