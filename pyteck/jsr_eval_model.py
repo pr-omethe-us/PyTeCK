@@ -6,7 +6,7 @@ from __future__ import division
 import os
 from os.path import splitext, basename
 import multiprocessing
-import warnings
+
 
 import numpy
 from scipy.interpolate import UnivariateSpline
@@ -17,17 +17,18 @@ except ImportError:
     print('Warning: YAML must be installed to read input file.')
     raise
 
-from pyked.chemked import ChemKED, SpeciesProfileDataPoint  
-from pyked.chemked import Composition # Added import to resolve picking error?
+from pyked.chemked import ChemKED
+
 # Local imports
-from .utils import units
-from .jsr_simulation import JSRSimulation
+# from .utils import units
+from .simulation import JSRSimulation
 from .plotting import generate_plots_jsr
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
 
-def create_simulations(dataset, properties,target_species_name):
+
+def create_simulations(dataset, properties, target_species_name):
     """Set up individual simulations for each ignition delay value.
 
     Parameters
@@ -46,19 +47,23 @@ def create_simulations(dataset, properties,target_species_name):
 
     simulations = []
     for case in properties.datapoints:
-        for idx,temp in enumerate(case.temperature):
+        for idx, temp in enumerate(case.temperature):
             sim_meta = {}
             # Common metadata
             sim_meta['data-file'] = dataset
             sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
 
-            simulations.append(JSRSimulation(properties.experiment_type,
-                                        properties.apparatus.kind,
-                                        sim_meta,
-                                        case,target_species_name
-                                        )
-                            )
+            simulations.append(
+                JSRSimulation(
+                    properties.experiment_type,
+                    properties.apparatus.kind,
+                    sim_meta,
+                    case,
+                    target_species_name=target_species_name
+                )
+            )
     return simulations
+
 
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
@@ -81,13 +86,12 @@ def simulation_worker(sim_tuple):
     sim.run_case(restart)
     concentration = sim.process_results()
 
-    sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties,sim.target_species_name)
-    return sim,concentration
+    sim = JSRSimulation(sim.kind, sim.apparatus, sim.meta, sim.properties, target_species_name=sim.target_species_name)
+    return sim, concentration
 
 
 def estimate_std_dev(indep_variable, dep_variable):
     """
-
     Parameters
     ----------
     indep_variable : ndarray, list(float)
@@ -115,7 +119,6 @@ def estimate_std_dev(indep_variable, dep_variable):
         dep_variable = numpy.delete(dep_variable, idx[1:])
         indep_variable = numpy.delete(indep_variable, idx[1:])
 
-
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))
     indep_variable = [pt[0] for pt in sorted_vars]
@@ -140,12 +143,12 @@ def estimate_std_dev(indep_variable, dep_variable):
     return standard_dev
 
 
-
 "Not sure this def is needed as only concentration/temperature changes? @ below"
 
-def get_changing_variables(case,species_name):
+
+def get_changing_variables(case, species_name):
     """Identify variable changing across multiple cases. #ToDo: Do it for multiple cases
-    e.g. Inlet temperature, inlet composition and target species 
+    e.g. Inlet temperature, inlet composition and target species
 
     Parameters
     ----------
@@ -160,29 +163,30 @@ def get_changing_variables(case,species_name):
     """
 
     inlet_composition = {}
-    for k,v in case.inlet_composition.items():
+    for k, v in case.inlet_composition.items():
         inlet_composition[k] = v.amount.magnitude.nominal_value
     target_species_profile = [quantity for quantity in case.outlet_composition[species_name].amount]
     inlet_temperature = [quantity for quantity in case.temperature]
-    variables = [target_species_profile,
-                inlet_temperature,
+    variables = [
+        target_species_profile,
+        inlet_temperature,
     ]
-    
+
     return variables
 
 
-
-"""thoughts: 
+"""thoughts:
 1. ideally inchi/species identifies are listed in yaml file/csv? so spec_keys_file may be unnecessary: Anthony
     But I think we need spec key file : Krishna
 2."""
+
 
 def evaluate_model(model_name, spec_keys_file, species_name,
                    dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=True, restart=False,
-                   skip_validation=True, create_plots=True, plot_path='jsr_plots'):
+                   skip_validation=True, create_plots=False, plot_path='jsr_plots'):
 
     """Evaluates the species profile error of a model for a given dataset.
 
@@ -251,7 +255,7 @@ def evaluate_model(model_name, spec_keys_file, species_name,
     # If number of threads not specified, use either max number of available
     # cores minus 1, or use 1 if multiple cores not available.
     if not num_threads:
-        num_threads = multiprocessing.cpu_count()-1 or 1
+        num_threads = multiprocessing.cpu_count() - 1 or 1
 
     # Loop through all datasets
     for idx_set, dataset in enumerate(dataset_list):
@@ -260,28 +264,28 @@ def evaluate_model(model_name, spec_keys_file, species_name,
 
         # Create individual simulation cases for each datapoint in this set
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
-        simulations = create_simulations(dataset, properties,target_species_name=species_name)
+        simulations = create_simulations(dataset, properties, target_species_name=species_name)
 
         species_profile_exp = numpy.zeros(len(simulations))
         species_profile_sim = numpy.zeros(len(simulations))
 
         #############################################
         # Determine standard deviation of the dataset and get variables
-        # Krishna: not doing standard deviation for now 
+        # Krishna: not doing standard deviation for now
         #############################################
 
         # get variable that is changing across datapoints
-        variables = [get_changing_variables(dp,species_name=species_name) for dp in properties.datapoints]
-        
-        #standard_dev = estimate_std_dev(variable, numpy.log(species_profile))
-        #dataset_meta['standard deviation'] = float(standard_dev)
+        variables = [get_changing_variables(dp, species_name=species_name) for dp in properties.datapoints]
+
+        # standard_dev = estimate_std_dev(variable, numpy.log(species_profile))
+        # dataset_meta['standard deviation'] = float(standard_dev)
 
         #######################################################
         # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
         #######################################################
         """
-        I don't think we need this for JSR simulations 
+        I don't think we need this for JSR simulations
         if ((any(['Ar' in spec for case in properties.datapoints
                   for spec in case.composition]
                   )
@@ -309,30 +313,27 @@ def evaluate_model(model_name, spec_keys_file, species_name,
             model_file = os.path.join(model_path, model_name)
             jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
 
+        if num_threads == 1:
+            # Don't use the threadpool if only 1 processor (useful for debugging)
+            results = []
+            for job in jobs:
+                results.append(simulation_worker(job))
+        else:
+            jobs = tuple(jobs)
+            results = pool.map(simulation_worker, jobs)
 
-        # run all cases
-        """
-        Deleting this for now because of weird picking error
-        jobs = tuple(jobs)
-        results = pool.map(simulation_worker, jobs)
-
-        # not adding more proceses, and ensure all finished
-        pool.close()
-        pool.join()
-        """
-        results = []
-        for job in jobs:
-            results.append(simulation_worker(job))
+            # not adding more proceses, and ensure all finished
+            pool.close()
+            pool.join()
 
         dataset_meta['datapoints'] = []
         expt_target_species_profiles = {}
-        simulated_species_profiles  = []
+        simulated_species_profiles = []
         for idx, sim_tuple in enumerate(results):
-            sim,concentration = sim_tuple
-            
+            sim, concentration = sim_tuple
 
-            expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0],species_name=species_name)
-            #Only assumes you have one csv : Krishna
+            expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0], species_name=species_name)
+            # Only assumes you have one csv : Krishna
             dataset_meta['datapoints'].append(
                 {'experimental species profile': str(expt_target_species_profile),
                  'simulated species profile': str(concentration),
@@ -342,14 +343,14 @@ def evaluate_model(model_name, spec_keys_file, species_name,
 
             expt_target_species_profiles[str(idx)] = [quantity.magnitude for quantity in expt_target_species_profile]
             simulated_species_profiles.append(concentration)
-            #assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
+            # assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
 
         # calculate error function for this dataset
-        experimental_trapz = numpy.trapz(inlet_temperature,expt_target_species_profile)
-        print (simulated_species_profiles)
-        simulated_trapz = numpy.trapz(inlet_temperature,simulated_species_profiles)
+        experimental_trapz = numpy.trapz(inlet_temperature, expt_target_species_profile)
+        print(simulated_species_profiles)
+        simulated_trapz = numpy.trapz(inlet_temperature, simulated_species_profiles)
         if print_results:
-            print ("Difference between AUC:{}".format(experimental_trapz-simulated_trapz))
+            print("Difference between AUC:{}".format(experimental_trapz - simulated_trapz))
 
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
