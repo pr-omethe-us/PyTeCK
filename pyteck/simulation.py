@@ -15,6 +15,8 @@ from collections import namedtuple
 import warnings
 import numpy
 
+from abc import ABC, abstractmethod
+
 # Related modules
 try:
     import cantera as ct
@@ -189,11 +191,11 @@ class PressureRiseProfile(VolumeProfile):
         self.velocity = first_derivative(self.times, volumes)
 
 
-class Simulation(object):
+class Simulation(ABC):
     """
     Superclass for simulations
     """
-    def __init__(self,kind,apparatus,meta,properties):
+    def __init__(self, kind, apparatus, meta, properties):
         """Initialize simulation case.
 
         :param kind: Kind of experiment (e.g., 'ignition delay' or 'species profile')
@@ -210,135 +212,79 @@ class Simulation(object):
         self.meta = meta
         self.properties = properties
 
-    def setup_case(self,model_file,species_key,path=''):
+    @abstractmethod
+    def setup_case(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def run_case(self, restart=False):
+        raise NotImplementedError
+
+    @abstractmethod
+    def process_results(self):
+        raise NotImplementedError
+
+
+class AutoIgnitionSimulation(Simulation):
+
+    def __init__(self, *args):
+        super(self.__class__, self).__init__(*args)
+    
+    
+    def setup_case(self, model_file, species_key, path=''):
+        """Sets up the simulation case to be run.
+
+        :param str model_file: Filename for Cantera-format model
+        :param dict species_key: Dictionary with species names for `model_file`
+        :param str path: Path for data file
+        """
+
         self.gas = ct.Solution(model_file)
-        
+
+        # Convert ignition delay to seconds
+        self.properties.ignition_delay.ito('second')
+
+        # Set end time of simulation to 100 times the experimental ignition delay
+        if hasattr(self.properties.ignition_delay, 'value'):
+            self.time_end = 100. * self.properties.ignition_delay.value.magnitude
+        else:
+            self.time_end = 100. * self.properties.ignition_delay.magnitude
+
         # Initial temperature needed in Kelvin for Cantera
-        if self.kind == 'ignition delay':
-            self.properties.temperature.ito('kelvin')
-            if hasattr(self.properties.temperature, 'value'):
-                temp = self.properties.temperature.value.magnitude
-            elif hasattr(self.properties.temperature, 'nominal_value'):
-                temp = self.properties.temperature.nominal_value
-            else:
-                temp = self.properties.temperature.magnitude
-            self.composition = self.properties.composition
-            self.composition_type = self.properties.composition_type
-        elif self.kind == 'species profile':
-            temperature = self.properties.temperature[int(self.meta['id'].split('_')[2])]
-            temperature.ito('kelvin')
-            if hasattr(temperature, 'value'):
-                temp = temperature.value.magnitude
-            elif hasattr(temperature, 'nominal_value'):
-                temp = temperature.nominal_value
-            else:
-                temp = temperature.magnitude
-            self.composition = self.properties.inlet_composition
-            self.composition_type = self.properties.inlet_composition_type
+        self.properties.temperature.ito('kelvin')
+
         # Initial pressure needed in Pa for Cantera
         self.properties.pressure.ito('pascal')
 
         # convert reactant names to those needed for model
-        reactants = [species_key[self.composition[spec].species_name] + ':' +
-                     str(self.composition[spec].amount.magnitude.nominal_value)
-                     for spec in self.composition
+        reactants = [species_key[self.properties.composition[spec].species_name] + ':'
+                     + str(self.properties.composition[spec].amount.magnitude)
+                     for spec in self.properties.composition
                      ]
         reactants = ','.join(reactants)
 
+        # need to extract values from Quantity or Measurement object
+        if hasattr(self.properties.temperature, 'value'):
+            temp = self.properties.temperature.value.magnitude
+        elif hasattr(self.properties.temperature, 'nominal_value'):
+            temp = self.properties.temperature.nominal_value
+        else:
+            temp = self.properties.temperature.magnitude
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
-            pres= self.properties.pressure.nominal_value
+            temp = self.properties.pressure.nominal_value  # TODO don't fix this, delete this file
         else:
             pres = self.properties.pressure.magnitude
-        print (temp,pres,reactants)
+
         # Reactants given in format for Cantera
-        if self.composition_type in ['mole fraction', 'mole percent']:
+        if self.properties.composition_type in ['mole fraction', 'mole percent']:
             self.gas.TPX = temp, pres, reactants
-        elif self.composition_type == 'mass fraction':
+        elif self.properties.composition_type == 'mass fraction':
             self.gas.TPY = temp, pres, reactants
         else:
             raise(BaseException('error: not supported'))
             return
-        return self.gas
-
-    def run_case(self,restart=False):
-        if restart and os.path.isfile(self.meta['save-file']):
-            print('Skipped existing case ', self.meta['id'])
-            return
-
-        # Save simulation results in hdf5 table format.
-        table_def = {'time': tables.Float64Col(pos=0),
-                     'temperature': tables.Float64Col(pos=1),
-                     'pressure': tables.Float64Col(pos=2),
-                     'volume': tables.Float64Col(pos=3),
-                     }
-        if self.kind =='ignition delay':
-            table_def['mass_fractions']=tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
-                          )
-        elif self.kind == 'species profile':
-            table_def['mole_fractions']=tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
-                          )
-
-        with tables.open_file(self.meta['save-file'], mode='w',
-                              title=self.meta['id']
-                              ) as h5file:
-
-            table = h5file.create_table(where=h5file.root,
-                                        name='simulation',
-                                        description=table_def
-                                        )
-            # Row instance to save timestep information to
-            timestep = table.row
-            # Save initial conditions
-            timestep['time'] = self.reac_net.time
-            timestep['temperature'] = self.reac.T
-            timestep['pressure'] = self.reac.thermo.P
-            timestep['volume'] = self.reac.volume
-            if self.kind == 'ignition delay':
-                timestep['mass_fractions'] = self.reac.Y
-            elif self.kind == 'species profile':
-                timestep['mole_fractions'] = self.reac.thermo.X
-            # Add ``timestep`` to table
-            timestep.append()
-
-            # Main time integration loop; continue integration while time of
-            # the ``ReactorNet`` is less than specified end time.
-            while self.reac_net.time < self.time_end:
-                self.reac_net.step()
-
-                # Save new timestep information
-                timestep['time'] = self.reac_net.time
-                timestep['temperature'] = self.reac.T
-                timestep['pressure'] = self.reac.thermo.P
-                timestep['volume'] = self.reac.volume
-                if self.kind == 'ignition delay':
-                    timestep['mass_fractions'] = self.reac.Y
-                elif self.kind == 'species profile':
-                    timestep['mole_fractions'] = self.reac.thermo.X
-                # Add ``timestep`` to table
-                timestep.append()
-
-            # Write ``table`` to disk
-            table.flush()
-
-        print('Done with case ', self.meta['id'])
-    def  process_results(self):
-        with tables.open_file(self.meta['save-file'], 'r') as h5file:
-            # Load Table with Group name simulation
-            table = h5file.root.simulation
-    
-        return table
-
-class AutoIgnitionSimulation(Simulation):
-    
-    def __init__(self,*args):
-        super(self.__class__, self).__init__(*args)
-    
-    def ign(self,model_file,species_key,path=''):
-        self.gas = super(AutoIgnitionSimulation,self).setup_case(model_file,species_key,path)
 
         # Create non-interacting ``Reservoir`` on other side of ``Wall``
         env = ct.Reservoir(ct.Solution('air.xml'))
@@ -439,19 +385,85 @@ class AutoIgnitionSimulation(Simulation):
         # Set file for later data file
         file_path = os.path.join(path, self.meta['id'] + '.h5')
         self.meta['save-file'] = file_path
+
     
-    def process_ign(self):
-        table = super(AutoIgnitionSimulation,self).process_results()
+    def run_case(self, restart=False):
+        """Run simulation case set up ``setup_case``.
 
-        time = table.col('time')
-        if self.properties.ignition_target == 'pressure':
-            target = table.col('pressure')
-        elif self.properties.ignition_target == 'temperature':
-            target = table.col('temperature')
-        else:
-            target = table.col('mass_fractions')[:, self.properties.ignition_target]
+        :param bool restart: If ``True``, skip if results file exists.
+        """
 
-    # add units to time
+        if restart and os.path.isfile(self.meta['save-file']):
+            print('Skipped existing case ', self.meta['id'])
+            return
+
+        # Save simulation results in hdf5 table format.
+        table_def = {'time': tables.Float64Col(pos=0),
+                     'temperature': tables.Float64Col(pos=1),
+                     'pressure': tables.Float64Col(pos=2),
+                     'volume': tables.Float64Col(pos=3),
+                     'mass_fractions': tables.Float64Col(
+                          shape=(self.reac.thermo.n_species), pos=4
+                          ),
+                     }
+
+        with tables.open_file(self.meta['save-file'], mode='w',
+                              title=self.meta['id']
+                              ) as h5file:
+
+            table = h5file.create_table(where=h5file.root,
+                                        name='simulation',
+                                        description=table_def
+                                        )
+            # Row instance to save timestep information to
+            timestep = table.row
+            # Save initial conditions
+            timestep['time'] = self.reac_net.time
+            timestep['temperature'] = self.reac.T
+            timestep['pressure'] = self.reac.thermo.P
+            timestep['volume'] = self.reac.volume
+            timestep['mass_fractions'] = self.reac.Y
+            # Add ``timestep`` to table
+            timestep.append()
+
+            # Main time integration loop; continue integration while time of
+            # the ``ReactorNet`` is less than specified end time.
+            while self.reac_net.time < self.time_end:
+                self.reac_net.step()
+
+                # Save new timestep information
+                timestep['time'] = self.reac_net.time
+                timestep['temperature'] = self.reac.T
+                timestep['pressure'] = self.reac.thermo.P
+                timestep['volume'] = self.reac.volume
+                timestep['mass_fractions'] = self.reac.Y
+
+                # Add ``timestep`` to table
+                timestep.append()
+
+            # Write ``table`` to disk
+            table.flush()
+
+        print('Done with case ', self.meta['id'])
+
+    def process_results(self):
+        """Process integration results to obtain ignition delay.
+        """
+
+        # Load saved integration results
+        with tables.open_file(self.meta['save-file'], 'r') as h5file:
+            # Load Table with Group name simulation
+            table = h5file.root.simulation
+
+            time = table.col('time')
+            if self.properties.ignition_target == 'pressure':
+                target = table.col('pressure')
+            elif self.properties.ignition_target == 'temperature':
+                target = table.col('temperature')
+            else:
+                target = table.col('mass_fractions')[:, self.properties.ignition_target]
+
+        # add units to time
         time = time * units.second
 
         # Analysis for ignition depends on type specified
@@ -472,12 +484,12 @@ class AutoIgnitionSimulation(Simulation):
             if len(ind) == 0:
                 filename = 'target-data-' + self.meta['id'] + '.out'
                 warnings.warn('No peak found, dumping target data to ' +
-                                filename + ' and continuing',
-                                RuntimeWarning
-                                )
+                              filename + ' and continuing',
+                              RuntimeWarning
+                              )
                 numpy.savetxt(filename, numpy.c_[time.magnitude, target],
-                                header=('time, target ('+self.properties.ignition_target+')')
-                                )
+                              header=('time, target ('+self.properties.ignition_target+')')
+                              )
                 self.meta['simulated-ignition-delay'] = 0.0 * units.second
                 return
 
@@ -495,8 +507,8 @@ class AutoIgnitionSimulation(Simulation):
 
 
             ign_delays = time[ind[numpy.where((time[ind[ind <= max_ind]] - time_comp)
-                                                > 0. * units.second
-                                                )]] - time_comp
+                                              > 0. * units.second
+                                             )]] - time_comp
         elif self.properties.ignition_type == '1/2 max':
             # maximum value, and associated index
             max_val = numpy.max(target)
@@ -522,7 +534,6 @@ class AutoIgnitionSimulation(Simulation):
             self.meta['simulated-first-stage-delay'] = ign_delays[0]
         else:
             self.meta['simulated-first-stage-delay'] = numpy.nan * units.second
-
 
 class JSRSimulation(Simulation):
     def __init__(self,*args,target_species_name):

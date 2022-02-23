@@ -17,11 +17,11 @@ except ImportError:
     print('Warning: YAML must be installed to read input file.')
     raise
 
-from pyked.chemked import ChemKED, IgnitionDataPoint  
+from pyked.chemked import ChemKED
 
 # Local imports
 from .utils import units
-from .autoignition_simulation import AutoIgnitionSimulation as Simulation
+from .simulation import AutoIgnitionSimulation as Simulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -361,13 +361,19 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
             jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
 
-        # run all cases
-        jobs = tuple(jobs)
-        results = pool.map(simulation_worker, jobs)
+        if num_threads == 1:
+            # Don't use the threadpool if only 1 processor (useful for debugging)
+            results = []
+            for job in jobs:
+                results.append(simulation_worker(job))
+        else:
+            # run all cases
+            jobs = tuple(jobs)
+            results = pool.map(simulation_worker, jobs)
 
-        # not adding more proceses, and ensure all finished
-        pool.close()
-        pool.join()
+            # not adding more proceses, and ensure all finished
+            pool.close()
+            pool.join()
 
         dataset_meta['datapoints'] = []
 
