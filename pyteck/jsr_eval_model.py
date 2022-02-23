@@ -305,7 +305,6 @@ def evaluate_model(model_name, spec_keys_file, species_name,
         """
         # Use available number of processors minus one,
         # or one process if single core.
-        pool = multiprocessing.Pool(processes=num_threads)
 
         # setup all cases
         jobs = []
@@ -319,6 +318,7 @@ def evaluate_model(model_name, spec_keys_file, species_name,
             for job in jobs:
                 results.append(simulation_worker(job))
         else:
+            pool = multiprocessing.Pool(processes=num_threads)
             jobs = tuple(jobs)
             results = pool.map(simulation_worker, jobs)
 

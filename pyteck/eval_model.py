@@ -307,10 +307,6 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             error_func_sets[idx_set] = numpy.nan
             continue
 
-        # Use available number of processors minus one,
-        # or one process if single core.
-        pool = multiprocessing.Pool(processes=num_threads)
-
         # setup all cases
         jobs = []
         for idx, sim in enumerate(simulations):
@@ -367,6 +363,9 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             for job in jobs:
                 results.append(simulation_worker(job))
         else:
+            # Use available number of processors minus one,
+            # or one process if single core.
+            pool = multiprocessing.Pool(processes=num_threads)
             # run all cases
             jobs = tuple(jobs)
             results = pool.map(simulation_worker, jobs)

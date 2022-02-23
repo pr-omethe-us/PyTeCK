@@ -12,7 +12,6 @@ from __future__ import division
 
 # Standard libraries
 import os
-from collections import namedtuple
 import warnings
 import numpy
 
