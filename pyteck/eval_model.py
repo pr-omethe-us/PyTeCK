@@ -59,6 +59,7 @@ def create_simulations(dataset, properties):
                            )
     return simulations
 
+
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
 
@@ -112,7 +113,6 @@ def estimate_std_dev(indep_variable, dep_variable):
         dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
         dep_variable = numpy.delete(dep_variable, idx[1:])
         indep_variable = numpy.delete(indep_variable, idx[1:])
-
 
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))
@@ -192,7 +192,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                    data_path='data', model_path='models',
                    results_path='results', model_variant_file=None,
                    num_threads=None, print_results=False, restart=False,
-                   skip_validation=False,
+                   skip_validation=False
                    ):
     """Evaluates the ignition delay error of a model for a given dataset.
 
@@ -257,7 +257,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
     # If number of threads not specified, use either max number of available
     # cores minus 1, or use 1 if multiple cores not available.
     if not num_threads:
-        num_threads = multiprocessing.cpu_count()-1 or 1
+        num_threads = multiprocessing.cpu_count() - 1 or 1
 
     # Loop through all datasets
     for idx_set, dataset in enumerate(dataset_list):
@@ -290,20 +290,15 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
         #######################################################
-        if ((any(['Ar' in spec for case in properties.datapoints
-                  for spec in case.composition]
-                  )
-             and 'Ar' not in model_spec_key[model_name]
-             ) or
-            (any(['He' in spec for case in properties.datapoints
-                  for spec in case.composition]
-                  )
-             and 'He' not in model_spec_key[model_name]
-             )
-            ):
-            warnings.warn('Warning: Ar or He in dataset, but not in model. Skipping.',
-                          RuntimeWarning
-                          )
+        Ar_in_model = 'Ar' in model_spec_key[model_name]
+        He_in_model = 'He' in model_spec_key[model_name]
+        Ar_in_dataset = any(['Ar' in spec for case in properties.datapoints for spec in case.composition])
+        He_in_dataset = any(['He' in spec for case in properties.datapoints for spec in case.composition])
+        if (Ar_in_dataset and not Ar_in_model) or (He_in_dataset and not He_in_model):
+            warnings.warn(
+                'Warning: Ar or He in dataset, but not in model. Skipping.',
+                RuntimeWarning
+            )
             error_func_sets[idx_set] = numpy.nan
             continue
 
@@ -319,7 +314,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                     bath_gases = set(model_variant[model_name]['bath gases'])
                     gases = bath_gases.intersection(
                         set([c['species-name'] for c in sim.properties.composition])
-                        )
+                    )
 
                     # If only one bath gas present, use that. If multiple, use the
                     # predominant species. If none of the designated bath gases
@@ -343,11 +338,10 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
                     # choose closest pressure
                     # better way to do this?
-                    i = numpy.argmin(numpy.abs(numpy.array(
-                        [float(n)
-                         for n in list(model_variant[model_name]['pressures'])
-                         ]
-                        ) - pres))
+                    i = numpy.argmin(numpy.abs(numpy.array([
+                        float(n)
+                        for n in list(model_variant[model_name]['pressures'])
+                    ]) - pres))
                     pres = list(model_variant[model_name]['pressures'])[i]
                     model_mod += model_variant[model_name]['pressures'][pres]
 
@@ -363,10 +357,7 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             for job in jobs:
                 results.append(simulation_worker(job))
         else:
-            # Use available number of processors minus one,
-            # or one process if single core.
             pool = multiprocessing.Pool(processes=num_threads)
-            # run all cases
             jobs = tuple(jobs)
             results = pool.map(simulation_worker, jobs)
 
@@ -404,16 +395,17 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
         # calculate error function for this dataset
         error_func = numpy.power(
-            (numpy.log(ignition_delays_sim) -
-             numpy.log(ignition_delays_exp)) / standard_dev, 2
-             )
+            (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp))
+            / standard_dev, 2
+        )
         error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
         dataset_meta['error function'] = float(error_func)
 
-        dev_func = (numpy.log(ignition_delays_sim) -
-                    numpy.log(ignition_delays_exp)
-                    ) / standard_dev
+        dev_func = (
+            numpy.log(ignition_delays_sim)
+            - numpy.log(ignition_delays_exp)
+        ) / standard_dev
         dev_func = numpy.nanmean(dev_func)
         dev_func_sets[idx_set] = dev_func
         dataset_meta['absolute deviation'] = float(dev_func)

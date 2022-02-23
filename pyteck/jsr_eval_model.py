@@ -46,22 +46,22 @@ def create_simulations(dataset, properties, target_species_name):
     """
 
     simulations = []
-    for case in properties.datapoints:
-        for idx, temp in enumerate(case.temperature):
-            sim_meta = {}
-            # Common metadata
-            sim_meta['data-file'] = dataset
-            sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+    for idx, case in enumerate(properties.datapoints):
+        sim_meta = {}
+        # Common metadata
+        sim_meta['data-file'] = dataset
+        sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+        sim_meta['idx'] = idx
 
-            simulations.append(
-                JSRSimulation(
-                    properties.experiment_type,
-                    properties.apparatus.kind,
-                    sim_meta,
-                    case,
-                    target_species_name=target_species_name
-                )
+        simulations.append(
+            JSRSimulation(
+                properties.experiment_type,
+                properties.apparatus.kind,
+                sim_meta,
+                case,
+                target_species_name=target_species_name
             )
+        )
     return simulations
 
 
@@ -145,6 +145,8 @@ def estimate_std_dev(indep_variable, dep_variable):
 
 "Not sure this def is needed as only concentration/temperature changes? @ below"
 
+# TODO implement this in eval_model
+
 
 def get_changing_variables(case, species_name):
     """Identify variable changing across multiple cases. #ToDo: Do it for multiple cases
@@ -165,7 +167,8 @@ def get_changing_variables(case, species_name):
     inlet_composition = {}
     for k, v in case.inlet_composition.items():
         inlet_composition[k] = v.amount.magnitude.nominal_value
-    target_species_profile = [quantity for quantity in case.outlet_composition[species_name].amount]
+    # target_species_profile = [quantity for quantity in case.outlet_composition[species_name].amount]
+    target_species_profile = case.outlet_composition[species_name].amount
     inlet_temperature = [quantity for quantity in case.temperature]
     variables = [
         target_species_profile,
@@ -275,7 +278,7 @@ def evaluate_model(model_name, spec_keys_file, species_name,
         #############################################
 
         # get variable that is changing across datapoints
-        variables = [get_changing_variables(dp, species_name=species_name) for dp in properties.datapoints]
+        # variables = [get_changing_variables(dp, species_name=species_name) for dp in properties.datapoints]
 
         # standard_dev = estimate_std_dev(variable, numpy.log(species_profile))
         # dataset_meta['standard deviation'] = float(standard_dev)
@@ -334,12 +337,12 @@ def evaluate_model(model_name, spec_keys_file, species_name,
 
             expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0], species_name=species_name)
             # Only assumes you have one csv : Krishna
-            dataset_meta['datapoints'].append(
-                {'experimental species profile': str(expt_target_species_profile),
-                 'simulated species profile': str(concentration),
-                 'temperature': str(sim.properties.temperature),
-                 'pressure': str(sim.properties.pressure),
-                 })
+            dataset_meta['datapoints'].append({
+                'experimental species profile': str(expt_target_species_profile),
+                'simulated species profile': str(concentration),
+                'temperature': str(sim.properties.temperature),
+                'pressure': str(sim.properties.pressure),
+            })
 
             expt_target_species_profiles[str(idx)] = [quantity.magnitude for quantity in expt_target_species_profile]
             simulated_species_profiles.append(concentration)
