@@ -70,3 +70,6 @@ target/
 
 # project-specific data files
 *.h5
+
+# IDE specific files
+.vscode

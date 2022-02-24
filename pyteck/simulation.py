@@ -13,7 +13,7 @@ from __future__ import division
 # Standard libraries
 import os
 import warnings
-import numpy
+import numpy as np
 
 from abc import ABC, abstractmethod
 
@@ -49,7 +49,7 @@ def first_derivative(x, y):
     :return: First derivative, :math:`dy/dx`
     :rtype: numpy.ndarray
     """
-    return numpy.gradient(y, x, edge_order=2)
+    return np.gradient(y, x, edge_order=2)
 
 
 def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
@@ -62,7 +62,7 @@ def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
     :return: List of times and pressures
     :rtype: list of numpy.ndarray
     """
-    times = numpy.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
+    times = np.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
     pressures = init_pres * (pressure_rise_rate * times + 1.0)
     return [times, pressures]
 
@@ -89,7 +89,7 @@ def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
     [times, pressures] = sample_rising_pressure(time_end, pres, freq, pres_rise)
 
     # Calculate volume profile based on pressure
-    volumes = numpy.zeros((len(pressures)))
+    volumes = np.zeros((len(pressures)))
     for i, p in enumerate(pressures):
         gas.SP = initial_entropy, p
         volumes[i] = initial_density / gas.density
@@ -140,7 +140,7 @@ class VolumeProfile(object):
         :return: Velocity in meters per second
         :rtype: float
         """
-        return numpy.interp(time, self.times, self.velocity, left=0., right=0.)
+        return np.interp(time, self.times, self.velocity, left=0., right=0.)
 
 
 class PressureRiseProfile(VolumeProfile):
@@ -349,7 +349,7 @@ class AutoIgnitionSimulation(Simulation):
         # Set maximum time step based on volume-time history, if present
         if self.properties.volume_history is not None:
             # Minimum difference between volume profile times
-            min_time = numpy.min(numpy.diff(self.properties.volume_history.time.magnitude))
+            min_time = np.min(np.diff(self.properties.volume_history.time.magnitude))
             self.reac_net.set_max_time_step(min_time)
 
         # Check if species ignition target, that species is present.
@@ -496,15 +496,15 @@ class AutoIgnitionSimulation(Simulation):
                     + filename + ' and continuing',
                     RuntimeWarning
                 )
-                numpy.savetxt(
-                    filename, numpy.c_[time.magnitude, target],
+                np.savetxt(
+                    filename, np.c_[time.magnitude, target],
                     header=('time, target (' + self.properties.ignition_target + ')')
                 )
                 self.meta['simulated-ignition-delay'] = 0.0 * units.second
                 return
 
             # Get index of largest peak (overall ignition delay)
-            max_ind = ind[numpy.argmax(target[ind])]
+            max_ind = ind[np.argmax(target[ind])]
 
             # Will need to subtract compression time for RCM
             time_comp = 0.0
@@ -514,21 +514,21 @@ class AutoIgnitionSimulation(Simulation):
                 else:
                     time_comp = self.properties.rcm_data.compression_time
 
-            ign_delays = time[ind[numpy.where(
+            ign_delays = time[ind[np.where(
                 (time[ind[ind <= max_ind]] - time_comp)
                 > 0. * units.second
             )]] - time_comp
 
         elif self.properties.ignition_type == '1/2 max':
             # maximum value, and associated index
-            max_val = numpy.max(target)
+            max_val = np.max(target)
             ind = detect_peaks(target)
-            max_ind = ind[numpy.argmax(target[ind])]
+            max_ind = ind[np.argmax(target[ind])]
 
             # TODO: interpolate for actual half-max value
             # Find index associated with the 1/2 max value, but only consider
             # points before the peak
-            half_idx = (numpy.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
+            half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
             ign_delays = [time[half_idx]]
 
             # TODO: detect two-stage ignition when 1/2 max type?
@@ -543,7 +543,7 @@ class AutoIgnitionSimulation(Simulation):
         if len(ign_delays) > 1:
             self.meta['simulated-first-stage-delay'] = ign_delays[0]
         else:
-            self.meta['simulated-first-stage-delay'] = numpy.nan * units.second
+            self.meta['simulated-first-stage-delay'] = np.nan * units.second
 
 
 class JSRSimulation(Simulation):
@@ -577,10 +577,9 @@ class JSRSimulation(Simulation):
             for spec in self.properties.inlet_composition
         ]
 
-
         reactants = ','.join(reactants)
         self.properties.pressure.ito('pascal')
-        
+
         # Need to extract values from quantity or measurement object
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
@@ -671,18 +670,32 @@ class JSRSimulation(Simulation):
             # Add ``timestep`` to table
             timestep.append()
 
-        # Main time integration loop; continue integration while time of
-        # the ``ReactorNet`` is less than specified end time.
+            integration_failed = False
+            # Main time integration loop; continue integration while time of
+            # the ``ReactorNet`` is less than specified end time.
             while self.reactor_net.time < self.maxsimulationtime:
                 self.reactor_net.step()
+
                 # Save new timestep information
                 timestep['time'] = self.reactor_net.time
                 timestep['temperature'] = self.reactor.T
                 timestep['pressure'] = self.reactor.thermo.P
                 timestep['volume'] = self.reactor.volume
                 timestep['mole_fractions'] = self.reactor.thermo.X
+
                 # Add ``timestep`` to table
                 timestep.append()
+                if len(table) > 5000:
+                    integration_failed = True
+                    break
+
+            if integration_failed:
+                # Failure is due to this bug
+                # https://github.com/Cantera/cantera/issues/1117
+                warnings.warn(
+                    'Normal integration timed out in JSR simulation ' + self.meta['id'],
+                    RuntimeWarning
+                )
 
             # Write ``table`` to disk
             table.flush()
