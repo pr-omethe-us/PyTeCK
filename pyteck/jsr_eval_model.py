@@ -169,7 +169,8 @@ def get_changing_variables(case, species_name):
         inlet_composition[k] = v.amount.magnitude.nominal_value
     # target_species_profile = [quantity for quantity in case.outlet_composition[species_name].amount]
     target_species_profile = case.outlet_composition[species_name].amount
-    inlet_temperature = [quantity for quantity in case.temperature]
+    # inlet_temperature = [quantity for quantity in case.temperature]
+    inlet_temperature = case.temperature
     variables = [
         target_species_profile,
         inlet_temperature,
@@ -330,9 +331,10 @@ def evaluate_model(model_name, spec_keys_file, species_name,
             pool.join()
 
         dataset_meta['datapoints'] = []
-        expt_target_species_profiles = {}
+        expt_target_species_profiles = []
         simulated_species_profiles = []
-        for idx, sim_tuple in enumerate(results):
+        inlet_temperatures = []
+        for sim_tuple in results:
             sim, concentration = sim_tuple
 
             expt_target_species_profile, inlet_temperature = get_changing_variables(properties.datapoints[0], species_name=species_name)
@@ -344,14 +346,13 @@ def evaluate_model(model_name, spec_keys_file, species_name,
                 'pressure': str(sim.properties.pressure),
             })
 
-            expt_target_species_profiles[str(idx)] = [quantity.magnitude for quantity in expt_target_species_profile]
+            expt_target_species_profiles.append(expt_target_species_profile.magnitude)
             simulated_species_profiles.append(concentration)
-            # assert (len(expt_target_species_profile)==len(sim.meta['simulated_species_profiles'])), "YOU DONE GOOFED UP SIMULATIONS"
+            inlet_temperatures.append(inlet_temperature)
 
         # calculate error function for this dataset
-        experimental_trapz = numpy.trapz(inlet_temperature, expt_target_species_profile)
-        print(simulated_species_profiles)
-        simulated_trapz = numpy.trapz(inlet_temperature, simulated_species_profiles)
+        experimental_trapz = numpy.trapz(inlet_temperatures, expt_target_species_profiles)
+        simulated_trapz = numpy.trapz(inlet_temperatures, simulated_species_profiles)
         if print_results:
             print("Difference between AUC:{}".format(experimental_trapz - simulated_trapz))
 

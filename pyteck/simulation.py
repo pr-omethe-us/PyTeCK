@@ -568,12 +568,8 @@ class JSRSimulation(Simulation):
         self.maxpressurerise = 0.01
         # Reactor volume needed in m^3 for Cantera
         self.volume = self.properties.reactor_volume.magnitude
-        print(self.properties.reactor_volume.units)
-        print(self.volume)
         # Residence time needed in s for Cantera
         self.restime = self.properties.residence_time.magnitude
-        print(self.properties.residence_time.units)
-        print(self.restime)
         # Create reactants from chemked file
         reactants = [
             self.species_key[self.properties.inlet_composition[spec].species_name] + ':'
@@ -581,10 +577,10 @@ class JSRSimulation(Simulation):
             for spec in self.properties.inlet_composition
         ]
 
-        # Krishna: Need to double check these numbers
+
         reactants = ','.join(reactants)
-        print(reactants)
         self.properties.pressure.ito('pascal')
+        
         # Need to extract values from quantity or measurement object
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
@@ -600,7 +596,7 @@ class JSRSimulation(Simulation):
             temp = temperature.nominal_value
         else:
             temp = temperature.magnitude
-        print(temp, pres)
+
         if self.properties.inlet_composition_type in ['mole fraction', 'mole percent']:
             self.gas.TPX = temp, pres, reactants
         elif self.properties.inlet_composition_type == 'mass fraction':
