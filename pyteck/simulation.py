@@ -195,7 +195,8 @@ class PressureRiseProfile(VolumeProfile):
 
 class Simulation(ABC):
     """
-    Superclass for simulations
+    Superclass for simulations. Each simulation must implement
+    its own setup_case, run_case, and process_results methods
     """
     def __init__(self, kind, apparatus, meta, properties, **kwargs):
         """Initialize simulation case.
@@ -228,7 +229,9 @@ class Simulation(ABC):
 
 
 class AutoIgnitionSimulation(Simulation):
-
+    """Class for shock tube and rapid compression machine
+    simulations with the goal of computing ignition delay times
+    """
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -548,6 +551,8 @@ class AutoIgnitionSimulation(Simulation):
 
 
 class JSRSimulation(Simulation):
+    """Class for jet-stirred reaction simulation with the goal of
+    obtaining species concentration profiles"""
     def __init__(self, *args, **kwargs):
         if 'species_name' in kwargs:
             self.target_species_name = kwargs['species_name']

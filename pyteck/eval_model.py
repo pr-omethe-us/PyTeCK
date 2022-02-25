@@ -19,7 +19,10 @@ from .simulation import AutoIgnitionSimulation, JSRSimulation
 
 
 def ignition_dataset_processing(results, print_results=False):
-    """Function to process the results from a single dataset
+    """Function to process all of the simulated datapoints
+    from a single ignition delay dataset
+
+    results is a list of pyteck.simulation.AutoIgnitionSimulation
     """
     dataset_meta = {}
 
@@ -95,6 +98,11 @@ def ignition_dataset_processing(results, print_results=False):
 
 
 def JSR_dataset_processing(results, print_results=False):
+    """Function to process all of the simulated datapoints
+    from a single jet-stirred reactor dataset
+
+    results is a list of pyteck.simulation.JSRSimulation
+    """
     dataset_meta = {}
     dataset_meta['datapoints'] = []
     expt_target_species_profiles = []
@@ -131,6 +139,9 @@ def JSR_dataset_processing(results, print_results=False):
 
 
 def ignition_total_processing(results_stats, print_results=False):
+    """Function to get overall statistics for ignition delays
+    from all provided datasets and simulations
+    """
     output = {'datasets': []}
     # NOTE results_stats already excludes skipped datasets
     error_func_sets = np.zeros(len(results_stats))
@@ -159,10 +170,16 @@ def ignition_total_processing(results_stats, print_results=False):
 
 
 def JSR_total_processing(results_stats, print_results=False):
+    """Function to get overall statistics for species concentrations
+    from all provided datasets and simulations
+    """
     return results_stats
 
 
 def SimulationFactory(datapoint_class):
+    """
+    Get the Simulation that corresponds to the input datapoint type
+    """
     simulations = {
         IgnitionDataPoint: AutoIgnitionSimulation,
         SpeciesProfileDataPoint: JSRSimulation,
@@ -171,6 +188,10 @@ def SimulationFactory(datapoint_class):
 
 
 def DatasetProcessingFactory(datapoint_class):
+    """
+    Get the dataset statistics post-processing function
+    that corresponds to the input datapoint type
+    """
     simulations = {
         IgnitionDataPoint: ignition_dataset_processing,
         SpeciesProfileDataPoint: JSR_dataset_processing,
@@ -179,6 +200,10 @@ def DatasetProcessingFactory(datapoint_class):
 
 
 def TotalProcessingFactory(datapoint_class):
+    """
+    Get the total statistics post-processing function that
+    corresponds to the input datapoint type
+    """
     simulations = {
         IgnitionDataPoint: ignition_total_processing,
         SpeciesProfileDataPoint: JSR_total_processing,
@@ -187,7 +212,7 @@ def TotalProcessingFactory(datapoint_class):
 
 
 def create_simulations(dataset, properties, **kwargs):
-    """Set up individual simulations for each ignition delay value.
+    """Set up individual simulations for each experimental datapoint.
 
     Parameters
     ----------
@@ -199,7 +224,8 @@ def create_simulations(dataset, properties, **kwargs):
     Returns
     -------
     simulations : list
-        List of :class:`AutoignitionSimulation` objects for each simulation
+        List of :class:`AutoignitionSimulation` objects for each simulation or
+        List of :class:`JSRSimulation` objects for each simulation
 
     """
     simulations = []
@@ -230,13 +256,14 @@ def simulation_worker(sim_tuple):
     Parameters
     ----------
     sim_tuple : tuple
-        Contains AutoignitionSimulation object and other parameters needed to setup
+        Contains Simulation object and other parameters needed to setup
         and run case.
 
     Returns
     -------
     sim : ``AutoignitionSimulation``
-        AutoignitionSimulation case with calculated ignition delay.
+          or ``JSRSimulation``
+        Simulation case with calculated results
 
     """
     sim, model_file, model_spec_key, path, restart = sim_tuple
