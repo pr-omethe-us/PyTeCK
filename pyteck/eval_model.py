@@ -4,19 +4,12 @@ from __future__ import division
 
 # Standard libraries
 import os
-from os.path import splitext, basename
 import multiprocessing
-import re
 import warnings
 
-import numpy
+import numpy as np
 from scipy.interpolate import UnivariateSpline
-
-try:
-    import yaml
-except ImportError:
-    print('Warning: YAML must be installed to read input file.')
-    raise
+import yaml
 
 from pyked.chemked import ChemKED, IgnitionDataPoint, SpeciesProfileDataPoint
 
@@ -24,17 +17,14 @@ from pyked.chemked import ChemKED, IgnitionDataPoint, SpeciesProfileDataPoint
 from .utils import units
 from .simulation import AutoIgnitionSimulation, JSRSimulation
 
-min_deviation = 0.10
-"""float: minimum allowable standard deviation for experimental data"""
-
 
 def ignition_dataset_processing(results, print_results=False):
     """Function to process the results from a single dataset
     """
     dataset_meta = {}
 
-    ignition_delays_exp = numpy.zeros(len(results))
-    ignition_delays_sim = numpy.zeros(len(results))
+    ignition_delays_exp = np.zeros(len(results))
+    ignition_delays_sim = np.zeros(len(results))
 
     #############################################
     # Determine standard deviation of the dataset
@@ -53,7 +43,7 @@ def ignition_dataset_processing(results, print_results=False):
     variable = get_changing_variable(datapoints)
 
     # for ignition delay, use logarithm of values
-    standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
+    standard_dev = estimate_std_dev(variable, np.log(ign_delay))
     dataset_meta['standard deviation'] = float(standard_dev)
     dataset_meta['datapoints'] = []
     # dataset_meta[''] add the dataset name
@@ -87,51 +77,21 @@ def ignition_dataset_processing(results, print_results=False):
         ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
 
     # calculate error function for this dataset
-    error_func = numpy.power(
-        (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp))
+    error_func = np.power(
+        (np.log(ignition_delays_sim) - np.log(ignition_delays_exp))
         / standard_dev, 2
     )
-    error_func = numpy.nanmean(error_func)
+    error_func = np.nanmean(error_func)
     dataset_meta['error function'] = float(error_func)
 
     dev_func = (
-        numpy.log(ignition_delays_sim)
-        - numpy.log(ignition_delays_exp)
+        np.log(ignition_delays_sim)
+        - np.log(ignition_delays_exp)
     ) / standard_dev
-    dev_func = numpy.nanmean(dev_func)
+    dev_func = np.nanmean(dev_func)
     dataset_meta['absolute deviation'] = float(dev_func)
 
     return dataset_meta
-
-
-# TODO get rid of this
-def get_changing_variables(case, species_name):
-    """Identify variable changing across multiple cases. #ToDo: Do it for multiple cases
-    e.g. Inlet temperature, inlet composition and target species
-
-    Parameters
-    ----------
-    case : pyked.chemked.SpeciesProfileDataPoint
-         SpeciesProfileDataPoint with experimental case data.
-
-    Returns
-    -------
-    variables : tuple(list(float))
-       Tuple of list of floats representing changing experimental variable.
-
-    """
-
-    inlet_composition = {}
-    for k, v in case.inlet_composition.items():
-        inlet_composition[k] = v.amount.magnitude.nominal_value
-    target_species_profile = case.outlet_composition[species_name].amount
-    inlet_temperature = case.temperature
-    variables = [
-        target_species_profile,
-        inlet_temperature,
-    ]
-
-    return variables
 
 
 def JSR_dataset_processing(results, print_results=False):
@@ -144,9 +104,14 @@ def JSR_dataset_processing(results, print_results=False):
         dataset_meta.update(sim.meta)
         concentration = sim.process_results()
         species_name = sim.meta['species_name']
-        expt_target_species_profile, inlet_temperature = get_changing_variables(sim.properties, species_name=species_name)
-        # Only assumes you have one csv : Krishna
+
+        inlet_composition = {}
+        for k, v in sim.properties.inlet_composition.items():
+            inlet_composition[k] = v.amount.magnitude.nominal_value
+        expt_target_species_profile = sim.properties.outlet_composition[species_name].amount
+        inlet_temperature = sim.properties.temperature
         dataset_meta['datapoints'].append({
+            # 'inlet composition': str(inlet_composition),
             'experimental species profile': str(expt_target_species_profile),
             'simulated species profile': str(concentration),
             'temperature': str(sim.properties.temperature),
@@ -158,8 +123,8 @@ def JSR_dataset_processing(results, print_results=False):
         inlet_temperatures.append(inlet_temperature)
 
     # calculate error function for this dataset
-    experimental_trapz = numpy.trapz(inlet_temperatures, expt_target_species_profiles)
-    simulated_trapz = numpy.trapz(inlet_temperatures, simulated_species_profiles)
+    experimental_trapz = np.trapz(inlet_temperatures, expt_target_species_profiles)
+    simulated_trapz = np.trapz(inlet_temperatures, simulated_species_profiles)
     if print_results:
         print("Difference between AUC:{}".format(experimental_trapz - simulated_trapz))
     return dataset_meta
@@ -168,26 +133,26 @@ def JSR_dataset_processing(results, print_results=False):
 def ignition_total_processing(results_stats, print_results=False):
     output = {'datasets': []}
     # NOTE results_stats already excludes skipped datasets
-    error_func_sets = numpy.zeros(len(results_stats))
-    dev_func_sets = numpy.zeros(len(results_stats))
+    error_func_sets = np.zeros(len(results_stats))
+    dev_func_sets = np.zeros(len(results_stats))
     for i, dataset_meta in enumerate(results_stats):
         dev_func_sets[i] = dataset_meta['absolute deviation']
         error_func_sets[i] = dataset_meta['error function']
         output['datasets'].append(dataset_meta)
 
     # Overall error function
-    error_func = numpy.nanmean(error_func_sets)
+    error_func = np.nanmean(error_func_sets)
     if print_results:
         print('overall error function: ' + repr(error_func))
-        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
+        print('error standard deviation: ' + repr(np.nanstd(error_func_sets)))
 
     # Absolute deviation function
-    abs_dev_func = numpy.nanmean(dev_func_sets)
+    abs_dev_func = np.nanmean(dev_func_sets)
     if print_results:
         print('absolute deviation function: ' + repr(abs_dev_func))
 
     output['average error function'] = float(error_func)
-    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
+    output['error function standard deviation'] = float(np.nanstd(error_func_sets))
     output['average deviation function'] = float(abs_dev_func)
 
     return output
@@ -243,7 +208,7 @@ def create_simulations(dataset, properties, **kwargs):
         sim_meta.update(kwargs)
         # Common metadata
         sim_meta['data-file'] = dataset
-        sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+        sim_meta['id'] = os.path.splitext(os.path.basename(dataset))[0] + '_' + str(idx)
         Simulation = SimulationFactory(type(case))
 
         simulations.append(
@@ -300,19 +265,19 @@ def estimate_std_dev(indep_variable, dep_variable):
         Standard deviation of difference between data and best-fit line
 
     """
-
+    MIN_DEVIATION = 0.1
     assert len(indep_variable) == len(dep_variable), \
         'independent and dependent variables not the same length'
 
     # ensure no repetition of independent variable by taking average of associated dependent
     # variables and removing duplicates
-    vals, count = numpy.unique(indep_variable, return_counts=True)
+    vals, count = np.unique(indep_variable, return_counts=True)
     repeated = vals[count > 1]
     for val in repeated:
-        idx, = numpy.where(indep_variable == val)
-        dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
-        dep_variable = numpy.delete(dep_variable, idx[1:])
-        indep_variable = numpy.delete(indep_variable, idx[1:])
+        idx, = np.where(indep_variable == val)
+        dep_variable[idx[0]] = np.mean(dep_variable[idx])
+        dep_variable = np.delete(dep_variable, idx[1:])
+        indep_variable = np.delete(indep_variable, idx[1:])
 
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))
@@ -322,18 +287,18 @@ def estimate_std_dev(indep_variable, dep_variable):
     # spline fit of the data
     if len(indep_variable) == 1 or len(indep_variable) == 2:
         # Fit of data will be perfect
-        return min_deviation
+        return MIN_DEVIATION
     elif len(indep_variable) == 3:
         spline = UnivariateSpline(indep_variable, dep_variable, k=2)
     else:
         spline = UnivariateSpline(indep_variable, dep_variable)
 
-    standard_dev = numpy.std(dep_variable - spline(indep_variable))
+    standard_dev = np.std(dep_variable - spline(indep_variable))
 
-    if standard_dev < min_deviation:
+    if standard_dev < MIN_DEVIATION:
         print('Standard deviation of {:.2f} too low, '
-              'using {:.2f}'.format(standard_dev, min_deviation))
-        standard_dev = min_deviation
+              'using {:.2f}'.format(standard_dev, MIN_DEVIATION))
+        standard_dev = MIN_DEVIATION
 
     return standard_dev
 
@@ -538,7 +503,7 @@ def evaluate_model(
 
                     # choose closest pressure
                     # better way to do this?
-                    i = numpy.argmin(numpy.abs(numpy.array([
+                    i = np.argmin(np.abs(np.array([
                         float(n)
                         for n in list(model_variant[model_name]['pressures'])
                     ]) - pres))
@@ -576,7 +541,10 @@ def evaluate_model(
     output = total_proc(results_stats)
 
     # Write data to YAML file
-    with open(os.path.join(results_path, splitext(basename(model_name))[0] + '-results.yaml'), 'w') as f:
+    with open(os.path.join(
+        results_path,
+        os.path.splitext(os.path.basename(model_name))[0] + '-results.yaml'
+    ), 'w') as f:
         yaml.dump(output, f)
 
     return output
