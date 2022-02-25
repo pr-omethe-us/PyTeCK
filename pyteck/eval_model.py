@@ -28,11 +28,115 @@ min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
 
 
-def ignition_processing():
+def ignition_dataset_processing(results):
+    """Function to process the results from a single dataset
+    """
+    dataset_meta = {}
+
+    ignition_delays_exp = numpy.zeros(len(results))
+    ignition_delays_sim = numpy.zeros(len(results))
+
+    #############################################
+    # Determine standard deviation of the dataset
+    #############################################
+    ign_delay = [
+        sim.properties.ignition_delay.to('second').value.magnitude
+        if hasattr(sim.properties.ignition_delay, 'value')
+        else sim.properties.ignition_delay.to('second').magnitude
+        for sim in results
+    ]
+
+    datapoints = [sim.properties for sim in results]
+
+    # get variable that is changing across datapoints
+    # variable = get_changing_variable(properties.datapoints)
+    variable = get_changing_variable(datapoints)
+
+    # for ignition delay, use logarithm of values
+    standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
+    dataset_meta['standard deviation'] = float(standard_dev)
+    dataset_meta['datapoints'] = []
+    # dataset_meta[''] add the dataset name
+
+    for idx, sim in enumerate(results):
+
+        sim.process_results()
+
+        if hasattr(sim.properties.ignition_delay, 'value'):
+            ignition_delay = sim.properties.ignition_delay.value
+        else:
+            ignition_delay = sim.properties.ignition_delay
+
+        if hasattr(ignition_delay, 'nominal_value'):
+            ignition_delay = ignition_delay.nominal_value * units.second
+
+        dataset_meta['datapoints'].append({
+            'experimental ignition delay': str(ignition_delay),
+            'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
+            'temperature': str(sim.properties.temperature),
+            'pressure': str(sim.properties.pressure),
+            'composition': [{
+                'InChI': sim.properties.composition[spec].InChI,
+                'species-name': sim.properties.composition[spec].species_name,
+                'amount': str(sim.properties.composition[spec].amount.magnitude),
+            } for spec in sim.properties.composition],
+            'composition type': sim.properties.composition_type,
+        })
+
+        ignition_delays_exp[idx] = ignition_delay.magnitude
+        ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
+
+    # calculate error function for this dataset
+    error_func = numpy.power(
+        (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp))
+        / standard_dev, 2
+    )
+    error_func = numpy.nanmean(error_func)
+    dataset_meta['error function'] = float(error_func)
+
+    dev_func = (
+        numpy.log(ignition_delays_sim)
+        - numpy.log(ignition_delays_exp)
+    ) / standard_dev
+    dev_func = numpy.nanmean(dev_func)
+    dataset_meta['absolute deviation'] = float(dev_func)
+
+    return dataset_meta
+
+
+def JSR_dataset_processing():
     pass
 
 
-def JSR_processing():
+def ignition_total_processing(results_stats, print_results=False):
+    output = {'datasets': []}
+    # NOTE results_stats already excludes skipped datasets
+    error_func_sets = numpy.zeros(len(results_stats))
+    dev_func_sets = numpy.zeros(len(results_stats))
+    for i, dataset_meta in enumerate(results_stats):
+        dev_func_sets[i] = dataset_meta['absolute deviation']
+        error_func_sets[i] = dataset_meta['error function']
+        output['datasets'].append(dataset_meta)
+
+    # Overall error function
+    error_func = numpy.nanmean(error_func_sets)
+    if print_results:
+        print('overall error function: ' + repr(error_func))
+        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
+
+    # Absolute deviation function
+    abs_dev_func = numpy.nanmean(dev_func_sets)
+    if print_results:
+        print('absolute deviation function: ' + repr(abs_dev_func))
+
+    output['average error function'] = float(error_func)
+    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
+    output['average deviation function'] = float(abs_dev_func)
+
+    return output
+
+
+def JSR_total_processing():
     pass
 
 
@@ -44,10 +148,18 @@ def SimulationFactory(datapoint_class):
     return simulations[datapoint_class]
 
 
-def PostProcessingFactory(datapoint_class):
+def DatasetProcessingFactory(datapoint_class):
     simulations = {
-        IgnitionDataPoint: ignition_processing,
-        SpeciesProfileDataPoint: JSR_processing,
+        IgnitionDataPoint: ignition_dataset_processing,
+        SpeciesProfileDataPoint: JSR_dataset_processing,
+    }
+    return simulations[datapoint_class]
+
+
+def TotalProcessingFactory(datapoint_class):
+    simulations = {
+        IgnitionDataPoint: ignition_total_processing,
+        SpeciesProfileDataPoint: JSR_dataset_processing,
     }
     return simulations[datapoint_class]
 
@@ -69,13 +181,14 @@ def create_simulations(dataset, properties, **kwargs):
 
     """
     # TODO add more args passing
+
     simulations = []
     for idx, case in enumerate(properties.datapoints):
         sim_meta = {}
+        sim_meta.update(kwargs)
         # Common metadata
         sim_meta['data-file'] = dataset
         sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
-
         Simulation = SimulationFactory(type(case))
 
         simulations.append(
@@ -208,15 +321,19 @@ def get_changing_variable(cases):
         changing_var = 'temperature'
 
     if changing_var == 'temperature':
-        variable = [case.temperature.value.magnitude if hasattr(case.temperature, 'value')
-                    else case.temperature.magnitude
-                    for case in cases
-                    ]
+        variable = [
+            case.temperature.value.magnitude if hasattr(case.temperature, 'value')
+            else case.temperature.magnitude
+            for case in cases
+        ]
     elif changing_var == 'pressure':
-        variable = [case.pressure.value.magnitude if hasattr(case.pressure, 'value')
-                    else case.pressure.magnitude
-                    for case in cases
-                    ]
+        variable = [
+            case.pressure.value.magnitude if hasattr(case.pressure, 'value')
+            else case.pressure.magnitude
+            for case in cases
+        ]
+    if variable[0].__class__.__name__ == 'Variable':
+        variable = [var.nominal_value for var in variable]
     return variable
 
 
@@ -294,12 +411,6 @@ def evaluate_model(
             continue
         dataset_list.append(formatted_line)
 
-    error_func_sets = numpy.zeros(len(dataset_list))
-    dev_func_sets = numpy.zeros(len(dataset_list))
-
-    # Dictionary with all output data
-    output = {'model': model_name, 'datasets': []}
-
     # If number of threads not specified, use either max number of available
     # cores minus 1, or use 1 if multiple cores not available.
     if not num_threads:
@@ -307,9 +418,12 @@ def evaluate_model(
 
     # Loop through all datasets
     skipped_datasets = []
+    results_stats = []
     for idx_set, dataset in enumerate(dataset_list):
 
-        dataset_meta = {'dataset': dataset, 'dataset_id': idx_set}
+        dataset_meta = {
+            'model_name': model_name,
+        }
 
         # Create individual simulation cases for each datapoint in this set
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
@@ -328,10 +442,9 @@ def evaluate_model(
                 RuntimeWarning
             )
             skipped_datasets.append(idx_set)  # TODO set the error to NAN
-            # error_func_sets[idx_set] = numpy.nan
             continue
 
-        simulations = create_simulations(dataset, properties)
+        simulations = create_simulations(dataset, properties, **dataset_meta)
 
         # setup all cases
         jobs = []
@@ -396,90 +509,15 @@ def evaluate_model(
             pool.close()
             pool.join()
 
-        # ---------------- ignition delay specific ----------------
-        ignition_delays_exp = numpy.zeros(len(simulations))
-        ignition_delays_sim = numpy.zeros(len(simulations))
-
-        #############################################
-        # Determine standard deviation of the dataset
-        #############################################
-        ign_delay = [case.ignition_delay.to('second').value.magnitude
-                     if hasattr(case.ignition_delay, 'value')
-                     else case.ignition_delay.to('second').magnitude
-                     for case in properties.datapoints
-                     ]
-
-        # get variable that is changing across datapoints
-        variable = get_changing_variable(properties.datapoints)
-        # for ignition delay, use logarithm of values
-        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
-        dataset_meta['standard deviation'] = float(standard_dev)
-        dataset_meta['datapoints'] = []
-
-        for idx, sim in enumerate(results):
-            sim.process_results()
-
-            if hasattr(sim.properties.ignition_delay, 'value'):
-                ignition_delay = sim.properties.ignition_delay.value
-            else:
-                ignition_delay = sim.properties.ignition_delay
-
-            if hasattr(ignition_delay, 'nominal_value'):
-                ignition_delay = ignition_delay.nominal_value * units.second
-
-            dataset_meta['datapoints'].append(
-                {'experimental ignition delay': str(ignition_delay),
-                 'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
-                 'temperature': str(sim.properties.temperature),
-                 'pressure': str(sim.properties.pressure),
-                 'composition': [{'InChI': sim.properties.composition[spec].InChI,
-                                  'species-name': sim.properties.composition[spec].species_name,
-                                  'amount': str(sim.properties.composition[spec].amount.magnitude),
-                                  } for spec in sim.properties.composition],
-                 'composition type': sim.properties.composition_type,
-                 })
-
-            ignition_delays_exp[idx] = ignition_delay.magnitude
-            ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
-
-        post_proc = PostProcessingFactory(type(properties.datapoints[0]))
-
-        # calculate error function for this dataset
-        error_func = numpy.power(
-            (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp))
-            / standard_dev, 2
-        )
-        error_func = numpy.nanmean(error_func)
-        error_func_sets[idx_set] = error_func
-        dataset_meta['error function'] = float(error_func)
-
-        dev_func = (
-            numpy.log(ignition_delays_sim)
-            - numpy.log(ignition_delays_exp)
-        ) / standard_dev
-        dev_func = numpy.nanmean(dev_func)
-        dev_func_sets[idx_set] = dev_func
-        dataset_meta['absolute deviation'] = float(dev_func)
-
-        output['datasets'].append(dataset_meta)
-
+        # process the results for each dataset
+        post_proc = DatasetProcessingFactory(type(properties.datapoints[0]))
+        results_stats.append(post_proc(results))
         if print_results:
             print('Done with ' + dataset)
 
-    # Overall error function
-    error_func = numpy.nanmean(error_func_sets)
-    if print_results:
-        print('overall error function: ' + repr(error_func))
-        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
-
-    # Absolute deviation function
-    abs_dev_func = numpy.nanmean(dev_func_sets)
-    if print_results:
-        print('absolute deviation function: ' + repr(abs_dev_func))
-
-    output['average error function'] = float(error_func)
-    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
-    output['average deviation function'] = float(abs_dev_func)
+    # process the total stats for multiple datasets
+    total_proc = TotalProcessingFactory(type(properties.datapoints[0]))
+    output = total_proc(results_stats)
 
     # Write data to YAML file
     with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:

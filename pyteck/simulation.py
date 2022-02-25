@@ -197,7 +197,7 @@ class Simulation(ABC):
     """
     Superclass for simulations
     """
-    def __init__(self, kind, apparatus, meta, properties):
+    def __init__(self, kind, apparatus, meta, properties, **kwargs):
         """Initialize simulation case.
 
         :param kind: Kind of experiment (e.g., 'ignition delay' or 'species profile')
@@ -229,8 +229,8 @@ class Simulation(ABC):
 
 class AutoIgnitionSimulation(Simulation):
 
-    def __init__(self, *args):
-        super(self.__class__, self).__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
 
     def setup_case(self, model_file, species_key, path=''):
         """Sets up the simulation case to be run.
@@ -272,10 +272,11 @@ class AutoIgnitionSimulation(Simulation):
             temp = self.properties.temperature.nominal_value
         else:
             temp = self.properties.temperature.magnitude
+
         if hasattr(self.properties.pressure, 'value'):
             pres = self.properties.pressure.value.magnitude
         elif hasattr(self.properties.pressure, 'nominal_value'):
-            temp = self.properties.pressure.nominal_value
+            pres = self.properties.pressure.nominal_value
         else:
             pres = self.properties.pressure.magnitude
 
@@ -452,7 +453,7 @@ class AutoIgnitionSimulation(Simulation):
             # Write ``table`` to disk
             table.flush()
 
-        print('Done with case ', self.meta['id'])
+        print(f'Done with case {self.meta["id"]}')
 
     def process_results(self):
         """Process integration results to obtain ignition delay.
