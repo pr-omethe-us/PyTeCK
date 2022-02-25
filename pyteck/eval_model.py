@@ -6,11 +6,11 @@ from __future__ import division
 import os
 from os.path import splitext, basename
 import multiprocessing
+import re
 import warnings
 
 import numpy
 from scipy.interpolate import UnivariateSpline
-import time
 
 try:
     import yaml
@@ -28,7 +28,7 @@ min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
 
 
-def ignition_dataset_processing(results):
+def ignition_dataset_processing(results, print_results=False):
     """Function to process the results from a single dataset
     """
     dataset_meta = {}
@@ -104,8 +104,64 @@ def ignition_dataset_processing(results):
     return dataset_meta
 
 
-def JSR_dataset_processing():
-    pass
+# TODO get rid of this
+def get_changing_variables(case, species_name):
+    """Identify variable changing across multiple cases. #ToDo: Do it for multiple cases
+    e.g. Inlet temperature, inlet composition and target species
+
+    Parameters
+    ----------
+    case : pyked.chemked.SpeciesProfileDataPoint
+         SpeciesProfileDataPoint with experimental case data.
+
+    Returns
+    -------
+    variables : tuple(list(float))
+       Tuple of list of floats representing changing experimental variable.
+
+    """
+
+    inlet_composition = {}
+    for k, v in case.inlet_composition.items():
+        inlet_composition[k] = v.amount.magnitude.nominal_value
+    target_species_profile = case.outlet_composition[species_name].amount
+    inlet_temperature = case.temperature
+    variables = [
+        target_species_profile,
+        inlet_temperature,
+    ]
+
+    return variables
+
+
+def JSR_dataset_processing(results, print_results=False):
+    dataset_meta = {}
+    dataset_meta['datapoints'] = []
+    expt_target_species_profiles = []
+    simulated_species_profiles = []
+    inlet_temperatures = []
+    for i, sim in enumerate(results):
+        concentration = sim.process_results()
+        species_name = sim.meta['species_name']
+        expt_target_species_profile, inlet_temperature = get_changing_variables(sim.properties, species_name=species_name)
+        # Only assumes you have one csv : Krishna
+        dataset_meta['datapoints'].append({
+            'experimental species profile': str(expt_target_species_profile),
+            'simulated species profile': str(concentration),
+            'temperature': str(sim.properties.temperature),
+            'pressure': str(sim.properties.pressure),
+        })
+
+        expt_target_species_profiles.append(expt_target_species_profile.magnitude)
+        simulated_species_profiles.append(concentration)
+        inlet_temperatures.append(inlet_temperature)
+
+    # calculate error function for this dataset
+    experimental_trapz = numpy.trapz(inlet_temperatures, expt_target_species_profiles)
+    simulated_trapz = numpy.trapz(inlet_temperatures, simulated_species_profiles)
+    if print_results:
+        print("Difference between AUC:{}".format(experimental_trapz - simulated_trapz))
+    return dataset_meta
 
 
 def ignition_total_processing(results_stats, print_results=False):
@@ -136,8 +192,8 @@ def ignition_total_processing(results_stats, print_results=False):
     return output
 
 
-def JSR_total_processing():
-    pass
+def JSR_total_processing(results_stats, print_results=False):
+    return results_stats
 
 
 def SimulationFactory(datapoint_class):
@@ -159,7 +215,7 @@ def DatasetProcessingFactory(datapoint_class):
 def TotalProcessingFactory(datapoint_class):
     simulations = {
         IgnitionDataPoint: ignition_total_processing,
-        SpeciesProfileDataPoint: JSR_dataset_processing,
+        SpeciesProfileDataPoint: JSR_total_processing,
     }
     return simulations[datapoint_class]
 
@@ -180,8 +236,6 @@ def create_simulations(dataset, properties, **kwargs):
         List of :class:`AutoignitionSimulation` objects for each simulation
 
     """
-    # TODO add more args passing
-
     simulations = []
     for idx, case in enumerate(properties.datapoints):
         sim_meta = {}
@@ -423,6 +477,7 @@ def evaluate_model(
 
         dataset_meta = {
             'model_name': model_name,
+            'species_name': species_name,
         }
 
         # Create individual simulation cases for each datapoint in this set
@@ -434,8 +489,8 @@ def evaluate_model(
         #######################################################
         Ar_in_model = 'Ar' in model_spec_key[model_name]
         He_in_model = 'He' in model_spec_key[model_name]
-        Ar_in_dataset = any(['Ar' in spec for case in properties.datapoints for spec in case.composition])
-        He_in_dataset = any(['He' in spec for case in properties.datapoints for spec in case.composition])
+        Ar_in_dataset = any(case.species_in_datapoint('Ar') for case in properties.datapoints)
+        He_in_dataset = any(case.species_in_datapoint('He') for case in properties.datapoints)
         if (Ar_in_dataset and not Ar_in_model) or (He_in_dataset and not He_in_model):
             warnings.warn(
                 'Warning: Ar or He in dataset, but not in model. Skipping.',
@@ -520,7 +575,7 @@ def evaluate_model(
     output = total_proc(results_stats)
 
     # Write data to YAML file
-    with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
+    with open(os.path.join(results_path, splitext(basename(model_name))[0] + '-results.yaml'), 'w') as f:
         yaml.dump(output, f)
 
     return output

@@ -548,9 +548,10 @@ class AutoIgnitionSimulation(Simulation):
 
 
 class JSRSimulation(Simulation):
-    def __init__(self, *args, target_species_name=None):
-        self.target_species_name = target_species_name
-        super(self.__class__, self).__init__(*args)
+    def __init__(self, *args, **kwargs):
+        if 'species_name' in kwargs:
+            self.target_species_name = kwargs['species_name']
+        super(self.__class__, self).__init__(*args, **kwargs)
 
     def setup_case(self, model_file, species_key, path=''):
         """Sets up the simulation case to be run.
@@ -707,8 +708,6 @@ class JSRSimulation(Simulation):
         """
         Process integration results to obtain concentrations.
         """
-        if self.target_species_name is None:
-            return -1
         # Load saved integration results
         with tables.open_file(self.meta['save-file'], 'r') as h5file:
             # Load Table with Group name simulation
