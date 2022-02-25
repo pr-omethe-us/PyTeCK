@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import yaml
 import cantera as ct
 import os
+import glob
 
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -30,7 +31,7 @@ def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, dat
     """
 
     sol = ct.Solution(os.path.join(model_path, model_name))
-    h5_list = os.listdir(results_path)
+    h5_list = glob.glob(os.path.join(results_path, '*.h5'))
     experimental_files = os.listdir(data_path)
 
     spec_names_model = (sol.species_names)
@@ -64,6 +65,9 @@ def generate_plots_jsr(model_name, model_path, results_path, spec_keys_file, dat
         elif os.path.exists(os.path.join('data', csvfile)):
             exp = pd.read_csv(os.path.join('data', csvfile))
             print(f"Loading {os.path.join('data', csvfile)}")
+        elif os.path.exists(os.path.join(data_path, csvfile)):
+            exp = pd.read_csv(os.path.join(data_path, csvfile))
+            print(f"Loading {os.path.join(data_path, csvfile)}")
         else:
             raise OSError(f"Couldn't find {csvfile}")
 

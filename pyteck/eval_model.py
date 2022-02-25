@@ -61,7 +61,7 @@ def ignition_dataset_processing(results, print_results=False):
     for idx, sim in enumerate(results):
 
         sim.process_results()
-
+        dataset_meta.update(sim.meta)
         if hasattr(sim.properties.ignition_delay, 'value'):
             ignition_delay = sim.properties.ignition_delay.value
         else:
@@ -141,6 +141,7 @@ def JSR_dataset_processing(results, print_results=False):
     simulated_species_profiles = []
     inlet_temperatures = []
     for i, sim in enumerate(results):
+        dataset_meta.update(sim.meta)
         concentration = sim.process_results()
         species_name = sim.meta['species_name']
         expt_target_species_profile, inlet_temperature = get_changing_variables(sim.properties, species_name=species_name)
