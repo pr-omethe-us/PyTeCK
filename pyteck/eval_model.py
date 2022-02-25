@@ -10,6 +10,7 @@ import warnings
 
 import numpy
 from scipy.interpolate import UnivariateSpline
+import time
 
 try:
     import yaml
@@ -17,17 +18,41 @@ except ImportError:
     print('Warning: YAML must be installed to read input file.')
     raise
 
-from pyked.chemked import ChemKED
+from pyked.chemked import ChemKED, IgnitionDataPoint, SpeciesProfileDataPoint
 
 # Local imports
 from .utils import units
-from .simulation import AutoIgnitionSimulation as Simulation
+from .simulation import AutoIgnitionSimulation, JSRSimulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
 
 
-def create_simulations(dataset, properties):
+def ignition_processing():
+    pass
+
+
+def JSR_processing():
+    pass
+
+
+def SimulationFactory(datapoint_class):
+    simulations = {
+        IgnitionDataPoint: AutoIgnitionSimulation,
+        SpeciesProfileDataPoint: JSRSimulation,
+    }
+    return simulations[datapoint_class]
+
+
+def PostProcessingFactory(datapoint_class):
+    simulations = {
+        IgnitionDataPoint: ignition_processing,
+        SpeciesProfileDataPoint: JSR_processing,
+    }
+    return simulations[datapoint_class]
+
+
+def create_simulations(dataset, properties, **kwargs):
     """Set up individual simulations for each ignition delay value.
 
     Parameters
@@ -43,7 +68,7 @@ def create_simulations(dataset, properties):
         List of :class:`AutoignitionSimulation` objects for each simulation
 
     """
-
+    # TODO add more args passing
     simulations = []
     for idx, case in enumerate(properties.datapoints):
         sim_meta = {}
@@ -51,12 +76,18 @@ def create_simulations(dataset, properties):
         sim_meta['data-file'] = dataset
         sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
 
-        simulations.append(Simulation(properties.experiment_type,
-                                      properties.apparatus.kind,
-                                      sim_meta,
-                                      case
-                                      )
-                           )
+        Simulation = SimulationFactory(type(case))
+
+        simulations.append(
+            Simulation(
+                properties.experiment_type,
+                properties.apparatus.kind,
+                sim_meta,
+                case,
+                **kwargs,
+            )
+        )
+
     return simulations
 
 
@@ -77,10 +108,11 @@ def simulation_worker(sim_tuple):
     """
     sim, model_file, model_spec_key, path, restart = sim_tuple
 
+    simulation_type = type(sim)
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
 
-    sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    sim = simulation_type(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
 
 
@@ -188,12 +220,20 @@ def get_changing_variable(cases):
     return variable
 
 
-def evaluate_model(model_name, spec_keys_file, dataset_file,
-                   data_path='data', model_path='models',
-                   results_path='results', model_variant_file=None,
-                   num_threads=None, print_results=False, restart=False,
-                   skip_validation=False
-                   ):
+def evaluate_model(
+    model_name,
+    spec_keys_file,
+    dataset_file,
+    data_path='data',
+    model_path='models',
+    results_path='results',
+    model_variant_file=None,
+    species_name=None,
+    num_threads=None,
+    print_results=False,
+    restart=False,
+    skip_validation=False
+):
     """Evaluates the ignition delay error of a model for a given dataset.
 
     Parameters
@@ -244,9 +284,15 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         with open(model_variant_file, 'r') as f:
             model_variant = yaml.safe_load(f)
 
-    # Read dataset list
+    # Read dataset list, ignoring blank lines and lines starting with #
+    dataset_list = []
     with open(dataset_file, 'r') as f:
-        dataset_list = f.read().splitlines()
+        lines = f.readlines()
+    for line in lines:
+        formatted_line = line.strip()
+        if formatted_line == '' or formatted_line[0] == '#':
+            continue
+        dataset_list.append(formatted_line)
 
     error_func_sets = numpy.zeros(len(dataset_list))
     dev_func_sets = numpy.zeros(len(dataset_list))
@@ -260,31 +306,13 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         num_threads = multiprocessing.cpu_count() - 1 or 1
 
     # Loop through all datasets
+    skipped_datasets = []
     for idx_set, dataset in enumerate(dataset_list):
 
         dataset_meta = {'dataset': dataset, 'dataset_id': idx_set}
 
         # Create individual simulation cases for each datapoint in this set
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
-        simulations = create_simulations(dataset, properties)
-
-        ignition_delays_exp = numpy.zeros(len(simulations))
-        ignition_delays_sim = numpy.zeros(len(simulations))
-
-        #############################################
-        # Determine standard deviation of the dataset
-        #############################################
-        ign_delay = [case.ignition_delay.to('second').value.magnitude
-                     if hasattr(case.ignition_delay, 'value')
-                     else case.ignition_delay.to('second').magnitude
-                     for case in properties.datapoints
-                     ]
-
-        # get variable that is changing across datapoints
-        variable = get_changing_variable(properties.datapoints)
-        # for ignition delay, use logarithm of values
-        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
-        dataset_meta['standard deviation'] = float(standard_dev)
 
         #######################################################
         # Need to check if Ar or He in reactants but not model,
@@ -299,8 +327,11 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
                 'Warning: Ar or He in dataset, but not in model. Skipping.',
                 RuntimeWarning
             )
-            error_func_sets[idx_set] = numpy.nan
+            skipped_datasets.append(idx_set)  # TODO set the error to NAN
+            # error_func_sets[idx_set] = numpy.nan
             continue
+
+        simulations = create_simulations(dataset, properties)
 
         # setup all cases
         jobs = []
@@ -365,6 +396,24 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             pool.close()
             pool.join()
 
+        # ---------------- ignition delay specific ----------------
+        ignition_delays_exp = numpy.zeros(len(simulations))
+        ignition_delays_sim = numpy.zeros(len(simulations))
+
+        #############################################
+        # Determine standard deviation of the dataset
+        #############################################
+        ign_delay = [case.ignition_delay.to('second').value.magnitude
+                     if hasattr(case.ignition_delay, 'value')
+                     else case.ignition_delay.to('second').magnitude
+                     for case in properties.datapoints
+                     ]
+
+        # get variable that is changing across datapoints
+        variable = get_changing_variable(properties.datapoints)
+        # for ignition delay, use logarithm of values
+        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
+        dataset_meta['standard deviation'] = float(standard_dev)
         dataset_meta['datapoints'] = []
 
         for idx, sim in enumerate(results):
@@ -392,6 +441,8 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
 
             ignition_delays_exp[idx] = ignition_delay.magnitude
             ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
+
+        post_proc = PostProcessingFactory(type(properties.datapoints[0]))
 
         # calculate error function for this dataset
         error_func = numpy.power(
