@@ -18,6 +18,10 @@ from .utils import units
 from .simulation import AutoIgnitionSimulation, JSRSimulation
 
 
+min_deviation = 0.1
+"""float: minimum allowable standard deviation for experimental data"""
+
+
 def ignition_dataset_processing(results, print_results=False):
     """Function to process all of the simulated datapoints
     from a single ignition delay dataset
@@ -292,7 +296,6 @@ def estimate_std_dev(indep_variable, dep_variable):
         Standard deviation of difference between data and best-fit line
 
     """
-    MIN_DEVIATION = 0.1
     assert len(indep_variable) == len(dep_variable), \
         'independent and dependent variables not the same length'
 
@@ -314,7 +317,7 @@ def estimate_std_dev(indep_variable, dep_variable):
     # spline fit of the data
     if len(indep_variable) == 1 or len(indep_variable) == 2:
         # Fit of data will be perfect
-        return MIN_DEVIATION
+        return min_deviation
     elif len(indep_variable) == 3:
         spline = UnivariateSpline(indep_variable, dep_variable, k=2)
     else:
@@ -322,10 +325,10 @@ def estimate_std_dev(indep_variable, dep_variable):
 
     standard_dev = np.std(dep_variable - spline(indep_variable))
 
-    if standard_dev < MIN_DEVIATION:
+    if standard_dev < min_deviation:
         print('Standard deviation of {:.2f} too low, '
-              'using {:.2f}'.format(standard_dev, MIN_DEVIATION))
-        standard_dev = MIN_DEVIATION
+              'using {:.2f}'.format(standard_dev, min_deviation))
+        standard_dev = min_deviation
 
     return standard_dev
 
