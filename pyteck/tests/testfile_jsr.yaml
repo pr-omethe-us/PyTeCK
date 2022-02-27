@@ -1,0 +1,177 @@
+---
+file-authors: 
+  - name: Anthony Stohr
+    ORCID: 0000-0002-2388-1723
+  - name: Benjamin Hoare
+    ORCID: 0000-0001-7205-0777
+file-version: 1.0
+chemked-version: 0.4.1
+reference:
+    doi: 10.1016/j.combustflame.2016.06.028
+    authors:
+        - name: Kuiwen Zhang
+        - name: Colin Banyon
+        - name: John Bugler
+        - name: Henry J. Curran
+          ORCID: 0000-0002-5124-8562
+        - name: Anne Rodriguez
+        - name: Olivier Herbinet
+        - name: Frédérique Battin-Leclerc
+          ORCID: 0000-0001-8265-7492
+        - name: Christine BChir
+        - name: Karl Alexander Heufer
+          ORCID: 0000-0003-1657-5231
+    journal: Combustion and Flame
+    year: 2016
+    volume: 172
+    pages: 116-135
+    detail: An updated experimental and kinetic modeling study of n-heptane oxidation
+    
+experiment-type: species profile
+apparatus:
+    kind: jet stirred reactor
+    institution: University of Lorraine, Nancy, France
+    facility: LRGP JSR
+      
+datapoints: 
+    - csvfile: jsr_zhang_2016_phi_2.csv
+      temperature:
+        - column-name: Temperature  # values are provided in the CSV file
+        - units: K
+        - uncertainty-type: absolute
+          uncertainty: 3 K
+      pressure:
+        - 1.067 bar
+        - uncertainty-type: absolute
+          uncertainty: 0.01 bar  # made up for testing
+      reactor-volume:
+        - 0.000095 m^3
+      residence-time:
+        - 2 s
+      inlet-composition: 
+        kind: mole fraction
+        species:
+          - species-name: n-heptane
+            InChI: 1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3
+            amount: 
+              - 0.005
+              - uncertainty-type: relative
+                uncertainty: 0.05
+          - species-name: He
+            InChI: 1S/He
+            amount: 
+              - 0.9675
+              - uncertainty-type: relative
+                uncertainty: 0.05 
+          - species-name: oxygen
+            InChI: 1S/O2/c1-2
+            amount:
+              - 0.0275
+              - uncertainty-type: relative
+                uncertainty: 0.05
+      outlet-composition:
+          kind: mole fraction
+          species:
+          - species-name: n-heptane  # species names must correspond with column headers in the CSV file
+            InChI: 1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3
+          - species-name: oxygen
+            InChI: InChI=1S/O2/c1-2
+          - species-name: carbon monoxide
+            InChI: 1S/CH2O/c1-2/h1H2
+          - species-name: carbon dioxide
+            InChI: 1S/CO2/c2-1-3
+          - species-name: methane
+            InChI: 1S/CH4/h1H4
+          - species-name: acetylene
+            InChI: 1S/C2H2/c1-2/h1-2H
+          - species-name: ethylene
+            InChI: 1S/C2H4/c1-2/h1-2H2
+          - species-name: ethane
+            InChI: 1S/C2H6/c1-2/h1-2H3
+          - species-name: propene
+            InChI: 1S/C3H6/c1-3-2/h3H,1H2,2H3
+          - species-name: propane
+            InChI: 1S/C3H8/c1-3-2/h3H2,1-2H3
+          - species-name: propadiene
+            InChI: 1S/C3H4/c1-3-2/h1-2H2
+          - species-name: propyne
+            InChI: 1S/C3H4/c1-3-2/h1H,2H3
+          - species-name: formaldehyde
+            InChI: 1S/CH2O/c1-2/h1H2
+          - species-name: ethylene oxide
+            InChI: 1S/C2H4O/c1-2-3-1/h1-2H2
+          - species-name: acetaldehyde
+            InChI: 1S/C2H4O/c1-2-3/h2H,1H3
+          - species-name: 1-butene
+            InChI: 1S/C4H8/c1-3-4-2/h3H,1,4H2,2H3
+          - species-name: 2-butene
+            InChI: 1S/C4H8/c1-3-4-2/h3-4H,1-2H3
+          - species-name: 1,3-butadiene
+            InChI: 1S/C4H6/c1-3-4-2/h3-4H,1-2H2
+          - species-name: n-butane
+            InChI: 1S/C4H10/c1-3-4-2/h3-4H2,1-2H3
+          - species-name: ethanol
+            InChI: 1S/C2H6O/c1-2-3/h3H,2H2,1H3
+          - species-name: propylene oxide
+            InChI: 1S/C3H6O/c1-3-2-4-3/h3H,2H2,1H3
+          - species-name: furan
+            InChI: 1S/C4H4O/c1-2-4-5-3-1/h1-4H
+          - species-name: acrolein
+            InChI: 1S/C3H4O/c1-2-3-4/h2-3H,1H2
+          - species-name: propanal
+            InChI: 1S/C3H8O/c1-2-3-4/h4H,2-3H2,1H3
+          - species-name: acetone
+            InChI: 1S/C3H6O/c1-3(2)4/h1-2H3
+          - species-name: 1-pentene
+            InChI: 1S/C5H10/c1-3-5-4-2/h3H,1,4-5H2,2H3
+          - species-name: 2-pentene
+            InChI: 1S/C5H10/c1-3-5-4-2/h3,5H,4H2,1-2H3
+          - species-name: cyclopentene
+            InChI: 1S/C5H8/c1-2-4-5-3-1/h1-2H,3-5H2
+          - species-name: 1,3-pentadiene
+            InChI: 1S/C5H8/c1-3-5-4-2/h3-5H,1H2,2H3
+          - species-name: 2-propen-1-ol
+            InChI: 1S/C3H6O/c1-2-3-4/h2,4H,1,3H2
+          - species-name: propan-1-ol
+            InChI: 1S/C3H8O/c1-2-3-4/h4H,2-3H2,1H3
+          - species-name: butenone
+            InChI: 1S/C4H6O/c1-3-4(2)5/h3H,1H2,2H3
+          - species-name: methyl-furan
+            InChI: 1S/C5H6O/c1-5-3-2-4-6-5/h2-4H,1H3
+          - species-name: butanal
+            InChI: 1S/C5H6O/c1-5-3-2-4-6-5/h2-4H,1H3
+          - species-name: 2-butanone
+            InChI: 1S/C4H8O/c1-3-4(2)5/h3H2,1-2H3
+          - species-name: 1-hexene
+            InChI: 1S/C6H12/c1-3-5-6-4-2/h3H,1,4-6H2,2H3
+          - species-name: 2-butenal
+            InChI: 1S/C4H6O/c1-2-3-4-5/h2-4H,1H3
+          - species-name: acetic acid
+            InChI: 1S/C2H4O2/c1-2(3)4/h1H3,(H,3,4)
+          - species-name: pentanal + pentanone
+            InChI: 1S/C5H10O/c1-2-3-4-5-6/h5H,2-4H2,1H3
+          - species-name: benzene
+            InChI: 1S/C6H6/c1-2-4-6-5-3-1/h1-6H
+          - species-name: dihydrofuran
+            InChI: 1S/C4H6O/c1-2-4-5-3-1/h1,3H,2,4H2
+          - species-name: 3-heptene
+            InChI: 1S/C7H14/c1-3-5-7-6-4-2/h5,7H,3-4,6H2,1-2H3
+          - species-name: 2-heptene
+            InChI: 1S/C7H14/c1-3-5-7-6-4-2/h3,5H,4,6-7H2,1-2H3
+          - species-name: 1-heptene
+            InChI: 1S/C7H14/c1-3-5-7-6-4-2/h3H,1,4-7H2,2H3
+          - species-name: 2-hexanone
+            InChI: 1S/C6H12O/c1-3-4-5-6(2)7/h3-5H2,1-2H3
+          - species-name: propanoic acid
+            InChI: 1S/C3H6O2/c1-2-3(4)5/h2H2,1H3,(H,4,5)
+          - species-name: 2-ethyl-5-methyl-furan
+            InChI: 1S/C7H10O/c1-3-7-5-4-6(2)8-7/h4-5H,3H2,1-2H3
+          - species-name: 2-methyl-dihydrofuranone
+            InChI: 1S/C5H8O2/c1-4-5(6)2-3-7-4/h4H,2-3H2,1H3
+          - species-name: sum of cyclic ether with 5 atoms
+          - species-name: sum of cyclic ether with 4 atoms
+          - species-name: sum of cyclic ether with 3 atoms
+          - species-name: 2methanol-5methyl-tetrahydrofuranone
+            InChI: 1S/C6H10O3/c1-4-6(8)2-5(3-7)9-4/h4-5,7H,2-3H2,1H3
+          - species-name: heptanone
+            InChI: 1S/C7H14O/c1-3-4-5-6-7(2)8/h3-6H2,1-2H3

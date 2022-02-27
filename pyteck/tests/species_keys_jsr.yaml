@@ -1,0 +1,12 @@
+---
+nheptane_reduced.cti:
+    H2: "H2(13)"
+    oxygen: "O2(2)"
+    O2: "O2(2)"
+    Ar: "Ar"
+    nC7H16: "C7H16(1)"
+    n-heptane: "C7H16(1)"
+    N2: "N2"
+    nitrogen: "N2"
+    CO2: "CO2(7)"
+    He: "He"
