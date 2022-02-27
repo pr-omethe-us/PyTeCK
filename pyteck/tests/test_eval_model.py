@@ -229,3 +229,20 @@ class TestEvalModel:
             assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=2.0e-3)
             assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
             assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)
+
+    def test_jsr(self):
+        """Test overall evaluation of JSR model.
+        """
+
+        with TemporaryDirectory() as temp_dir:
+            output = eval_model.evaluate_model(
+                model_name='nheptane_reduced.cti',
+                spec_keys_file=self.relative_location('species_keys_jsr.yaml'),
+                dataset_file=self.relative_location('dataset_file_jsr.txt'),
+                species_name='n-heptane',
+                data_path=self.relative_location(''),
+                model_path=self.relative_location(''),
+                results_path=temp_dir,
+                num_threads=2,
+                skip_validation=True
+            )

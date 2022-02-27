@@ -354,7 +354,7 @@ class AutoIgnitionSimulation(Simulation):
         if self.properties.volume_history is not None:
             # Minimum difference between volume profile times
             min_time = np.min(np.diff(self.properties.volume_history.time.magnitude))
-            self.reac_net.set_max_time_step(min_time)
+            self.reac_net.max_time_step = min_time
 
         # Check if species ignition target, that species is present.
         if self.properties.ignition_type['target'] not in ['pressure', 'temperature']:
