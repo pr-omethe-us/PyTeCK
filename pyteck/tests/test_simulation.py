@@ -16,7 +16,7 @@ except ImportError:
     print("Error: Cantera must be installed.")
     raise
 
-from pyked.chemked import ChemKED, DataPoint, TimeHistory
+from pyked.chemked import ChemKED, TimeHistory, IgnitionDataPoint
 
 # Taken from http://stackoverflow.com/a/22726782/1569494
 try:
@@ -110,7 +110,7 @@ class TestSampleRisingPressure:
         assert times[-1] == time_end
 
         # Ensure final pressure correct, and check constant derivative
-        assert np.allclose(pressures[-1], pres*(pres_rise * time_end + 1))
+        assert np.allclose(pressures[-1], pres * (pres_rise * time_end + 1))
         dpdt = simulation.first_derivative(times, pressures)
         assert np.allclose(dpdt, pres * pres_rise)
 
@@ -122,8 +122,8 @@ class TestCreateVolumeHistory:
         """Ensure constant volume history if zero pressure rise.
         """
         [times, volume] = simulation.create_volume_history(
-                    'air.xml', 300., ct.one_atm, 'N2:1.0', 0.0, 1.0
-                    )
+            'air.xml', 300., ct.one_atm, 'N2:1.0', 0.0, 1.0
+        )
         # check that end time is correct and volume unchanged
         assert np.isclose(times[-1], 1.0)
         assert np.allclose(volume, 1.0)
@@ -136,9 +136,9 @@ class TestCreateVolumeHistory:
         end_time = 1.0
         initial_temp = 300.
         [times, volumes] = simulation.create_volume_history(
-                    'air.xml', initial_temp, initial_pres, 'N2:1.0',
-                    pres_rise, end_time
-                    )
+            'air.xml', initial_temp, initial_pres, 'N2:1.0',
+            pres_rise, end_time
+        )
         # pressure at end time
         end_pres = initial_pres * (pres_rise * end_time + 1.0)
 
@@ -199,12 +199,12 @@ class TestPressureRiseProfile(object):
         velocity_profile = simulation.PressureRiseProfile(
             'air.xml', init_temp, init_pressure, 'N2:1.0',
             pressure_rise, end_time
-            )
+        )
 
         # Sample pressure
         [times, pressures] = simulation.sample_rising_pressure(
             end_time, init_pressure, 2.e3, pressure_rise
-            )
+        )
 
         # Check velocity profile against "theoretical" volume derivative
         gas = ct.Solution('air.xml')
@@ -216,8 +216,8 @@ class TestPressureRiseProfile(object):
             gas.SP = init_entropy, pressures[i]
             gamma = gas.cp / gas.cv
             velocities[i] = velocity_profile(times[i])
-            dvolumes[i] = ((-1. / gamma) * pressure_rise *
-                           (pressures[i] / init_pressure)**((-1. / gamma) - 1.0)
+            dvolumes[i] = ((-1. / gamma) * pressure_rise
+                           * (pressures[i] / init_pressure)**((-1. / gamma) - 1.0)
                            )
 
         assert np.allclose(velocities, dvolumes, rtol=1e-3)
@@ -234,12 +234,22 @@ class TestGetIgnitionDelay(object):
         """
         a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
         times = np.linspace(0, 1, 10000)
-        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        mass_fraction = a * np.exp(-((times - b) / c)**2)
         # max value of this occurs when x == b
-
-        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'max')
-
-        assert np.allclose(ignition_delays[0], b, rtol=1e-4)
+        temperature = 1000.0
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'target name': 'species',
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': 'max'
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        ignition_delays = sim.get_ignition_delay(times, mass_fraction)
+        assert np.allclose(ignition_delays.magnitude[-1], b, rtol=1e-4)
 
     def test_max_derivative(self):
         """Test using maximum derivative of temperature for ignition delay.
@@ -249,67 +259,127 @@ class TestGetIgnitionDelay(object):
         times = np.linspace(0, 1, 10000)
         temperature = -0.5 * np.sqrt(np.pi) * a * c * erf((b - times) / c) + d
         # max derivative of this occurs when x == b
-
-        ignition_delays = simulation.get_ignition_delay(times, temperature, 'temperature', 'd/dt max')
-
-        assert np.allclose(ignition_delays[0], b, rtol=1e-4)
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': 'd/dt max'
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        ignition_delays = sim.get_ignition_delay(times, temperature)
+        assert np.allclose(ignition_delays.magnitude[-1], b, rtol=1e-4)
 
     def test_max_derivative_species(self):
         """Test using max derivative of a species-looking profile.
         """
         a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
         times = np.linspace(0, 1, 10000)
-        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        mass_fraction = a * np.exp(-((times - b) / c)**2)
+        temperature = 1000.0
         # first inflection point of Gaussian occurs at b - sqrt(1/2)*c
         # so this is where the maximum derivative occurs
-
-        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max')
-        assert np.allclose(ignition_delays[0], b - np.sqrt(1/2)*c, rtol=1e-4)
-
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': 'd/dt max',
+            'target name': 'species',
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        ignition_delays = sim.get_ignition_delay(times, mass_fraction)
+        # ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max')
+        assert np.allclose(ignition_delays.magnitude[-1], b - np.sqrt(1 / 2) * c, rtol=1e-4)
 
     def test_half_max(self):
         """Test using half maximum value for ignition delay.
         """
         a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
         times = np.linspace(0, 1, 10000)
-        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        mass_fraction = a * np.exp(-((times - b) / c)**2)
+        temperature = 1000.0
         # value of peak is `a`, so half max is `a/2`
         # `mass_fraction = a/2` at `b - c*np.sqrt(np.log(2))`
         # (peak minus half of the full width and half max, FWHM)
-
-        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', '1/2 max')
-
-        assert np.allclose(ignition_delays[0], b - c*np.sqrt(np.log(2)), rtol=1e-4)
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': '1/2 max',
+            'target name': 'species',
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        ignition_delays = sim.get_ignition_delay(times, mass_fraction)
+        assert np.allclose(ignition_delays.magnitude, b - c * np.sqrt(np.log(2)), rtol=1e-4)
 
     def test_derivative_max_extrapolated(self):
         """Test using d/dt max extrapolated value for ignition delay.
         """
         a, b, c = [5.13293528e+04, 3.16147043e-01, 1.05018205e-02]
         times = np.linspace(0, 1, 10000)
-        mass_fraction = a * np.exp(-((times - b)/c)**2)
+        mass_fraction = a * np.exp(-((times - b) / c)**2)
+        temperature = 1000.0
         # first inflection point of Gaussian occurs at b - sqrt(1/2)*c
         # so this is where the maximum derivative occurs
         # derivative:
         # df_dt = (-2*a/c**2) * (times - b) * np.exp(-(b - times)**2 / c**2)
 
-        time_max_dfdt = b - np.sqrt(1/2)*c
-        dfdt_max = (-2*a/c**2) * (time_max_dfdt - b) * np.exp(-(b - time_max_dfdt)**2 / c**2)
+        time_max_dfdt = b - np.sqrt(1 / 2) * c
+        dfdt_max = (-2 * a / c**2) * (time_max_dfdt - b) * np.exp(-(b - time_max_dfdt)**2 / c**2)
 
-        ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max extrapolated')
-        assert np.allclose(ignition_delays[0],
-                           time_max_dfdt - a * np.exp(-((time_max_dfdt - b)/c)**2) / dfdt_max,
-                           rtol=1e-4
-                           )
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': 'd/dt max extrapolated',
+            'target name': 'species',
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        ignition_delays = sim.get_ignition_delay(times, mass_fraction)
+
+        # ignition_delays = simulation.get_ignition_delay(times, mass_fraction, 'species', 'd/dt max extrapolated')
+        assert np.allclose(
+            ignition_delays.magnitude[-1],
+            time_max_dfdt - a * np.exp(-((time_max_dfdt - b) / c)**2) / dfdt_max,
+            rtol=1e-4
+        )
 
     def test_not_supported_type(self):
         """Test that a non-supported type raises a warning and returns zero.
         """
-        with pytest.warns(RuntimeWarning,
+        times = np.linspace(0, 1, 10000)
+        mass_fraction = times
+        temperature = 1000.0
+        times *= units.second
+        properties = IgnitionDataPoint({
+            'temperature': [str(temperature)],
+            'composition': {
+                'kind': 'mole fraction',
+                'species': [{'species-name': 'O2', 'amount': [1.0]}]
+            },
+            'ignition-type': 'min',
+            'target name': 'emission',
+        })
+        sim = simulation.AutoIgnitionSimulation('ignition delay', 'shock tube', {}, properties)
+        with pytest.warns(
+            RuntimeWarning,
             match='Unable to process ignition type min, setting result to 0 and continuing'
-            ):
-            ignition_delays = simulation.get_ignition_delay(0.0, 0.0, 'emission', 'min')
+        ):
+            # ignition_delays = simulation.get_ignition_delay(0.0, 0.0, 'emission', 'min')
+            ignition_delays = sim.get_ignition_delay(times, mass_fraction)
 
-        assert ignition_delays[0] == 0.0
+        assert ignition_delays[-1] == 0.0
 
 
 class TestSimulation:
@@ -440,10 +510,10 @@ class TestSimulation:
 
         # Check constructed velocity profile
         [times, volumes] = simulation.create_volume_history(
-                                mechanism_filename, init_temp, init_pres,
-                                'H2:0.00444,O2:0.00566,AR:0.9899',
-                                0.10 * 1000., sim.time_end
-                                )
+            mechanism_filename, init_temp, init_pres,
+            'H2:0.00444,O2:0.00566,AR:0.9899',
+            0.10 * 1000., sim.time_end
+        )
         volumes = volumes / volumes[0]
         dVdt = simulation.first_derivative(times, volumes)
         velocities = np.zeros(times.size)
@@ -517,7 +587,7 @@ class TestSimulation:
             5.78058719368E+001, 5.80849611077E+001, 5.85928651155E+001,
             5.94734357453E+001, 6.09310671165E+001, 6.32487551103E+001,
             6.68100309742E+001
-            ])
+        ])
         volumes = volumes / volumes[0]
         dVdt = simulation.first_derivative(times, volumes)
         velocities = np.zeros(times.size)
@@ -581,7 +651,7 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
-                    ])
+                ])
                 assert np.allclose(table.col('time')[-1], time_end)
                 assert np.allclose(table.col('temperature')[-1], temp)
                 assert np.allclose(table.col('pressure')[-1], pres)
@@ -626,7 +696,7 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
-                    ])
+                ])
                 assert np.allclose(table.col('time')[-1], time_end)
                 assert np.allclose(table.col('temperature')[-1], temp)
                 assert np.allclose(table.col('pressure')[-1], pres)
@@ -689,7 +759,7 @@ class TestSimulation:
                     0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
                     9.95297294e-01,   0.00000000e+00,   0.00000000e+00,
                     0.00000000e+00,   0.00000000e+00
-                    ])
+                ])
                 assert np.allclose(table.col('time')[-1], time_end)
                 assert np.allclose(table.col('temperature')[-1], temp)
                 assert np.allclose(table.col('pressure')[-1], pres)
@@ -725,9 +795,10 @@ class TestSimulation:
                 table = h5file.root.simulation
 
                 # Ensure exact columns present
-                assert set(['time', 'temperature', 'pressure',
-                           'volume', 'mass_fractions'
-                           ]) == set(table.colnames)
+                assert set([
+                    'time', 'temperature', 'pressure',
+                    'volume', 'mass_fractions'
+                ]) == set(table.colnames)
                 # Ensure final state matches expected
                 time_end = 1.0e-1
                 temp = 2385.3726323703772
@@ -751,7 +822,7 @@ class TestSimulation:
                     -1.31976752e-30,  -2.12060990e-32,   1.55792718e-01,
                     7.74803838e-01,   2.72630502e-66,   2.88273784e-67,
                     -2.18774836e-50,  -1.47465442e-48
-                    ])
+                ])
                 assert np.allclose(table.col('time')[-1], time_end)
                 assert np.allclose(table.col('temperature')[-1], temp,
                                    rtol=1e-5, atol=1e-9

@@ -458,26 +458,10 @@ class AutoIgnitionSimulation(Simulation):
 
         print(f'Done with case {self.meta["id"]}')
 
-    def process_results(self):
-        """Process integration results to obtain ignition delay.
+    def get_ignition_delay(self, time, target):
+        """Function to get ignition delay
         """
-
-        # Load saved integration results
-        with tables.open_file(self.meta['save-file'], 'r') as h5file:
-            # Load Table with Group name simulation
-            table = h5file.root.simulation
-
-            time = table.col('time')
-            if self.properties.ignition_target == 'pressure':
-                target = table.col('pressure')
-            elif self.properties.ignition_target == 'temperature':
-                target = table.col('temperature')
-            else:
-                target = table.col('mass_fractions')[:, self.properties.ignition_target]
-
-        # add units to time
-        time = time * units.second
-
+        ign_delays = [0.0]
         # Analysis for ignition depends on type specified
         if self.properties.ignition_type in ['max', 'd/dt max']:
             if self.properties.ignition_type == 'd/dt max':
@@ -533,9 +517,50 @@ class AutoIgnitionSimulation(Simulation):
             # Find index associated with the 1/2 max value, but only consider
             # points before the peak
             half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
-            ign_delays = [time[half_idx]]
+            ign_delays = time[half_idx]
 
-            # TODO: detect two-stage ignition when 1/2 max type?
+        elif self.properties.ignition_type == 'd/dt max extrapolated':
+            # First need to evaluate derivative of the target
+            target_derivative = first_derivative(time, target)
+
+            # Get indices of peaks, and index of largest peak, which corresponds to
+            # the point of maximum deriative
+            peak_inds = detect_peaks(target_derivative, edge=None, mph=1.e-9 * np.max(target))
+            max_ind = peak_inds[np.argmax(target_derivative[peak_inds])]
+
+            # use slope to extrapolate to intercept with baseline value (0 by default)
+            ign_delays = np.array([time.magnitude[max_ind] - (target[max_ind] / target_derivative[max_ind])]) * units.second
+
+        else:
+            warnings.warn(
+                'Unable to process ignition type ' + self.properties.ignition_type
+                + ', setting result to 0 and continuing', RuntimeWarning
+            )
+            ign_delays = 0.0 * units.second
+            return np.array([0.0])
+
+        return ign_delays
+
+    def process_results(self):
+        """Process integration results to obtain ignition delay.
+        """
+
+        # Load saved integration results
+        with tables.open_file(self.meta['save-file'], 'r') as h5file:
+            # Load Table with Group name simulation
+            table = h5file.root.simulation
+
+            time = table.col('time')
+            if self.properties.ignition_target == 'pressure':
+                target = table.col('pressure')
+            elif self.properties.ignition_target == 'temperature':
+                target = table.col('temperature')
+            else:
+                target = table.col('mass_fractions')[:, self.properties.ignition_target]
+
+        # add units to time
+        time = time * units.second
+        ign_delays = self.get_ignition_delay(time, target)
 
         # Overall ignition delay
         if len(ign_delays) > 0:
