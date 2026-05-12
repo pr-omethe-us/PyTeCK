@@ -1,6 +1,6 @@
 version: 1.0.{build}
 environment:
-  PYTHON_LOC: "C:\\Miniconda36-x64"
+  PYTHON_LOC: "C:\\Miniconda3-x64"
 
 skip_tags: true
 
@@ -10,20 +10,20 @@ install:
   - cmd: conda config --append channels conda-forge
   - cmd: conda update conda
   - cmd: conda update -q --all
-  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.5"} | set-content test-environment.yaml
+  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.7"} | set-content test-environment.yaml
   - cmd: conda env create -qf test-environment.yaml
   - cmd: git checkout -- test-environment.yaml
-  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.6"} | set-content test-environment.yaml
+  - ps: (get-content test-environment.yaml) | %{$_ -replace "\$\{PYTHON\}","3.9"} | set-content test-environment.yaml
   - cmd: conda env create -qf test-environment.yaml
   - cmd: conda info -a
-  - ps: Write-Host "Packages in py3.5 Environment:"
-  - cmd: conda list -n py3.5
-  - ps: Write-Host "Packages in py3.6 Environment:"
-  - cmd: conda list -n py3.6
+  - ps: Write-Host "Packages in py3.7 Environment:"
+  - cmd: conda list -n py3.7
+  - ps: Write-Host "Packages in py3.9 Environment:"
+  - cmd: conda list -n py3.9
 
 build_script:
-  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.5
+  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.7
   - cmd: pytest -vv --cov=./ --cov-append
-  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.6
+  - cmd: call %PYTHON_LOC%\Scripts\activate.bat py3.9
   - cmd: pytest -vv --cov=./ --cov-append
   - cmd: codecov -X gcov

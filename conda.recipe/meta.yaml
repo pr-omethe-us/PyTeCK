@@ -14,12 +14,12 @@ build:
 
 requirements:
   build:
-    - python >=3.5
+    - python >=3.7,<3.10
     - setuptools
     - pip
 
   run:
-    - python
+    - python >=3.7,<3.10
     - pyyaml >=3.12,<4.0
     - numpy >=1.13.1
     - scipy >=1.0.0

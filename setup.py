@@ -26,9 +26,9 @@ with open(path.join(here, 'CITATION.md')) as citation_file:
 long_description = readme + '\n\n' + changelog + '\n\n' + citation
 
 install_requires = [
-    'pyyaml>=3.12,<4.0',
-    'pint>=0.7.2,<0.9',
-    'numpy>=1.13.0,<2.0',
+    'pyyaml>=3.12',
+    'pint>=0.7.2',
+    'numpy>=1.13.0',
     'tables',
     'pyked>=0.4.1',
     'scipy>=1.0.0',
@@ -60,6 +60,7 @@ setup(
     package_data={'pyteck': ['tests/*.xml', 'tests/*.yaml', 'tests/dataset_file.txt', 'tests/*.cti']},
     install_requires=install_requires,
     zip_safe=False,
+    python_requires='>=3.7,<3.10',
 
     license='MIT License',
 
@@ -76,8 +77,9 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Chemistry',
     ],
     keywords='chemical_kinetics',

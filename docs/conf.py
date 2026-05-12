@@ -51,7 +51,7 @@ autoclass_content = 'class'
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.6', None),
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 

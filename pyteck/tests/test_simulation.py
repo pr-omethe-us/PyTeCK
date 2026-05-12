@@ -301,6 +301,53 @@ class TestGetIgnitionDelay(object):
                            rtol=1e-4
                            )
 
+    def test_derivative_max_extrapolated_nonpositive_derivative_returns_zero(self, monkeypatch):
+        """Do not extrapolate when the derivative maximum is not positive.
+        """
+        times = np.linspace(0, 1, 3)
+        target = np.ones_like(times)
+        derivative = np.array([-1.0, 0.0, -1.0])
+
+        monkeypatch.setattr(
+            simulation, 'first_derivative',
+            lambda time, target: derivative
+            )
+
+        ignition_delays = simulation.get_ignition_delay(
+            times, target, 'species', 'd/dt max extrapolated'
+            )
+
+        assert ignition_delays[0] == 0.0
+
+    @pytest.mark.parametrize('ignition_type', [
+        'max',
+        'd/dt max',
+        '1/2 max',
+        'd/dt max extrapolated',
+    ])
+    def test_flat_signal_returns_zero_without_dumping_target_data(self, ignition_type):
+        """Flat signals are expected non-ignitions, not debug-dump cases.
+        """
+        times = np.linspace(0, 1, 100)
+        target = np.zeros_like(times)
+
+        cwd = os.getcwd()
+        with TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            try:
+                ignition_delays = simulation.get_ignition_delay(
+                    times, target, 'species', ignition_type
+                    )
+                dumped_files = [
+                    filename for filename in os.listdir(temp_dir)
+                    if filename.startswith('target-data-') and filename.endswith('.out')
+                    ]
+            finally:
+                os.chdir(cwd)
+
+        assert ignition_delays[0] == 0.0
+        assert dumped_files == []
+
     def test_not_supported_type(self):
         """Test that a non-supported type raises a warning and returns zero.
         """
