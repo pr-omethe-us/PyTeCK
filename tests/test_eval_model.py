@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -175,17 +176,25 @@ class TestEvalModel:
         """Test overall evaluation of model.
         """
 
+        cwd = os.getcwd()
         with TemporaryDirectory() as temp_dir:
-            output = eval_model.evaluate_model(
-                model_name='h2o2.yaml',
-                spec_keys_file=str(HERE / 'spec_keys.yaml'),
-                dataset_file=str(HERE / 'dataset_file.txt'),
-                data_path=str(HERE),
-                model_path='',
-                results_path=temp_dir,
-                num_threads=1,
-                skip_validation=True
-                )
+            # Run from within the temporary directory so any files produced
+            # (e.g. the summary results YAML) are contained and cleaned up.
+            os.chdir(temp_dir)
+            try:
+                output = eval_model.evaluate_model(
+                    model_name='h2o2.yaml',
+                    spec_keys_file=str(HERE / 'spec_keys.yaml'),
+                    dataset_file=str(HERE / 'dataset_file.txt'),
+                    data_path=str(HERE),
+                    model_path='',
+                    results_path=temp_dir,
+                    num_threads=1,
+                    skip_validation=True
+                    )
+            finally:
+                os.chdir(cwd)
+
             assert numpy.isclose(output['average error function'], 58.78211242028232, rtol=1.e-3)
             assert numpy.isclose(output['error function standard deviation'], 0.0, rtol=1.e-3)
             assert numpy.isclose(output['average deviation function'], 7.635983785416241, rtol=1.e-3)
