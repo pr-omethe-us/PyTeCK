@@ -5,13 +5,6 @@ Based on validation module of pyrk (https://github.com/pyrk).
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
 
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-import sys
-if sys.version_info > (3,):
-    long = int
-
 import pint
 
 # Local imports
@@ -211,15 +204,15 @@ def validate_num(value_name, value):
         The original value
 
     """
-    if isinstance(value, (int, long, float, units.Quantity)):
+    if isinstance(value, (int, float, units.Quantity)):
         return value
     else:
         try:
-            if isinstance(value.magnitude, (int, long, float, units.Quantity)):
+            if isinstance(value.magnitude, (int, float, units.Quantity)):
                 return value
         except AttributeError:
             pass
-    msg = (value_name + ' must be an integer, long, float, or Quantity. \n'
+    msg = (value_name + ' must be an integer, float, or Quantity. \n'
            'The value provided was of type ' + str(type(value)) + ' and '
            'value ' + str(value)
            )

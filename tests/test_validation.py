@@ -1,12 +1,8 @@
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
 from pint import DimensionalityError
 import pytest
 
-from ..validation import validate_geq, validate_gt, validate_leq, validate_num
-from ..utils import units
+from pyteck.validation import validate_geq, validate_gt, validate_leq, validate_num
+from pyteck.utils import units
 
 class TestValidate_geq:
     """Class of tests for validation function of value lower limit and type.

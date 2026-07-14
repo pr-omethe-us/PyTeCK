@@ -3,10 +3,6 @@
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
 
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
 # Standard libraries
 import os
 from collections import namedtuple
@@ -15,18 +11,8 @@ import numpy as np
 from datetime import datetime
 
 # Related modules
-try:
-    import cantera as ct
-    ct.suppress_thermo_warnings()
-except ImportError:
-    print("Error: Cantera must be installed.")
-    raise
-
-try:
-    import tables
-except ImportError:
-    print('PyTables must be installed')
-    raise
+import cantera as ct
+import tables
 
 # Local imports
 from .utils import units
@@ -351,10 +337,10 @@ class Simulation(object):
             return
 
         # Create non-interacting ``Reservoir`` on other side of ``Wall``
-        env = ct.Reservoir(ct.Solution('air.xml'))
+        env = ct.Reservoir(ct.Solution('air.yaml'), clone=True)
 
         # All reactors are ``IdealGasReactor`` objects
-        self.reac = ct.IdealGasReactor(self.gas)
+        self.reac = ct.IdealGasReactor(self.gas, clone=True)
         if self.apparatus == 'shock tube' and self.properties.pressure_rise is None:
             # Shock tube modeled by constant UV
             self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
@@ -400,7 +386,7 @@ class Simulation(object):
 
         # Number of solution variables is number of species + mass,
         # volume, temperature
-        self.n_vars = self.reac.kinetics.n_species + 3
+        self.n_vars = self.reac.phase.n_species + 3
 
         # Create ``ReactorNet`` newtork
         self.reac_net = ct.ReactorNet([self.reac])
@@ -409,7 +395,7 @@ class Simulation(object):
         if self.properties.volume_history is not None:
             # Minimum difference between volume profile times
             min_time = np.min(np.diff(self.properties.volume_history.time.magnitude))
-            self.reac_net.set_max_time_step(min_time)
+            self.reac_net.max_time_step = min_time
 
         # Check if species ignition target, that species is present.
         if self.properties.ignition_type['target'] not in ['pressure', 'temperature']:
@@ -466,7 +452,7 @@ class Simulation(object):
                      'pressure': tables.Float64Col(pos=2),
                      'volume': tables.Float64Col(pos=3),
                      'mass_fractions': tables.Float64Col(
-                          shape=(self.reac.thermo.n_species), pos=4
+                          shape=(self.reac.phase.n_species), pos=4
                           ),
                      }
 
@@ -483,7 +469,7 @@ class Simulation(object):
             # Save initial conditions
             timestep['time'] = self.reac_net.time
             timestep['temperature'] = self.reac.T
-            timestep['pressure'] = self.reac.thermo.P
+            timestep['pressure'] = self.reac.phase.P
             timestep['volume'] = self.reac.volume
             timestep['mass_fractions'] = self.reac.Y
             # Add ``timestep`` to table
@@ -497,7 +483,7 @@ class Simulation(object):
                 # Save new timestep information
                 timestep['time'] = self.reac_net.time
                 timestep['temperature'] = self.reac.T
-                timestep['pressure'] = self.reac.thermo.P
+                timestep['pressure'] = self.reac.phase.P
                 timestep['volume'] = self.reac.volume
                 timestep['mass_fractions'] = self.reac.Y
 

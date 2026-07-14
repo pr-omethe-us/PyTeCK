@@ -2,7 +2,6 @@
 
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
-from __future__ import print_function
 
 import pint
 

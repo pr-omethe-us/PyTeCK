@@ -3,19 +3,10 @@
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
 
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
-# Standard libraries
 import os
 from argparse import ArgumentParser
 import numpy
-
-try:
-    import yaml
-except ImportError:
-    print('Warning: YAML must be installed to read input file.')
+import yaml
 
 try:
     from lxml import etree

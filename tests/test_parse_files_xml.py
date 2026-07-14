@@ -1,30 +1,14 @@
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
-# Standard libraries
-import os
-import pkg_resources
+import xml.etree.ElementTree as etree
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-try:
-    from lxml import etree
-except ImportError:
-    try:
-        import xml.etree.cElementTree as etree
-    except ImportError:
-        try:
-            import xml.etree.ElementTree as etree
-        except ImportError:
-          print("Failed to import ElementTree from any known place")
-          raise
+from pyteck import parse_files_XML
+from pyteck.simulation import Simulation
+from pyteck.utils import units
 
-# Local imports
-from .. import parse_files_XML
-from ..simulation import Simulation
-from ..utils import units
+HERE = Path(__file__).parent
 
 #pytestmark = pytest.mark.skip(reason="XML converter not completed")
 
@@ -34,8 +18,8 @@ class TestExperimentType:
     def test_shock_tube_experiment(self):
         """Ensure shock tube experiment can be detected.
         """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -45,8 +29,8 @@ class TestExperimentType:
     def test_RCM_experiment(self):
         """Ensure rapid compression machine experiment can be detected.
         """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_rcm.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -60,8 +44,8 @@ class TestCommonProperties:
     def test_shock_tube_common_properties(self):
         """Ensure basic common properties parsed for shock tube.
         """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -88,8 +72,8 @@ class TestCommonProperties:
     def test_shock_tube_common_properties_pressure_rise(self):
         """Ensure basic common properties parsed for shock tube.
         """
-        file_path = os.path.join('testfile_st2.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st2.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -116,8 +100,8 @@ class TestCommonProperties:
     def test_rcm_common_properties(self):
         """Ensure basic common properties parsed for RCM.
         """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_rcm.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -140,8 +124,8 @@ class TestIgnitionType:
     def test_pressure_ignition_target(self):
         """Test pressure max derivative as target for RCM.
         """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_rcm.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -153,8 +137,8 @@ class TestIgnitionType:
     def test_pressure_species_target(self):
         """Test pressure max derivative as target for shock tube.
         """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -166,8 +150,8 @@ class TestIgnitionType:
     def test_pressure_species_target_OH(self):
         """Test species max value as targetree.
         """
-        file_path = os.path.join('testfile_st2.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st2.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -183,8 +167,8 @@ class TestDataGroups:
     def test_shock_tube_data_points(self):
         """Test parsing of ignition delay data points for shock tube file.
         """
-        file_path = os.path.join('testfile_st.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -202,8 +186,8 @@ class TestDataGroups:
     def test_shock_tube_data_points_pressure_rise(self):
         """Test parsing of ignition delay data points for shock tube file.
         """
-        file_path = os.path.join('testfile_st2.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_st2.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 
@@ -221,8 +205,8 @@ class TestDataGroups:
     def test_rcm_data_points(self):
         """Test parsing of ignition delay data points for RCM file.
         """
-        file_path = os.path.join('testfile_rcm.xml')
-        filename = pkg_resources.resource_filename(__name__, file_path)
+        file_path = 'testfile_rcm.xml'
+        filename = str(HERE / file_path)
         tree = etree.parse(filename)
         root = tree.getroot()
 

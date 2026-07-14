@@ -1,44 +1,18 @@
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
-# Standard libraries
-import os
-import pkg_resources
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 # Third-party libraries
 import numpy
 import pytest
 from pyked.chemked import ChemKED, DataPoint
 
-# Taken from http://stackoverflow.com/a/22726782/1569494
-try:
-    from tempfile import TemporaryDirectory
-except ImportError:
-    from contextlib import contextmanager
-    import shutil
-    import tempfile
-    import errno
-
-    @contextmanager
-    def TemporaryDirectory():
-        name = tempfile.mkdtemp()
-        try:
-            yield name
-        finally:
-            try:
-                shutil.rmtree(name)
-            except OSError as e:
-                # Reraise unless ENOENT: No such file or directory
-                # (ok if directory has already been deleted)
-                if e.errno != errno.ENOENT:
-                    raise
-
 # Local imports
-from .. import eval_model
-from ..simulation import Simulation
-from ..utils import units
-from ..exceptions import UndefinedKeywordError
+from pyteck import eval_model
+from pyteck.simulation import Simulation
+from pyteck.utils import units
+from pyteck.exceptions import UndefinedKeywordError
+
+HERE = Path(__file__).parent
 
 
 class TestEstimateStandardDeviation:
@@ -199,21 +173,16 @@ class TestGetChangingVariable:
 class TestEvalModel:
     """
     """
-    def relative_location(self, file):
-        """Give relative location in package."""
-        file_path = os.path.join(file)
-        return pkg_resources.resource_filename(__name__, file_path)
-
     def test(self):
         """Test overall evaluation of model.
         """
 
         with TemporaryDirectory() as temp_dir:
             output = eval_model.evaluate_model(
-                model_name='h2o2.cti',
-                spec_keys_file=self.relative_location('spec_keys.yaml'),
-                dataset_file=self.relative_location('dataset_file.txt'),
-                data_path=self.relative_location(''),
+                model_name='h2o2.yaml',
+                spec_keys_file=str(HERE / 'spec_keys.yaml'),
+                dataset_file=str(HERE / 'dataset_file.txt'),
+                data_path=str(HERE),
                 model_path='',
                 results_path=temp_dir,
                 num_threads=1,

@@ -1,8 +1,3 @@
-# Python 2 compatibility
-from __future__ import print_function
-from __future__ import division
-
-# Standard libraries
 import os
 from os.path import splitext, basename
 import multiprocessing
@@ -10,13 +5,7 @@ import warnings
 
 import numpy
 from scipy.interpolate import UnivariateSpline
-
-try:
-    import yaml
-except ImportError:
-    print('Warning: YAML must be installed to read input file.')
-    raise
-
+import yaml
 from pyked.chemked import ChemKED, DataPoint
 
 # Local imports

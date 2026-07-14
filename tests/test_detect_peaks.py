@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ..detect_peaks import detect_peaks
+from pyteck.detect_peaks import detect_peaks
 
 class TestDetectPeaks:
     """
