@@ -25,15 +25,9 @@ PyPI with
 
 If you prefer to install manually, or want a particular version outside of the
 tagged releases distributed to those services, you can download the source files
-from this repository, navigate to the directory, and install using either `setuptools`
-
-    > python setup.py install
-
-or `pip`
+from this repository, navigate to the directory, and install using `pip`:
 
     > pip install .
-
-`pip` is recommended due to its easy uninstall option (`pip uninstall pyteck`).
 
 ## Usage
 

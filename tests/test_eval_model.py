@@ -1,7 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-# Third-party libraries
 import numpy
 import pytest
 from pyked.chemked import ChemKED, DataPoint
@@ -10,7 +9,6 @@ from pyked.chemked import ChemKED, DataPoint
 from pyteck import eval_model
 from pyteck.simulation import Simulation
 from pyteck.utils import units
-from pyteck.exceptions import UndefinedKeywordError
 
 HERE = Path(__file__).parent
 
