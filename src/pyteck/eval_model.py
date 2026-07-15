@@ -1,16 +1,17 @@
-import os
-from os.path import splitext, basename
 import multiprocessing
+import os
 import warnings
+from os.path import basename, splitext
 
 import numpy
-from scipy.interpolate import UnivariateSpline
 import yaml
-from pyked.chemked import ChemKED, DataPoint
+from pyked.chemked import ChemKED
+from scipy.interpolate import UnivariateSpline
+
+from .simulation import create_simulation
 
 # Local imports
 from .utils import units
-from .simulation import Simulation
 
 min_deviation = 0.10
 """float: minimum allowable standard deviation for experimental data"""
@@ -21,7 +22,8 @@ def create_simulations(dataset, properties):
 
     Parameters
     ----------
-    dataset :
+    dataset : str
+        Name of dataset file
 
     properties : pyked.chemked.ChemKED
         ChemKED object with full set of experimental properties
@@ -37,16 +39,14 @@ def create_simulations(dataset, properties):
     for idx, case in enumerate(properties.datapoints):
         sim_meta = {}
         # Common metadata
-        sim_meta['data-file'] = dataset
-        sim_meta['id'] = splitext(basename(dataset))[0] + '_' + str(idx)
+        sim_meta["data-file"] = dataset
+        sim_meta["id"] = splitext(basename(dataset))[0] + "_" + str(idx)
 
-        simulations.append(Simulation(properties.experiment_type,
-                                      properties.apparatus.kind,
-                                      sim_meta,
-                                      case
-                                      )
-                           )
+        simulations.append(
+            create_simulation(properties.experiment_type, properties.apparatus.kind, sim_meta, case)
+        )
     return simulations
+
 
 def simulation_worker(sim_tuple):
     """Worker for multiprocessing of simulation cases.
@@ -68,7 +68,7 @@ def simulation_worker(sim_tuple):
     sim.setup_case(model_file, model_spec_key, path)
     sim.run_case(restart)
 
-    sim = Simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    sim = create_simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
     return sim
 
 
@@ -89,19 +89,19 @@ def estimate_std_dev(indep_variable, dep_variable):
 
     """
 
-    assert len(indep_variable) == len(dep_variable), \
-        'independent and dependent variables not the same length'
+    assert len(indep_variable) == len(dep_variable), (
+        "independent and dependent variables not the same length"
+    )
 
     # ensure no repetition of independent variable by taking average of associated dependent
     # variables and removing duplicates
     vals, count = numpy.unique(indep_variable, return_counts=True)
     repeated = vals[count > 1]
     for val in repeated:
-        idx, = numpy.where(indep_variable == val)
+        (idx,) = numpy.where(indep_variable == val)
         dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
         dep_variable = numpy.delete(dep_variable, idx[1:])
         indep_variable = numpy.delete(indep_variable, idx[1:])
-
 
     # ensure data sorted based on independent variable to avoid some problems
     sorted_vars = sorted(zip(indep_variable, dep_variable))
@@ -120,8 +120,9 @@ def estimate_std_dev(indep_variable, dep_variable):
     standard_dev = numpy.std(dep_variable - spline(indep_variable))
 
     if standard_dev < min_deviation:
-        print('Standard deviation of {:.2f} too low, '
-              'using {:.2f}'.format(standard_dev, min_deviation))
+        print(
+            "Standard deviation of {:.2f} too low, using {:.2f}".format(standard_dev, min_deviation)
+        )
         standard_dev = min_deviation
 
     return standard_dev
@@ -143,46 +144,56 @@ def get_changing_variable(cases):
     """
     changing_var = None
 
-    for var_name in ['temperature', 'pressure']:
-        if var_name == 'temperature':
+    for var_name in ["temperature", "pressure"]:
+        if var_name == "temperature":
             variable = [case.temperature for case in cases]
-        elif var_name == 'pressure':
+        elif var_name == "pressure":
             variable = [case.pressure for case in cases]
 
         if not all([x == variable[0] for x in variable]):
             if not changing_var:
                 changing_var = var_name
             else:
-                warnings.warn('Warning: multiple changing variables. '
-                              'Using temperature.',
-                              RuntimeWarning
-                              )
-                changing_var = 'temperature'
+                warnings.warn(
+                    "Warning: multiple changing variables. Using temperature.", RuntimeWarning
+                )
+                changing_var = "temperature"
                 break
 
     # Temperature is default
     if changing_var is None:
-        changing_var = 'temperature'
+        changing_var = "temperature"
 
-    if changing_var == 'temperature':
-        variable = [case.temperature.value.magnitude if hasattr(case.temperature, 'value')
-                    else case.temperature.magnitude
-                    for case in cases
-                    ]
-    elif changing_var == 'pressure':
-        variable = [case.pressure.value.magnitude if hasattr(case.pressure, 'value')
-                    else case.pressure.magnitude
-                    for case in cases
-                    ]
+    if changing_var == "temperature":
+        variable = [
+            case.temperature.value.magnitude
+            if hasattr(case.temperature, "value")
+            else case.temperature.magnitude
+            for case in cases
+        ]
+    elif changing_var == "pressure":
+        variable = [
+            case.pressure.value.magnitude
+            if hasattr(case.pressure, "value")
+            else case.pressure.magnitude
+            for case in cases
+        ]
     return variable
 
 
-def evaluate_model(model_name, spec_keys_file, dataset_file,
-                   data_path='data', model_path='models',
-                   results_path='results', model_variant_file=None,
-                   num_threads=None, print_results=False, restart=False,
-                   skip_validation=False,
-                   ):
+def evaluate_model(
+    model_name,
+    spec_keys_file,
+    dataset_file,
+    data_path="data",
+    model_path="models",
+    results_path="results",
+    model_variant_file=None,
+    num_threads=None,
+    print_results=False,
+    restart=False,
+    skip_validation=False,
+):
     """Evaluates the ignition delay error of a model for a given dataset.
 
     Parameters
@@ -224,34 +235,33 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         os.makedirs(results_path)
 
     # Dict to translate species names into those used by models
-    with open(spec_keys_file, 'r') as f:
+    with open(spec_keys_file, "r") as f:
         model_spec_key = yaml.safe_load(f)
 
     # Keys for models with variants depending on pressure or bath gas
     model_variant = None
     if model_variant_file:
-        with open(model_variant_file, 'r') as f:
+        with open(model_variant_file, "r") as f:
             model_variant = yaml.safe_load(f)
 
     # Read dataset list
-    with open(dataset_file, 'r') as f:
+    with open(dataset_file, "r") as f:
         dataset_list = f.read().splitlines()
 
     error_func_sets = numpy.zeros(len(dataset_list))
     dev_func_sets = numpy.zeros(len(dataset_list))
 
     # Dictionary with all output data
-    output = {'model': model_name, 'datasets': []}
+    output = {"model": model_name, "datasets": []}
 
     # If number of threads not specified, use either max number of available
     # cores minus 1, or use 1 if multiple cores not available.
     if not num_threads:
-        num_threads = multiprocessing.cpu_count()-1 or 1
+        num_threads = multiprocessing.cpu_count() - 1 or 1
 
     # Loop through all datasets
     for idx_set, dataset in enumerate(dataset_list):
-
-        dataset_meta = {'dataset': dataset, 'dataset_id': idx_set}
+        dataset_meta = {"dataset": dataset, "dataset_id": idx_set}
 
         # Create individual simulation cases for each datapoint in this set
         properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
@@ -263,36 +273,33 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         #############################################
         # Determine standard deviation of the dataset
         #############################################
-        ign_delay = [case.ignition_delay.to('second').value.magnitude
-                     if hasattr(case.ignition_delay, 'value')
-                     else case.ignition_delay.to('second').magnitude
-                     for case in properties.datapoints
-                     ]
+        ign_delay = [
+            case.ignition_delay.to("second").value.magnitude
+            if hasattr(case.ignition_delay, "value")
+            else case.ignition_delay.to("second").magnitude
+            for case in properties.datapoints
+        ]
 
         # get variable that is changing across datapoints
         variable = get_changing_variable(properties.datapoints)
         # for ignition delay, use logarithm of values
         standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
-        dataset_meta['standard deviation'] = float(standard_dev)
+        dataset_meta["standard deviation"] = float(standard_dev)
 
         #######################################################
         # Need to check if Ar or He in reactants but not model,
         # and if so skip this dataset (for now).
         #######################################################
-        if ((any(['Ar' in spec for case in properties.datapoints
-                  for spec in case.composition]
-                  )
-             and 'Ar' not in model_spec_key[model_name]
-             ) or
-            (any(['He' in spec for case in properties.datapoints
-                  for spec in case.composition]
-                  )
-             and 'He' not in model_spec_key[model_name]
-             )
-            ):
-            warnings.warn('Warning: Ar or He in dataset, but not in model. Skipping.',
-                          RuntimeWarning
-                          )
+        if (
+            any(["Ar" in spec for case in properties.datapoints for spec in case.composition])
+            and "Ar" not in model_spec_key[model_name]
+        ) or (
+            any(["He" in spec for case in properties.datapoints for spec in case.composition])
+            and "He" not in model_spec_key[model_name]
+        ):
+            warnings.warn(
+                "Warning: Ar or He in dataset, but not in model. Skipping.", RuntimeWarning
+            )
             error_func_sets[idx_set] = numpy.nan
             continue
 
@@ -306,43 +313,46 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
             # special treatment based on pressure for Princeton model (and others)
 
             if model_variant and model_name in model_variant:
-                model_mod = ''
-                if 'bath gases' in model_variant[model_name]:
+                model_mod = ""
+                if "bath gases" in model_variant[model_name]:
                     # find any bath gases requiring special treatment
-                    bath_gases = set(model_variant[model_name]['bath gases'])
+                    bath_gases = set(model_variant[model_name]["bath gases"])
                     gases = bath_gases.intersection(
-                        set([c['species-name'] for c in sim.properties.composition])
-                        )
+                        set([c["species-name"] for c in sim.properties.composition])
+                    )
 
                     # If only one bath gas present, use that. If multiple, use the
                     # predominant species. If none of the designated bath gases
                     # are present, just use the first one (shouldn't matter.)
                     if len(gases) > 1:
-                        max_mole = 0.
-                        sp = ''
+                        max_mole = 0.0
+                        sp = ""
                         for g in gases:
-                            if float(sim.properties['composition'][g]) > max_mole:
+                            if float(sim.properties["composition"][g]) > max_mole:
                                 sp = g
                     elif len(gases) == 1:
                         sp = gases.pop()
                     else:
                         # If no designated bath gas present, use any.
                         sp = bath_gases.pop()
-                    model_mod += model_variant[model_name]['bath gases'][sp]
+                    model_mod += model_variant[model_name]["bath gases"][sp]
 
-                if 'pressures' in model_variant[model_name]:
+                if "pressures" in model_variant[model_name]:
                     # pressure to atm
-                    pres = sim.properties.pressure.to('atm').magnitude
+                    pres = sim.properties.pressure.to("atm").magnitude
 
                     # choose closest pressure
                     # better way to do this?
-                    i = numpy.argmin(numpy.abs(numpy.array(
-                        [float(n)
-                         for n in list(model_variant[model_name]['pressures'])
-                         ]
-                        ) - pres))
-                    pres = list(model_variant[model_name]['pressures'])[i]
-                    model_mod += model_variant[model_name]['pressures'][pres]
+                    i = numpy.argmin(
+                        numpy.abs(
+                            numpy.array(
+                                [float(n) for n in list(model_variant[model_name]["pressures"])]
+                            )
+                            - pres
+                        )
+                    )
+                    pres = list(model_variant[model_name]["pressures"])[i]
+                    model_mod += model_variant[model_name]["pressures"][pres]
 
                 model_file = os.path.join(model_path, model_name + model_mod)
             else:
@@ -358,72 +368,75 @@ def evaluate_model(model_name, spec_keys_file, dataset_file,
         pool.close()
         pool.join()
 
-        dataset_meta['datapoints'] = []
+        dataset_meta["datapoints"] = []
 
         for idx, sim in enumerate(results):
             sim.process_results()
 
-            if hasattr(sim.properties.ignition_delay, 'value'):
+            if hasattr(sim.properties.ignition_delay, "value"):
                 ignition_delay = sim.properties.ignition_delay.value
             else:
                 ignition_delay = sim.properties.ignition_delay
 
-            if hasattr(ignition_delay, 'nominal_value'):
+            if hasattr(ignition_delay, "nominal_value"):
                 ignition_delay = ignition_delay.nominal_value * units.second
 
-            dataset_meta['datapoints'].append(
-                {'experimental ignition delay': str(ignition_delay),
-                 'simulated ignition delay': str(sim.meta['simulated-ignition-delay']),
-                 'temperature': str(sim.properties.temperature),
-                 'pressure': str(sim.properties.pressure),
-                 'composition': [{'InChI': sim.properties.composition[spec].InChI,
-                                  'species-name': sim.properties.composition[spec].species_name,
-                                  'amount': str(sim.properties.composition[spec].amount.magnitude),
-                                  } for spec in sim.properties.composition],
-                 'composition type': sim.properties.composition_type,
-                 })
+            dataset_meta["datapoints"].append(
+                {
+                    "experimental ignition delay": str(ignition_delay),
+                    "simulated ignition delay": str(sim.meta["simulated-ignition-delay"]),
+                    "temperature": str(sim.properties.temperature),
+                    "pressure": str(sim.properties.pressure),
+                    "composition": [
+                        {
+                            "InChI": sim.properties.composition[spec].InChI,
+                            "species-name": sim.properties.composition[spec].species_name,
+                            "amount": str(sim.properties.composition[spec].amount.magnitude),
+                        }
+                        for spec in sim.properties.composition
+                    ],
+                    "composition type": sim.properties.composition_type,
+                }
+            )
 
             ignition_delays_exp[idx] = ignition_delay.magnitude
-            ignition_delays_sim[idx] = sim.meta['simulated-ignition-delay'].magnitude
+            ignition_delays_sim[idx] = sim.meta["simulated-ignition-delay"].magnitude
 
         # calculate error function for this dataset
         error_func = numpy.power(
-            (numpy.log(ignition_delays_sim) -
-             numpy.log(ignition_delays_exp)) / standard_dev, 2
-             )
+            (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev, 2
+        )
         error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
-        dataset_meta['error function'] = float(error_func)
+        dataset_meta["error function"] = float(error_func)
 
-        dev_func = (numpy.log(ignition_delays_sim) -
-                    numpy.log(ignition_delays_exp)
-                    ) / standard_dev
+        dev_func = (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev
         dev_func = numpy.nanmean(dev_func)
         dev_func_sets[idx_set] = dev_func
-        dataset_meta['absolute deviation'] = float(dev_func)
+        dataset_meta["absolute deviation"] = float(dev_func)
 
-        output['datasets'].append(dataset_meta)
+        output["datasets"].append(dataset_meta)
 
         if print_results:
-            print('Done with ' + dataset)
+            print("Done with " + dataset)
 
     # Overall error function
     error_func = numpy.nanmean(error_func_sets)
     if print_results:
-        print('overall error function: ' + repr(error_func))
-        print('error standard deviation: ' + repr(numpy.nanstd(error_func_sets)))
+        print("overall error function: " + repr(error_func))
+        print("error standard deviation: " + repr(numpy.nanstd(error_func_sets)))
 
     # Absolute deviation function
     abs_dev_func = numpy.nanmean(dev_func_sets)
     if print_results:
-        print('absolute deviation function: ' + repr(abs_dev_func))
+        print("absolute deviation function: " + repr(abs_dev_func))
 
-    output['average error function'] = float(error_func)
-    output['error function standard deviation'] = float(numpy.nanstd(error_func_sets))
-    output['average deviation function'] = float(abs_dev_func)
+    output["average error function"] = float(error_func)
+    output["error function standard deviation"] = float(numpy.nanstd(error_func_sets))
+    output["average deviation function"] = float(abs_dev_func)
 
     # Write data to YAML file
-    with open(splitext(basename(model_name))[0] + '-results.yaml', 'w') as f:
+    with open(splitext(basename(model_name))[0] + "-results.yaml", "w") as f:
         yaml.dump(output, f)
 
     return output

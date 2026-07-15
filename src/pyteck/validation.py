@@ -32,10 +32,10 @@ def validate_geq(value_name, value, low_lim):
 
     try:
         if validate_num(value_name, value) < low_lim:
-            msg = (value_name + ' must be greater than or equal to ' +
-                   str(low_lim) + '.\n'
-                   'Value provided was: ' + str(value)
-                   )
+            msg = (
+                value_name + " must be greater than or equal to " + str(low_lim) + ".\n"
+                "Value provided was: " + str(value)
+            )
             # RuntimeError used to avoid being caught by Pint comparison error.
             # Pint should really raise TypeError (or something) rather than
             # ValueError.
@@ -44,28 +44,20 @@ def validate_geq(value_name, value, low_lim):
             return value
     except ValueError:
         if isinstance(value, units.Quantity):
-            msg = ('\n' + value_name + ' given with units, when variable '
-                   'should be dimensionless.'
-                   )
-            raise pint.DimensionalityError(value.units, None,
-                                           extra_msg=msg
-                                           )
+            msg = "\n" + value_name + " given with units, when variable should be dimensionless."
+            raise pint.DimensionalityError(value.units, None, extra_msg=msg)
         else:
-            msg = ('\n' + value_name + ' not given in units. '
-                   'Correct units share dimensionality with: ' +
-                   str(low_lim.units)
-                   )
-            raise pint.DimensionalityError(None, low_lim.units,
-                                           extra_msg=msg
-                                           )
+            msg = (
+                "\n" + value_name + " not given in units. "
+                "Correct units share dimensionality with: " + str(low_lim.units)
+            )
+            raise pint.DimensionalityError(None, low_lim.units, extra_msg=msg)
     except pint.DimensionalityError:
-        msg = ('\n' + value_name + ' given in incompatible units. '
-               'Correct units share dimensionality with: ' +
-               str(low_lim.units)
-               )
-        raise pint.DimensionalityError(value.units, low_lim.units,
-                                       extra_msg=msg
-                                       )
+        msg = (
+            "\n" + value_name + " given in incompatible units. "
+            "Correct units share dimensionality with: " + str(low_lim.units)
+        )
+        raise pint.DimensionalityError(value.units, low_lim.units, extra_msg=msg)
     except:
         raise
 
@@ -91,10 +83,10 @@ def validate_gt(value_name, value, low_lim):
 
     try:
         if not validate_num(value_name, value) > low_lim:
-            msg = (value_name + ' must be greater than ' +
-                   str(low_lim) + '.\n'
-                   'Value provided was: ' + str(value)
-                   )
+            msg = (
+                value_name + " must be greater than " + str(low_lim) + ".\n"
+                "Value provided was: " + str(value)
+            )
             # RuntimeError used to avoid being caught by Pint comparison error.
             # Pint should really raise TypeError (or something) rather than
             # ValueError.
@@ -103,28 +95,20 @@ def validate_gt(value_name, value, low_lim):
             return value
     except ValueError:
         if isinstance(value, units.Quantity):
-            msg = ('\n' + value_name + ' given with units, when variable '
-                   'should be dimensionless.'
-                   )
-            raise pint.DimensionalityError(value.units, None,
-                                           extra_msg=msg
-                                           )
+            msg = "\n" + value_name + " given with units, when variable should be dimensionless."
+            raise pint.DimensionalityError(value.units, None, extra_msg=msg)
         else:
-            msg = ('\n' + value_name + ' not given in units. '
-                   'Correct units share dimensionality with: ' +
-                   str(low_lim.units)
-                   )
-            raise pint.DimensionalityError(None, low_lim.units,
-                                           extra_msg=msg
-                                           )
+            msg = (
+                "\n" + value_name + " not given in units. "
+                "Correct units share dimensionality with: " + str(low_lim.units)
+            )
+            raise pint.DimensionalityError(None, low_lim.units, extra_msg=msg)
     except pint.DimensionalityError:
-        msg = ('\n' + value_name + ' given in incompatible units. '
-               'Correct units share dimensionality with: ' +
-               str(low_lim.units)
-               )
-        raise pint.DimensionalityError(value.units, low_lim.units,
-                                       extra_msg=msg
-                                       )
+        msg = (
+            "\n" + value_name + " given in incompatible units. "
+            "Correct units share dimensionality with: " + str(low_lim.units)
+        )
+        raise pint.DimensionalityError(value.units, low_lim.units, extra_msg=msg)
     except:
         raise
 
@@ -150,10 +134,10 @@ def validate_leq(value_name, value, upp_lim):
 
     try:
         if validate_num(value_name, value) > upp_lim:
-            msg = (value_name + ' must be less than or equal to ' +
-                   str(upp_lim) + '.\n'
-                   'Value provided was: ' + str(value)
-                   )
+            msg = (
+                value_name + " must be less than or equal to " + str(upp_lim) + ".\n"
+                "Value provided was: " + str(value)
+            )
             # RuntimeError used to avoid being caught by Pint comparison error.
             # Pint should really raise TypeError (or something) rather than
             # ValueError.
@@ -162,28 +146,20 @@ def validate_leq(value_name, value, upp_lim):
             return value
     except ValueError:
         if isinstance(value, units.Quantity):
-            msg = ('\n' + value_name + ' given with units, when variable '
-                   'should be dimensionless.'
-                   )
-            raise pint.DimensionalityError(value.units, None,
-                                           extra_msg=msg
-                                           )
+            msg = "\n" + value_name + " given with units, when variable should be dimensionless."
+            raise pint.DimensionalityError(value.units, None, extra_msg=msg)
         else:
-            msg = ('\n' + value_name + ' not given in units. '
-                   'Correct units share dimensionality with: ' +
-                   str(upp_lim.units)
-                   )
-            raise pint.DimensionalityError(None, upp_lim.units,
-                                           extra_msg=msg
-                                           )
+            msg = (
+                "\n" + value_name + " not given in units. "
+                "Correct units share dimensionality with: " + str(upp_lim.units)
+            )
+            raise pint.DimensionalityError(None, upp_lim.units, extra_msg=msg)
     except pint.DimensionalityError:
-        msg = ('\n' + value_name + ' given in incompatible units. '
-               'Correct units share dimensionality with: ' +
-               str(upp_lim.units)
-               )
-        raise pint.DimensionalityError(value.units, upp_lim.units,
-                                       extra_msg=msg
-                                       )
+        msg = (
+            "\n" + value_name + " given in incompatible units. "
+            "Correct units share dimensionality with: " + str(upp_lim.units)
+        )
+        raise pint.DimensionalityError(value.units, upp_lim.units, extra_msg=msg)
     except:
         raise
 
@@ -212,8 +188,9 @@ def validate_num(value_name, value):
                 return value
         except AttributeError:
             pass
-    msg = (value_name + ' must be an integer, float, or Quantity. \n'
-           'The value provided was of type ' + str(type(value)) + ' and '
-           'value ' + str(value)
-           )
+    msg = (
+        value_name + " must be an integer, float, or Quantity. \n"
+        "The value provided was of type " + str(type(value)) + " and "
+        "value " + str(value)
+    )
     raise TypeError(msg)
