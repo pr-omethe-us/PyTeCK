@@ -176,7 +176,7 @@ class TestEvalModel:
     def test(self):
         """Test overall evaluation of model."""
 
-        cwd = os.getcwd()
+        cwd = Path.cwd()
         with TemporaryDirectory() as temp_dir:
             # Run from within the temporary directory so any files produced
             # (e.g. the summary results YAML) are contained and cleaned up.

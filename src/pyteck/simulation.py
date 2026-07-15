@@ -1,13 +1,13 @@
-"""
+"""Simulation classes and helpers for evaluating kinetic models against data.
 
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
 
 # Standard libraries
-import os
 import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 
 # Related modules
 import cantera as ct
@@ -41,7 +41,11 @@ class VolumeProfile(object):
         only called once when the class is initialized at the beginning of a
         problem so it is efficient.
 
-        :param VolumeHistory volume_history: time and volume history
+        Parameters
+        ----------
+        volume_history : pyked.chemked.TimeHistory
+            Time and volume history for the case
+
         """
 
         # The time and volume are each stored as a ``np.array`` in the
@@ -56,9 +60,16 @@ class VolumeProfile(object):
     def __call__(self, time):
         """Return (interpolated) velocity when called during a time step.
 
-        :param float time: Current simulation time in seconds
-        :return: Velocity in meters per second
-        :rtype: float
+        Parameters
+        ----------
+        time : float
+            Current simulation time, in seconds
+
+        Returns
+        -------
+        float
+            Wall velocity, in meters per second
+
         """
         return np.interp(time, self.times, self.velocity, left=0.0, right=0.0)
 
@@ -96,15 +107,24 @@ class PressureRiseProfile(VolumeProfile):
     ):
         """Set the initial values of properties needed for velocity.
 
-        :param str mech_filename: Cantera-format mechanism
-        :param float initial_temp: Initial temperature in K
-        :param float initial_pres: Initial pressure in Pa
-        :param str reactants: Reactants composition in mole fraction
-        :param float pres_rise: Pressure rise rate in s^-1
-        :param float time_end: End time of simulation in s
+        Parameters
+        ----------
+        mech_filename : str or pathlib.Path
+            Cantera-format mechanism file
+        initial_temp : float
+            Initial temperature, in K
+        initial_pres : float
+            Initial pressure, in Pa
+        reactants : str
+            Reactants composition in mole fraction
+        pressure_rise : float
+            Pressure rise rate, in s^-1
+        time_end : float
+            End time of simulation, in s
+
         """
 
-        [self.times, volumes] = HomogeneousReactorSimulation.create_volume_history(
+        self.times, volumes = HomogeneousReactorSimulation.create_volume_history(
             mech_filename, initial_temp, initial_pres, reactants, pressure_rise, time_end
         )
 
@@ -118,17 +138,22 @@ class BaseSimulation(ABC):
     Subclasses implement a specific simulation type, e.g. a homogeneous reactor
     for autoignition delay or a one-dimensional flame for laminar burning
     velocity.
+
+    Parameters
+    ----------
+    kind : str
+        Kind of experiment (e.g., 'ignition delay')
+    apparatus : str
+        Type of apparatus (e.g., 'shock tube')
+    meta : dict
+        Metadata for this case
+    properties : pyked.chemked.DataPoint
+        Set of properties for this case
+
     """
 
     def __init__(self, kind, apparatus, meta, properties):
-        """Initialize simulation case.
-
-        :param str kind: Kind of experiment (e.g., 'ignition delay')
-        :param str apparatus: Type of apparatus (e.g., 'shock tube')
-        :param dict meta: Metadata for this case
-        :param properties: Set of properties for this case
-        :type properties: pyked.chemked.DataPoint
-        """
+        """Initialize simulation case."""
         self.kind = kind
         self.apparatus = apparatus
         self.meta = meta
@@ -141,8 +166,13 @@ class BaseSimulation(ABC):
         converting temperature and pressure to Cantera units, mapping reactant
         names via ``species_key``, and setting the initial composition.
 
-        :param str model_file: Filename for Cantera-format model
-        :param dict species_key: Dictionary with species names for `model_file`
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+
         """
         self.gas = ct.Solution(model_file)
 
@@ -188,16 +218,36 @@ class BaseSimulation(ABC):
     def clean(self):
         """Remove the intermediate results data file, if it exists."""
         save_file = self.meta.get("save-file")
-        if save_file and os.path.isfile(save_file):
-            os.remove(save_file)
+        if save_file is not None:
+            Path(save_file).unlink(missing_ok=True)
 
     @abstractmethod
     def setup_case(self, model_file, species_key, path=""):
-        """Set up the simulation case to be run."""
+        """Set up the simulation case to be run.
+
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+        path : str or pathlib.Path, optional
+            Directory in which to save any results data file. The default
+            (``""``) uses the current working directory.
+
+        """
 
     @abstractmethod
     def run_case(self, restart=False):
-        """Run the simulation case set up by ``setup_case``."""
+        """Run the simulation case set up by ``setup_case``.
+
+        Parameters
+        ----------
+        restart : bool, optional
+            If ``True``, skip the case when its results file already exists
+            (default: ``False``).
+
+        """
 
     @abstractmethod
     def process_results(self):
@@ -215,29 +265,51 @@ class HomogeneousReactorSimulation(BaseSimulation):
     def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
         """Samples pressure for particular frequency assuming linear rise.
 
-        :param float time_end: End time of simulation in s
-        :param float init_pres: Initial pressure
-        :param float freq: Frequency of sampling, in Hz
-        :param float pressure_rise_rate: Pressure rise rate, in s^-1
-        :return: List of times and pressures
-        :rtype: list of np.ndarray
+        Parameters
+        ----------
+        time_end : float
+            End time of simulation, in seconds
+        init_pres : float
+            Initial pressure, in Pa
+        freq : float
+            Frequency of sampling, in Hz
+        pressure_rise_rate : float
+            Pressure rise rate, in s^-1
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Tuple of times and sampled pressures
+
         """
         times = np.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
         pressures = init_pres * (pressure_rise_rate * times + 1.0)
-        return [times, pressures]
+        return times, pressures
 
     @staticmethod
     def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
-        """Constructs a volume profile based on intiial conditions and pressure rise.
+        """Construct a volume profile based on initial conditions and pressure rise.
 
-        :param str mech: Cantera-format mechanism file
-        :param float temp: Initial temperature in K
-        :param float pres: Initial pressure in Pa
-        :param str reactants: Reactants composition in mole fraction
-        :param float pres_rise: Pressure rise rate, in s^-1
-        :param float time_end: End time of simulation in s
-        :return: List of times and volumes
-        :rtype: list of np.ndarray
+        Parameters
+        ----------
+        mech : str or pathlib.Path
+            Cantera-format mechanism file (``*.yaml``)
+        temp : float
+            Initial temperature, in K
+        pres : float
+            Initial pressure, in Pa
+        reactants : str
+            Reactants composition in mole fraction
+        pres_rise : float
+            Pressure rise rate, in s^-1
+        time_end : float
+            End time of simulation, in s
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Times and computed volumes
+
         """
         gas = ct.Solution(mech)
         gas.TPX = temp, pres, reactants
@@ -246,7 +318,7 @@ class HomogeneousReactorSimulation(BaseSimulation):
 
         # Sample pressure at 20 kHz
         freq = 2.0e4
-        [times, pressures] = HomogeneousReactorSimulation.sample_rising_pressure(
+        times, pressures = HomogeneousReactorSimulation.sample_rising_pressure(
             time_end, pres, freq, pres_rise
         )
 
@@ -256,11 +328,29 @@ class HomogeneousReactorSimulation(BaseSimulation):
             gas.SP = initial_entropy, p
             volumes[i] = initial_density / gas.density
 
-        return [times, volumes]
+        return times, volumes
 
     @staticmethod
     def get_ignition_delay(time, target, target_name, ignition_type):
-        """Identify ignition delay based on time, target, and type of detection."""
+        """Identify ignition delay based on time, target, and type of detection.
+
+        Parameters
+        ----------
+        time : numpy.ndarray
+            Times in s
+        target : numpy.ndarray
+            Values of target quantity of interest (e.g., temperature, pressure, species amount)
+        target_name : str
+            Name of target quantity of interest (e.g., 'temperature', 'OH')
+        ignition_type : str
+            'max', 'd/dt max', '1/2 max', or 'd/dt max extrapolated'
+
+        Returns
+        -------
+        numpy.ndarray
+            One or more calculated ignition delay times, in s
+
+        """
         no_ignition_delay = np.array([0.0])
 
         if ignition_type == "max":
@@ -352,9 +442,16 @@ class HomogeneousReactorSimulation(BaseSimulation):
     def setup_case(self, model_file, species_key, path=""):
         """Sets up the simulation case to be run.
 
-        :param str model_file: Filename for Cantera-format model
-        :param dict species_key: Dictionary with species names for `model_file`
-        :param str path: Path for data file
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+        path : str or pathlib.Path, optional
+            Directory in which to save the results data file. The default
+            (``""``) writes to the current working directory.
+
         """
         # Convert ignition delay to seconds
         self.properties.ignition_delay.ito("second")
@@ -463,16 +560,21 @@ class HomogeneousReactorSimulation(BaseSimulation):
             self.properties.ignition_type = self.properties.ignition_type["type"]
 
         # Set file for later data file
-        file_path = os.path.join(path, self.meta["id"] + ".h5")
+        file_path = Path(path) / f"{self.meta['id']}.h5"
         self.meta["save-file"] = file_path
 
     def run_case(self, restart=False):
-        """Run simulation case set up ``setup_case``.
+        """Run simulation case set up by ``setup_case``.
 
-        :param bool restart: If ``True``, skip if results file exists.
+        Parameters
+        ----------
+        restart : bool, optional
+            If ``True``, skip the case when its results file already exists
+            (default: ``False``).
+
         """
 
-        if restart and os.path.isfile(self.meta["save-file"]):
+        if restart and Path(self.meta["save-file"]).is_file():
             print("Skipped existing case ", self.meta["id"])
             return
 

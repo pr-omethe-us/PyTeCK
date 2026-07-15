@@ -15,7 +15,7 @@ def validate_geq(value_name, value, low_lim):
     """Raise error if value lower than specified lower limit or wrong type.
 
     Parameters
-    ---------
+    ----------
     value_name : str
         Name of value being tested
     value : int, float, numpy.ndarray, pint.Quantity
@@ -66,7 +66,7 @@ def validate_gt(value_name, value, low_lim):
     """Raise error if value not greater than lower limit or wrong type.
 
     Parameters
-    ---------
+    ----------
     value_name : str
         Name of value being tested
     value : int, float, numpy.ndarray, pint.Quantity
@@ -117,7 +117,7 @@ def validate_leq(value_name, value, upp_lim):
     """Raise error if value greater than specified upper limit or wrong type.
 
     Parameters
-    ---------
+    ----------
     value_name : str
         Name of value being tested
     value : int, float, numpy.ndarray, pint.Quantity
@@ -168,7 +168,7 @@ def validate_num(value_name, value):
     """Raise error if value is not a number.
 
     Parameters
-    ---------
+    ----------
     value_name : str
         Name of value being tested
     value : int, float, numpy.ndarray, pint.Quantity

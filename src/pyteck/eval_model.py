@@ -1,7 +1,11 @@
+"""Evaluate chemical kinetic models against experimental ignition-delay data.
+
+.. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
+"""
+
 import multiprocessing
-import os
 import warnings
-from os.path import basename, splitext
+from pathlib import Path
 
 import numpy
 import yaml
@@ -9,8 +13,6 @@ from pyked.chemked import ChemKED
 from scipy.interpolate import UnivariateSpline
 
 from .simulation import create_simulation
-
-# Local imports
 from .utils import units
 
 min_deviation = 0.10
@@ -24,14 +26,14 @@ def create_simulations(dataset, properties):
     ----------
     dataset : str
         Name of dataset file
-
     properties : pyked.chemked.ChemKED
         ChemKED object with full set of experimental properties
 
     Returns
     -------
-    simulations : list
-        List of :class:`Simulation` objects for each simulation
+    simulations : list of BaseSimulation
+        List of simulation cases (``BaseSimulation`` subclass instances), one
+        per datapoint
 
     """
 
@@ -40,7 +42,7 @@ def create_simulations(dataset, properties):
         sim_meta = {}
         # Common metadata
         sim_meta["data-file"] = dataset
-        sim_meta["id"] = splitext(basename(dataset))[0] + "_" + str(idx)
+        sim_meta["id"] = Path(dataset).stem + "_" + str(idx)
 
         simulations.append(
             create_simulation(properties.experiment_type, properties.apparatus.kind, sim_meta, case)
@@ -54,13 +56,13 @@ def simulation_worker(sim_tuple):
     Parameters
     ----------
     sim_tuple : tuple
-        Contains Simulation object and other parameters needed to setup
-        and run case.
+        Contains a ``BaseSimulation`` instance and the parameters needed to set
+        up and run the case: ``(sim, model_file, model_spec_key, path, restart)``
 
     Returns
     -------
-    sim : ``Simulation``
-        Simulation case with calculated ignition delay.
+    sim : BaseSimulation
+        Simulation case with results ready for ``process_results``
 
     """
     sim, model_file, model_spec_key, path, restart = sim_tuple
@@ -73,13 +75,13 @@ def simulation_worker(sim_tuple):
 
 
 def estimate_std_dev(indep_variable, dep_variable):
-    """
+    """Estimate standard deviation of experimental data via a spline fit.
 
     Parameters
     ----------
-    indep_variable : ndarray, list(float)
+    indep_variable : numpy.ndarray or list of float
         Independent variable (e.g., temperature, pressure)
-    dep_variable : ndarray, list(float)
+    dep_variable : numpy.ndarray or list of float
         Dependent variable (e.g., ignition delay)
 
     Returns
@@ -133,13 +135,13 @@ def get_changing_variable(cases):
 
     Parameters
     ----------
-    cases : list(pyked.chemked.DataPoint)
-        List of DataPoint with experimental case data.
+    cases : list of pyked.chemked.DataPoint
+        List of DataPoint with experimental case data
 
     Returns
     -------
-    variable : list(float)
-        List of floats representing changing experimental variable.
+    variable : list of float
+        Values of the changing experimental variable
 
     """
     changing_var = None
@@ -194,7 +196,7 @@ def evaluate_model(
     restart=False,
     skip_validation=False,
 ):
-    """Evaluates the ignition delay error of a model for a given dataset.
+    """Evaluate the ignition delay error of a model for a given dataset.
 
     Parameters
     ----------
@@ -204,49 +206,48 @@ def evaluate_model(
         Name of YAML file identifying important species
     dataset_file : str
         Name of file with list of data files
-    data_path : str
-        Local path for data files. Optional; default = 'data'
-    model_path : str
-        Local path for model file. Optional; default = 'models'
-    results_path : str
-        Local path for creating results files. Optional; default = 'results'
-    model_variant_file : str
+    data_path : str, optional
+        Local path for data files (default: ``"data"``)
+    model_path : str, optional
+        Local path for the model file (default: ``"models"``)
+    results_path : str, optional
+        Local path for creating results files (default: ``"results"``)
+    model_variant_file : str, optional
         Name of YAML file identifying ranges of conditions for variants of the
-        kinetic model. Optional; default = ``None``
-    num_threads : int
-        Number of CPU threads to use for performing simulations in parallel.
-        Optional; default = ``None``, in which case the available number of
-        cores minus one is used.
-    print_results : bool
-        If ``True``, print results of the model evaluation to screen.
-    restart : bool
-        If ``True``, process saved results. Mainly intended for testing/development.
-    skip_validation : bool
-        If ``True``, skips validation of ChemKED files.
+        kinetic model (default: ``None``)
+    num_threads : int, optional
+        Number of CPU threads to use for running simulations in parallel. The
+        default (``None``) uses the number of available cores minus one.
+    print_results : bool, optional
+        If ``True``, print results of the model evaluation to screen
+        (default: ``False``).
+    restart : bool, optional
+        If ``True``, reuse existing results files and only compute new cases
+        (default: ``False``).
+    skip_validation : bool, optional
+        If ``True``, skip validation of ChemKED files (default: ``False``).
 
     Returns
     -------
     output : dict
-        Dictionary with all information about model evaluation results.
+        Dictionary with all information about model evaluation results
 
     """
     # Create results_path if it doesn't exist
-    if not os.path.exists(results_path):
-        os.makedirs(results_path)
+    Path(results_path).mkdir(parents=True, exist_ok=True)
 
     # Dict to translate species names into those used by models
-    with open(spec_keys_file, "r") as f:
+    with Path(spec_keys_file).open("r") as f:
         model_spec_key = yaml.safe_load(f)
 
     # Keys for models with variants depending on pressure or bath gas
     model_variant = None
     if model_variant_file:
-        with open(model_variant_file, "r") as f:
+        with Path(model_variant_file).open("r") as f:
             model_variant = yaml.safe_load(f)
 
     # Read dataset list
-    with open(dataset_file, "r") as f:
-        dataset_list = f.read().splitlines()
+    dataset_list = Path(dataset_file).read_text().splitlines()
 
     error_func_sets = numpy.zeros(len(dataset_list))
     dev_func_sets = numpy.zeros(len(dataset_list))
@@ -264,7 +265,7 @@ def evaluate_model(
         dataset_meta = {"dataset": dataset, "dataset_id": idx_set}
 
         # Create individual simulation cases for each datapoint in this set
-        properties = ChemKED(os.path.join(data_path, dataset), skip_validation=skip_validation)
+        properties = ChemKED(Path(data_path, dataset), skip_validation=skip_validation)
         simulations = create_simulations(dataset, properties)
 
         ignition_delays_exp = numpy.zeros(len(simulations))
@@ -354,9 +355,9 @@ def evaluate_model(
                     pres = list(model_variant[model_name]["pressures"])[i]
                     model_mod += model_variant[model_name]["pressures"][pres]
 
-                model_file = os.path.join(model_path, model_name + model_mod)
+                model_file = Path(model_path, model_name + model_mod)
             else:
-                model_file = os.path.join(model_path, model_name)
+                model_file = Path(model_path, model_name)
 
             jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
 
@@ -436,7 +437,7 @@ def evaluate_model(
     output["average deviation function"] = float(abs_dev_func)
 
     # Write data to YAML file
-    with open(splitext(basename(model_name))[0] + "-results.yaml", "w") as f:
+    with Path(f"{Path(model_name).stem}-results.yaml").open("w") as f:
         yaml.dump(output, f)
 
     return output

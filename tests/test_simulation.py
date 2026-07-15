@@ -75,7 +75,7 @@ class TestSampleRisingPressure:
         pres = 1.0
         pres_rise = 0.0
         freq = 2.0e4
-        [times, pressures] = HomogeneousReactorSimulation.sample_rising_pressure(
+        times, pressures = HomogeneousReactorSimulation.sample_rising_pressure(
             time_end, pres, freq, pres_rise
         )
         # Check time array
@@ -91,7 +91,7 @@ class TestSampleRisingPressure:
         pres = 1.0
         pres_rise = 0.05
         freq = 2.0e4
-        [times, pressures] = HomogeneousReactorSimulation.sample_rising_pressure(
+        times, pressures = HomogeneousReactorSimulation.sample_rising_pressure(
             time_end, pres, freq, pres_rise
         )
         # Check time array
@@ -109,7 +109,7 @@ class TestCreateVolumeHistory:
 
     def test_volume_profile_no_pressure_rise(self):
         """Ensure constant volume history if zero pressure rise."""
-        [times, volume] = HomogeneousReactorSimulation.create_volume_history(
+        times, volume = HomogeneousReactorSimulation.create_volume_history(
             "air.yaml", 300.0, ct.one_atm, "N2:1.0", 0.0, 1.0
         )
         # check that end time is correct and volume unchanged
@@ -122,7 +122,7 @@ class TestCreateVolumeHistory:
         pres_rise = 0.05
         end_time = 1.0
         initial_temp = 300.0
-        [times, volumes] = HomogeneousReactorSimulation.create_volume_history(
+        times, volumes = HomogeneousReactorSimulation.create_volume_history(
             "air.yaml", initial_temp, initial_pres, "N2:1.0", pres_rise, end_time
         )
         # pressure at end time
@@ -301,7 +301,7 @@ class TestPressureRiseProfile(object):
         )
 
         # Sample pressure
-        [times, pressures] = HomogeneousReactorSimulation.sample_rising_pressure(
+        times, pressures = HomogeneousReactorSimulation.sample_rising_pressure(
             end_time, init_pressure, 2.0e3, pressure_rise
         )
 
@@ -438,18 +438,14 @@ class TestGetIgnitionDelay(object):
         times = np.linspace(0, 1, 100)
         target = np.zeros_like(times)
 
-        cwd = os.getcwd()
+        cwd = Path.cwd()
         with TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
             try:
                 ignition_delays = HomogeneousReactorSimulation.get_ignition_delay(
                     times, target, "species", ignition_type
                 )
-                dumped_files = [
-                    filename
-                    for filename in os.listdir(temp_dir)
-                    if filename.startswith("target-data-") and filename.endswith(".out")
-                ]
+                dumped_files = list(Path(temp_dir).glob("target-data-*.out"))
             finally:
                 os.chdir(cwd)
 
@@ -586,7 +582,7 @@ class TestSimulation:
         assert sim.n_vars == gas.n_species + 3
 
         # Check constructed velocity profile
-        [times, volumes] = HomogeneousReactorSimulation.create_volume_history(
+        times, volumes = HomogeneousReactorSimulation.create_volume_history(
             mechanism_filename,
             init_temp,
             init_pres,
@@ -756,7 +752,7 @@ class TestSimulation:
                 sim.run_case()
 
                 # check for presence of data file
-                assert os.path.exists(sim.meta["save-file"])
+                assert sim.meta["save-file"].exists()
                 with tables.open_file(sim.meta["save-file"], "r") as h5file:
                     table = h5file.root.simulation
 
@@ -794,7 +790,7 @@ class TestSimulation:
             sim.run_case()
 
             # check for presence of data file
-            assert os.path.exists(sim.meta["save-file"])
+            assert sim.meta["save-file"].exists()
             with tables.open_file(sim.meta["save-file"], "r") as h5file:
                 table = h5file.root.simulation
                 assert_physically_valid_results(mechanism_filename, sim.time_end, table)
@@ -818,7 +814,7 @@ class TestSimulation:
             sim.run_case()
 
             # check for presence of data file
-            assert os.path.exists(sim.meta["save-file"])
+            assert sim.meta["save-file"].exists()
             with tables.open_file(sim.meta["save-file"], "r") as h5file:
                 table = h5file.root.simulation
                 assert_physically_valid_results(mechanism_filename, sim.time_end, table)

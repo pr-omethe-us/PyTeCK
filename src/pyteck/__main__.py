@@ -5,6 +5,7 @@ from .eval_model import evaluate_model
 
 
 def main():
+    """Parse command-line arguments and run the model evaluation."""
     parser = ArgumentParser(
         description="PyTeCK: Evaluate performance of kinetic models using "
         "experimental ignition delay data."

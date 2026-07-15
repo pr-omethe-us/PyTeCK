@@ -1,4 +1,4 @@
-"""
+"""Shared utilities: unit registry and species name/InChI lookup tables.
 
 .. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
 """
