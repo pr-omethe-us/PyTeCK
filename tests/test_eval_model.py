@@ -13,6 +13,22 @@ from pyteck.utils import units
 HERE = Path(__file__).parent
 
 
+class TestReadDatasetList:
+    """Tests for reading the dataset-list file (see issue #12)."""
+
+    def test_skips_blank_lines(self, tmp_path):
+        """Blank and whitespace-only lines are dropped, not treated as files."""
+        dataset_file = tmp_path / "datasets.txt"
+        dataset_file.write_text("first.yaml\n\n   \n\t\nsecond.yaml\n\n")
+        assert eval_model.read_dataset_list(dataset_file) == ["first.yaml", "second.yaml"]
+
+    def test_strips_surrounding_whitespace(self, tmp_path):
+        """Surrounding whitespace on real entries is stripped."""
+        dataset_file = tmp_path / "datasets.txt"
+        dataset_file.write_text("  first.yaml  \n\tsecond.yaml\t\n")
+        assert eval_model.read_dataset_list(dataset_file) == ["first.yaml", "second.yaml"]
+
+
 class TestEstimateStandardDeviation:
     """ """
 

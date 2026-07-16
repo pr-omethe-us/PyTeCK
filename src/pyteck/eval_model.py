@@ -183,6 +183,24 @@ def get_changing_variable(cases):
     return variable
 
 
+def read_dataset_list(dataset_file):
+    """Read the list of dataset files, skipping blank or whitespace-only lines.
+
+    Parameters
+    ----------
+    dataset_file : str or pathlib.Path
+        Name of file listing dataset files, one per line
+
+    Returns
+    -------
+    list of str
+        Names of the dataset files, stripped of surrounding whitespace and with
+        blank lines removed
+
+    """
+    return [line.strip() for line in Path(dataset_file).read_text().splitlines() if line.strip()]
+
+
 def evaluate_model(
     model_name,
     spec_keys_file,
@@ -246,8 +264,8 @@ def evaluate_model(
         with Path(model_variant_file).open("r") as f:
             model_variant = yaml.safe_load(f)
 
-    # Read dataset list
-    dataset_list = Path(dataset_file).read_text().splitlines()
+    # Read dataset list, skipping any blank or whitespace-only lines
+    dataset_list = read_dataset_list(dataset_file)
 
     error_func_sets = numpy.zeros(len(dataset_list))
     dev_func_sets = numpy.zeros(len(dataset_list))
