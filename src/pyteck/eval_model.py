@@ -315,6 +315,14 @@ def evaluate_model(
     with Path(spec_keys_file).open("r") as f:
         model_spec_key = yaml.safe_load(f)
 
+    # Fail fast with a clear message if the model has no species-key entry
+    # (e.g. a name/case mismatch) rather than a cryptic KeyError later on.
+    if model_name not in model_spec_key:
+        raise KeyError(
+            f"Model '{model_name}' not found in species-keys file '{spec_keys_file}'. "
+            f"Available entries: {sorted(model_spec_key)}"
+        )
+
     # Keys for models with variants depending on pressure or bath gas
     model_variant = None
     if model_variant_file:

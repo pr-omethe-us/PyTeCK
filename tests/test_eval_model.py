@@ -93,6 +93,28 @@ class TestSelectVariantSuffix:
         assert eval_model.select_variant_suffix({}, props) == ""
 
 
+class TestModelKeyValidation:
+    """A missing model entry in the species-keys file is reported clearly (issue #10)."""
+
+    def test_missing_model_key_raises_clear_error(self, tmp_path):
+        """An unknown model name fails fast with a helpful message, not a bare KeyError."""
+        spec_keys = tmp_path / "spec_keys.yaml"
+        spec_keys.write_text("othermodel.yaml:\n    H2: H2\n")
+        dataset_file = tmp_path / "datasets.txt"
+        dataset_file.write_text("some_data.yaml\n")
+
+        with pytest.raises(KeyError, match="not found in species-keys file"):
+            eval_model.evaluate_model(
+                model_name="h2o2.yaml",
+                spec_keys_file=str(spec_keys),
+                dataset_file=str(dataset_file),
+                data_path=str(tmp_path),
+                model_path="",
+                results_path=str(tmp_path / "results"),
+                skip_validation=True,
+            )
+
+
 class TestEstimateStandardDeviation:
     """ """
 
