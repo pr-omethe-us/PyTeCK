@@ -70,3 +70,7 @@ target/
 
 # project-specific data files
 *.h5
+
+# model-evaluation output (per-case results dir and summary YAML)
+results/
+*-results.yaml

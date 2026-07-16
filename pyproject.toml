@@ -40,7 +40,7 @@ dependencies = [
 [dependency-groups]
 test = ["pytest", "pytest-cov",]
 lint = ["pre-commit", "ruff",]
-docs = ["sphinx", "nbsphinx", "ipython",]
+docs = ["sphinx", "nbsphinx", "ipython", "matplotlib",]
 all = [
     {include-group = "test"},
     {include-group = "lint"},
