@@ -8,7 +8,8 @@ experimental ignition-delay measurements in the `ChemKED
 corresponding cases with `Cantera <https://cantera.org>`_, and reports how well
 a chemical kinetic model reproduces the measurements.
 
-PyTeCK is released under the :ref:`MIT license <license>` and developed openly
+PyTeCK is released under the `MIT license
+<https://github.com/pr-omethe-us/PyTeCK/blob/main/LICENSE>`_ and developed openly
 on `GitHub <https://github.com/pr-omethe-us/PyTeCK>`_.
 
 Features
@@ -55,16 +56,21 @@ or from Python:
 The :doc:`example` page walks through a complete, runnable hydrogen shock-tube
 case. The full list of command-line options is available with ``pyteck --help``.
 
+
+User guide
+----------
+
 .. toctree::
    :maxdepth: 2
-   :caption: User guide
 
    installation
    example
 
+API reference
+-------------
+
 .. toctree::
    :maxdepth: 2
-   :caption: API reference
 
    eval_model
    simulation
@@ -76,15 +82,7 @@ Citation
 
 If you use PyTeCK in a scholarly publication, please cite it as described in
 `CITATION.md
-<https://github.com/pr-omethe-us/PyTeCK/blob/master/CITATION.md>`_.
-
-.. _license:
-
-License
--------
-
-PyTeCK is released under the MIT license; see `LICENSE
-<https://github.com/pr-omethe-us/PyTeCK/blob/master/LICENSE>`_ for details.
+<https://github.com/pr-omethe-us/PyTeCK/blob/main/CITATION.md>`_.
 
 Indices and tables
 ------------------
