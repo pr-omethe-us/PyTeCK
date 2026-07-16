@@ -29,6 +29,70 @@ class TestReadDatasetList:
         assert eval_model.read_dataset_list(dataset_file) == ["first.yaml", "second.yaml"]
 
 
+def _make_datapoint(species_amounts, pressure="1.0 atm"):
+    """Build a DataPoint with the given species mole fractions and pressure."""
+    return DataPoint(
+        {
+            "temperature": ["1000.0 kelvin"],
+            "pressure": [pressure],
+            "composition": {
+                "kind": "mole fraction",
+                "species": [
+                    {"species-name": name, "amount": [amount]}
+                    for name, amount in species_amounts.items()
+                ],
+            },
+            "ignition-type": None,
+        }
+    )
+
+
+class TestSelectVariantSuffix:
+    """Tests for model-variant selection from a case (see issue #9).
+
+    ``properties.composition`` is a dict keyed by species name in current PyKED,
+    which previously broke the bath-gas selection logic.
+    """
+
+    def test_single_bath_gas_present(self):
+        """The one designated bath gas present selects its suffix."""
+        variant = {"bath gases": {"Ar": "-ar", "He": "-he"}}
+        props = _make_datapoint({"H2": 0.1, "O2": 0.05, "Ar": 0.85})
+        assert eval_model.select_variant_suffix(variant, props) == "-ar"
+
+    def test_multiple_bath_gases_use_predominant(self):
+        """With several bath gases, the most abundant one is chosen."""
+        variant = {"bath gases": {"Ar": "-ar", "He": "-he"}}
+        props = _make_datapoint({"H2": 0.1, "Ar": 0.2, "He": 0.7})
+        assert eval_model.select_variant_suffix(variant, props) == "-he"
+
+    def test_no_designated_bath_gas_falls_back(self):
+        """If no designated bath gas is present, any valid suffix is returned."""
+        variant = {"bath gases": {"Ar": "-ar", "He": "-he"}}
+        props = _make_datapoint({"H2": 0.5, "O2": 0.5})
+        assert eval_model.select_variant_suffix(variant, props) in {"-ar", "-he"}
+
+    def test_pressure_selects_closest(self):
+        """The pressure variant closest to the case pressure is chosen."""
+        variant = {"pressures": {"1": "-1atm", "10": "-10atm", "50": "-50atm"}}
+        props = _make_datapoint({"H2": 1.0}, pressure="12.0 atm")
+        assert eval_model.select_variant_suffix(variant, props) == "-10atm"
+
+    def test_bath_gas_and_pressure_combined(self):
+        """Bath-gas and pressure suffixes are concatenated."""
+        variant = {
+            "bath gases": {"Ar": "-ar"},
+            "pressures": {"1": "-1atm", "10": "-10atm"},
+        }
+        props = _make_datapoint({"H2": 0.1, "Ar": 0.9}, pressure="9.0 atm")
+        assert eval_model.select_variant_suffix(variant, props) == "-ar-10atm"
+
+    def test_empty_variant_is_no_suffix(self):
+        """A variant with no bath-gas or pressure maps yields an empty suffix."""
+        props = _make_datapoint({"H2": 1.0})
+        assert eval_model.select_variant_suffix({}, props) == ""
+
+
 class TestEstimateStandardDeviation:
     """ """
 

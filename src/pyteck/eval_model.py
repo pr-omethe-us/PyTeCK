@@ -201,6 +201,63 @@ def read_dataset_list(dataset_file):
     return [line.strip() for line in Path(dataset_file).read_text().splitlines() if line.strip()]
 
 
+def select_variant_suffix(variant, properties):
+    """Build the model-file suffix for a model variant from a case's properties.
+
+    Some models ship as several files that differ by bath gas and/or nominal
+    pressure. The ``model_variant`` mapping records, for each such model, the
+    filename suffix to use for each bath gas and pressure. This selects the
+    suffix appropriate for a given experimental case.
+
+    Parameters
+    ----------
+    variant : dict
+        Model-variant entry, optionally with ``"bath gases"`` and/or
+        ``"pressures"`` maps from a bath-gas name / pressure to a filename suffix
+    properties : pyked.chemked.DataPoint
+        Experimental case properties (``composition`` is a dict keyed by species
+        name, and ``pressure`` is a pint quantity)
+
+    Returns
+    -------
+    str
+        Suffix to append to the model filename (empty if no variant applies)
+
+    """
+    model_mod = ""
+
+    if "bath gases" in variant:
+        # find any designated bath gases present in the mixture
+        bath_gases = set(variant["bath gases"])
+        gases = bath_gases.intersection(set(properties.composition))
+
+        # If only one bath gas is present, use it. If several, use the
+        # predominant (most abundant) one. If none of the designated bath gases
+        # are present, just use any (shouldn't matter).
+        if len(gases) > 1:
+            max_mole = 0.0
+            sp = ""
+            for g in gases:
+                amount = float(properties.composition[g].amount.magnitude)
+                if amount > max_mole:
+                    max_mole = amount
+                    sp = g
+        elif len(gases) == 1:
+            sp = gases.pop()
+        else:
+            sp = bath_gases.pop()
+        model_mod += variant["bath gases"][sp]
+
+    if "pressures" in variant:
+        # choose the variant pressure closest to the experimental pressure
+        pres = properties.pressure.to("atm").magnitude
+        pressures = list(variant["pressures"])
+        i = numpy.argmin(numpy.abs(numpy.array([float(p) for p in pressures]) - pres))
+        model_mod += variant["pressures"][pressures[i]]
+
+    return model_mod
+
+
 def evaluate_model(
     model_name,
     spec_keys_file,
@@ -332,47 +389,7 @@ def evaluate_model(
             # special treatment based on pressure for Princeton model (and others)
 
             if model_variant and model_name in model_variant:
-                model_mod = ""
-                if "bath gases" in model_variant[model_name]:
-                    # find any bath gases requiring special treatment
-                    bath_gases = set(model_variant[model_name]["bath gases"])
-                    gases = bath_gases.intersection(
-                        set([c["species-name"] for c in sim.properties.composition])
-                    )
-
-                    # If only one bath gas present, use that. If multiple, use the
-                    # predominant species. If none of the designated bath gases
-                    # are present, just use the first one (shouldn't matter.)
-                    if len(gases) > 1:
-                        max_mole = 0.0
-                        sp = ""
-                        for g in gases:
-                            if float(sim.properties["composition"][g]) > max_mole:
-                                sp = g
-                    elif len(gases) == 1:
-                        sp = gases.pop()
-                    else:
-                        # If no designated bath gas present, use any.
-                        sp = bath_gases.pop()
-                    model_mod += model_variant[model_name]["bath gases"][sp]
-
-                if "pressures" in model_variant[model_name]:
-                    # pressure to atm
-                    pres = sim.properties.pressure.to("atm").magnitude
-
-                    # choose closest pressure
-                    # better way to do this?
-                    i = numpy.argmin(
-                        numpy.abs(
-                            numpy.array(
-                                [float(n) for n in list(model_variant[model_name]["pressures"])]
-                            )
-                            - pres
-                        )
-                    )
-                    pres = list(model_variant[model_name]["pressures"])[i]
-                    model_mod += model_variant[model_name]["pressures"][pres]
-
+                model_mod = select_variant_suffix(model_variant[model_name], sim.properties)
                 model_file = Path(model_path, model_name + model_mod)
             else:
                 model_file = Path(model_path, model_name)
