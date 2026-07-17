@@ -258,6 +258,52 @@ def select_variant_suffix(variant, properties):
     return model_mod
 
 
+def calculate_error_function(ignition_delays_exp, ignition_delays_sim, standard_dev):
+    """Calculate the error and deviation functions for a dataset.
+
+    Cases that did not ignite—indicated by a simulated ignition delay of zero or
+    a non-finite value—are excluded from the averages, so that a single
+    non-ignition does not drive the whole dataset's error to infinity (see
+    issues #1 and #18).
+
+    Parameters
+    ----------
+    ignition_delays_exp : numpy.ndarray
+        Experimental ignition delays
+    ignition_delays_sim : numpy.ndarray
+        Simulated ignition delays (zero or non-finite where no ignition occurred)
+    standard_dev : float
+        Standard deviation of the experimental data
+
+    Returns
+    -------
+    error_func : float
+        Mean squared logarithmic error over the igniting cases (``nan`` if none
+        of the cases ignited)
+    dev_func : float
+        Mean logarithmic deviation over the igniting cases (``nan`` if none of
+        the cases ignited)
+
+    """
+    ignition_delays_exp = numpy.asarray(ignition_delays_exp, dtype=float)
+    ignition_delays_sim = numpy.asarray(ignition_delays_sim, dtype=float)
+
+    with numpy.errstate(divide="ignore", invalid="ignore"):
+        log_ratio = (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev
+
+    # Non-igniting cases (zero or non-finite simulated delay) produce a
+    # non-finite log ratio; mark them nan so nanmean/nanstd ignore them.
+    log_ratio[~numpy.isfinite(log_ratio)] = numpy.nan
+
+    with warnings.catch_warnings():
+        # an all-nan dataset (nothing ignited) yields nan rather than a warning
+        warnings.simplefilter("ignore", RuntimeWarning)
+        error_func = numpy.nanmean(numpy.power(log_ratio, 2))
+        dev_func = numpy.nanmean(log_ratio)
+
+    return error_func, dev_func
+
+
 def evaluate_model(
     model_name,
     spec_keys_file,
@@ -446,16 +492,14 @@ def evaluate_model(
             ignition_delays_exp[idx] = ignition_delay.magnitude
             ignition_delays_sim[idx] = sim.meta["simulated-ignition-delay"].magnitude
 
-        # calculate error function for this dataset
-        error_func = numpy.power(
-            (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev, 2
+        # calculate error and deviation functions for this dataset, excluding
+        # any cases that did not ignite
+        error_func, dev_func = calculate_error_function(
+            ignition_delays_exp, ignition_delays_sim, standard_dev
         )
-        error_func = numpy.nanmean(error_func)
         error_func_sets[idx_set] = error_func
         dataset_meta["error function"] = float(error_func)
 
-        dev_func = (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev
-        dev_func = numpy.nanmean(dev_func)
         dev_func_sets[idx_set] = dev_func
         dataset_meta["absolute deviation"] = float(dev_func)
 

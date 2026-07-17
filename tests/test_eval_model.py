@@ -115,6 +115,109 @@ class TestModelKeyValidation:
             )
 
 
+class TestCalculateErrorFunction:
+    """Non-igniting cases must not make the error function infinite (issues #1, #18)."""
+
+    def test_all_ignite_matches_direct_computation(self):
+        """With every case igniting, the result matches the plain mean."""
+        exp = numpy.array([1.0e-3, 2.0e-3, 3.0e-3])
+        sim = numpy.array([1.1e-3, 2.2e-3, 2.9e-3])
+        log_ratio = (numpy.log(sim) - numpy.log(exp)) / 0.1
+        error, dev = eval_model.calculate_error_function(exp, sim, 0.1)
+        assert numpy.isclose(error, numpy.mean(log_ratio**2))
+        assert numpy.isclose(dev, numpy.mean(log_ratio))
+
+    def test_zero_simulated_delay_is_excluded(self):
+        """A non-igniting case (simulated delay 0) is dropped, not turned to inf."""
+        exp = numpy.array([1.0e-3, 2.0e-3, 3.0e-3])
+        sim_with_zero = numpy.array([1.1e-3, 0.0, 2.9e-3])  # middle case did not ignite
+        error, dev = eval_model.calculate_error_function(exp, sim_with_zero, 0.1)
+
+        # equivalent to computing over only the igniting cases
+        error_ref, dev_ref = eval_model.calculate_error_function(
+            numpy.array([1.0e-3, 3.0e-3]), numpy.array([1.1e-3, 2.9e-3]), 0.1
+        )
+        assert numpy.isfinite(error) and numpy.isfinite(dev)
+        assert numpy.isclose(error, error_ref)
+        assert numpy.isclose(dev, dev_ref)
+
+    def test_nan_simulated_delay_is_also_excluded(self):
+        """A NaN simulated delay is excluded just like a zero."""
+        exp = numpy.array([1.0e-3, 2.0e-3, 3.0e-3])
+        sim = numpy.array([1.1e-3, numpy.nan, 2.9e-3])
+        error, dev = eval_model.calculate_error_function(exp, sim, 0.1)
+
+        # equivalent to computing over only the igniting cases
+        error_ref, dev_ref = eval_model.calculate_error_function(
+            numpy.array([1.0e-3, 3.0e-3]), numpy.array([1.1e-3, 2.9e-3]), 0.1
+        )
+        assert numpy.isfinite(error) and numpy.isfinite(dev)
+        assert numpy.isclose(error, error_ref)
+        assert numpy.isclose(dev, dev_ref)
+
+    def test_no_cases_ignite_is_nan_not_inf(self):
+        """If nothing ignites the result is nan (undefined), never inf."""
+        exp = numpy.array([1.0e-3, 2.0e-3])
+        sim = numpy.array([0.0, 0.0])
+        error, dev = eval_model.calculate_error_function(exp, sim, 0.1)
+        assert numpy.isnan(error) and numpy.isnan(dev)
+
+
+class TestNoIgnitionEvaluation:
+    """evaluate_model stays finite end-to-end when a case does not ignite (issue #18)."""
+
+    def test_finite_error_with_non_igniting_case(self, monkeypatch, tmp_path):
+        """Mock the simulations so one case yields a zero delay; error stays finite."""
+        from pyteck.simulation import HomogeneousReactorSimulation
+
+        # first case does not ignite (simulated delay 0.0); the rest ignite
+        delays = iter([0.0, 5.0e-4, 5.0e-4, 5.0e-4, 5.0e-4])
+
+        def fake_worker(job):
+            sim = job[0]
+            # setup_case normally converts the experimental delay to seconds
+            sim.properties.ignition_delay.ito("second")
+            sim.meta["simulated-ignition-delay"] = next(delays) * units.second
+            return sim
+
+        class FakePool:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def map(self, func, jobs):
+                return [func(job) for job in jobs]
+
+            def close(self):
+                pass
+
+            def join(self):
+                pass
+
+        monkeypatch.setattr(eval_model.multiprocessing, "Pool", FakePool)
+        monkeypatch.setattr(eval_model, "simulation_worker", fake_worker)
+        monkeypatch.setattr(HomogeneousReactorSimulation, "process_results", lambda self: None)
+
+        cwd = Path.cwd()
+        os.chdir(tmp_path)  # contain the summary results YAML
+        try:
+            output = eval_model.evaluate_model(
+                model_name="h2o2.yaml",
+                spec_keys_file=str(HERE / "spec_keys.yaml"),
+                dataset_file=str(HERE / "dataset_file.txt"),
+                data_path=str(HERE),
+                model_path="",
+                results_path=str(tmp_path),
+                num_threads=1,
+                skip_validation=True,
+            )
+        finally:
+            os.chdir(cwd)
+
+        assert numpy.isfinite(output["average error function"])
+        assert numpy.isfinite(output["average deviation function"])
+        assert numpy.isfinite(output["datasets"][0]["error function"])
+
+
 class TestEstimateStandardDeviation:
     """ """
 
