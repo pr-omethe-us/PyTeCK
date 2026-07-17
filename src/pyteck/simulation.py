@@ -360,9 +360,9 @@ class HomogeneousReactorSimulation(BaseSimulation):
             if peak_inds.size == 0:
                 return no_ignition_delay
             else:
-                # Get index of largest peak (overall ignition delay)
+                # ignition delay is the time of the largest peak
                 max_ind = peak_inds[np.argmax(target[peak_inds])]
-                ign_delays = time[peak_inds[peak_inds <= max_ind]]
+                ign_delays = np.array([time[max_ind]])
 
         elif ignition_type == "d/dt max":
             target = np.gradient(target, time, edge_order=2)
@@ -373,11 +373,9 @@ class HomogeneousReactorSimulation(BaseSimulation):
             if peak_inds.size == 0:
                 return no_ignition_delay
             else:
-                # Get index of largest peak (overall ignition delay)
+                # ignition delay is the time of the largest-derivative peak
                 max_ind = peak_inds[np.argmax(target[peak_inds])]
-                ign_delays = time[
-                    peak_inds[np.where((time[peak_inds[peak_inds <= max_ind]]) > 0.0)]
-                ]
+                ign_delays = np.array([time[max_ind]])
 
         elif ignition_type == "1/2 max":
             # maximum value, and associated index

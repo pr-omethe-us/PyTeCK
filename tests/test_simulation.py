@@ -371,6 +371,29 @@ class TestGetIgnitionDelay(object):
         )
         assert np.allclose(ignition_delays[0], b - np.sqrt(1 / 2) * c, rtol=1e-4)
 
+    def test_max_selects_largest_peak_not_first(self):
+        """'max' returns the largest peak's time, not the earliest peak (issue #22)."""
+        times = np.linspace(0, 1, 10000)
+        # a small earlier peak at t=0.2 and a larger (max) peak at t=0.6
+        target = 1.0 * np.exp(-(((times - 0.2) / 0.02) ** 2)) + 5.0 * np.exp(
+            -(((times - 0.6) / 0.02) ** 2)
+        )
+        ignition_delays = HomogeneousReactorSimulation.get_ignition_delay(
+            times, target, "species", "max"
+        )
+        assert np.allclose(ignition_delays[0], 0.6, atol=1e-3)
+
+    def test_d_dt_max_selects_largest_derivative_not_first(self):
+        """'d/dt max' returns the steepest rise's time, not the earliest (issue #22)."""
+        times = np.linspace(0, 1, 10000)
+        # a gentle earlier rise (small derivative peak near t=0.2) and a steep
+        # later rise (largest derivative peak near t=0.6)
+        target = 0.2 * (erf((times - 0.2) / 0.05) + 1.0) + 3.0 * (erf((times - 0.6) / 0.01) + 1.0)
+        ignition_delays = HomogeneousReactorSimulation.get_ignition_delay(
+            times, target, "temperature", "d/dt max"
+        )
+        assert np.allclose(ignition_delays[0], 0.6, atol=2e-3)
+
     def test_half_max(self):
         """Test using half maximum value for ignition delay."""
         a, b, c = [5.13293528e04, 3.16147043e-01, 1.05018205e-02]
