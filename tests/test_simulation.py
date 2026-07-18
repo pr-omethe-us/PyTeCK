@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import cantera as ct
 import numpy as np
@@ -456,21 +455,20 @@ class TestGetIgnitionDelay(object):
             "d/dt max extrapolated",
         ],
     )
-    def test_flat_signal_returns_zero_without_dumping_target_data(self, ignition_type):
+    def test_flat_signal_returns_zero_without_dumping_target_data(self, ignition_type, tmp_path):
         """Flat signals are expected non-ignitions, not debug-dump cases."""
         times = np.linspace(0, 1, 100)
         target = np.zeros_like(times)
 
         cwd = Path.cwd()
-        with TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-            try:
-                ignition_delays = HomogeneousReactorSimulation.get_ignition_delay(
-                    times, target, "species", ignition_type
-                )
-                dumped_files = list(Path(temp_dir).glob("target-data-*.out"))
-            finally:
-                os.chdir(cwd)
+        os.chdir(tmp_path)
+        try:
+            ignition_delays = HomogeneousReactorSimulation.get_ignition_delay(
+                times, target, "species", ignition_type
+            )
+            dumped_files = list(tmp_path.glob("target-data-*.out"))
+        finally:
+            os.chdir(cwd)
 
         assert ignition_delays[0] == 0.0
         assert dumped_files == []
@@ -756,7 +754,7 @@ class TestSimulation:
 
         assert sim.n_vars == gas.n_species + 3
 
-    def test_shock_tube_run_cases(self):
+    def test_shock_tube_run_cases(self, tmp_path):
         """Test that shock tube cases run correctly."""
         # Read experiment file
         filename = str(HERE / "testfile_st.yaml")
@@ -769,32 +767,31 @@ class TestSimulation:
         SPEC_KEY = {"H2": "H2", "O2": "O2", "N2": "N2", "Ar": "AR"}
 
         # Setup and run the first two simulations
-        with TemporaryDirectory() as temp_dir:
-            for sim in simulations[:2]:
-                sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
-                sim.run_case()
+        for sim in simulations[:2]:
+            sim.setup_case(mechanism_filename, SPEC_KEY, path=tmp_path)
+            sim.run_case()
 
-                # check for presence of data file
-                assert sim.meta["save-file"].exists()
-                with tables.open_file(sim.meta["save-file"], "r") as h5file:
-                    table = h5file.root.simulation
+            # check for presence of data file
+            assert sim.meta["save-file"].exists()
+            with tables.open_file(sim.meta["save-file"], "r") as h5file:
+                table = h5file.root.simulation
 
-                    assert_physically_valid_results(mechanism_filename, sim.time_end, table)
+                assert_physically_valid_results(mechanism_filename, sim.time_end, table)
 
-                    # This is a constant-volume, adiabatic shock tube, so the
-                    # final state is the constant internal-energy/volume
-                    # equilibrium of the initial mixture.
-                    gas = ct.Solution(mechanism_filename)
-                    gas.TPY = (
-                        table.col("temperature")[0],
-                        table.col("pressure")[0],
-                        table.col("mass_fractions")[0],
-                    )
-                    gas.equilibrate("UV")
-                    assert np.isclose(table.col("temperature")[-1], gas.T, rtol=1e-3)
-                    assert np.isclose(table.col("pressure")[-1], gas.P, rtol=1e-3)
+                # This is a constant-volume, adiabatic shock tube, so the
+                # final state is the constant internal-energy/volume
+                # equilibrium of the initial mixture.
+                gas = ct.Solution(mechanism_filename)
+                gas.TPY = (
+                    table.col("temperature")[0],
+                    table.col("pressure")[0],
+                    table.col("mass_fractions")[0],
+                )
+                gas.equilibrate("UV")
+                assert np.isclose(table.col("temperature")[-1], gas.T, rtol=1e-3)
+                assert np.isclose(table.col("pressure")[-1], gas.P, rtol=1e-3)
 
-    def test_shock_tube_pressure_rise_run_cases(self):
+    def test_shock_tube_pressure_rise_run_cases(self, tmp_path):
         """Test that shock tube cases with pressure rise run correctly."""
         # Read experiment file
         filename = str(HERE / "testfile_st2.yaml")
@@ -807,18 +804,17 @@ class TestSimulation:
         SPEC_KEY = {"H2": "H2", "O2": "O2", "N2": "N2", "Ar": "AR"}
 
         # Setup and run each simulation
-        with TemporaryDirectory() as temp_dir:
-            sim = simulations[0]
-            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
-            sim.run_case()
+        sim = simulations[0]
+        sim.setup_case(mechanism_filename, SPEC_KEY, path=tmp_path)
+        sim.run_case()
 
-            # check for presence of data file
-            assert sim.meta["save-file"].exists()
-            with tables.open_file(sim.meta["save-file"], "r") as h5file:
-                table = h5file.root.simulation
-                assert_physically_valid_results(mechanism_filename, sim.time_end, table)
+        # check for presence of data file
+        assert sim.meta["save-file"].exists()
+        with tables.open_file(sim.meta["save-file"], "r") as h5file:
+            table = h5file.root.simulation
+            assert_physically_valid_results(mechanism_filename, sim.time_end, table)
 
-    def test_rcm_run_cases(self):
+    def test_rcm_run_cases(self, tmp_path):
         """Test that RCM case runs correctly."""
         # Read experiment file
         filename = str(HERE / "testfile_rcm.yaml")
@@ -831,16 +827,15 @@ class TestSimulation:
         SPEC_KEY = {"H2": "H2", "O2": "O2", "N2": "N2", "Ar": "AR"}
 
         # Setup and run each simulation
-        with TemporaryDirectory() as temp_dir:
-            sim = simulations[0]
-            sim.setup_case(mechanism_filename, SPEC_KEY, path=temp_dir)
-            sim.run_case()
+        sim = simulations[0]
+        sim.setup_case(mechanism_filename, SPEC_KEY, path=tmp_path)
+        sim.run_case()
 
-            # check for presence of data file
-            assert sim.meta["save-file"].exists()
-            with tables.open_file(sim.meta["save-file"], "r") as h5file:
-                table = h5file.root.simulation
-                assert_physically_valid_results(mechanism_filename, sim.time_end, table)
+        # check for presence of data file
+        assert sim.meta["save-file"].exists()
+        with tables.open_file(sim.meta["save-file"], "r") as h5file:
+            table = h5file.root.simulation
+            assert_physically_valid_results(mechanism_filename, sim.time_end, table)
 
     # TODO: add test for restart option
 
