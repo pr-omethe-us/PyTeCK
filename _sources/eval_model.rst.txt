@@ -1,6 +1,6 @@
-==============
-Evaluate Model
-==============
+==========
+eval_model
+==========
 
 .. automodule:: pyteck.eval_model
 

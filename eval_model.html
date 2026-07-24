@@ -1,27 +1,28 @@
-
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <title>Evaluate Model &#8212; PyTeCK 0.2.5a11 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>eval_model &#8212; PyTeCK 0.2.5a11 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=39dd3580"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Detect Peaks" href="detect_peaks.html" />
-    <link rel="prev" title="Welcome to PyTeCK’s documentation!" href="index.html" />
+    <link rel="next" title="simulation" href="simulation.html" />
+    <link rel="prev" title="Example: hydrogen shock tube" href="example.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -33,137 +34,213 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-pyteck.eval_model">
-<span id="evaluate-model"></span><h1>Evaluate Model<a class="headerlink" href="#module-pyteck.eval_model" title="Permalink to this headline">¶</a></h1>
+  <section id="module-pyteck.eval_model">
+<span id="eval-model"></span><h1>eval_model<a class="headerlink" href="#module-pyteck.eval_model" title="Link to this heading">¶</a></h1>
+<p>Evaluate chemical kinetic models against experimental ignition-delay data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">members</dt>
+<dt class="field-odd">members<span class="colon">:</span></dt>
 <dd class="field-odd"><p></p></dd>
 </dl>
-<dl class="function">
-<dt id="pyteck.eval_model.create_simulations">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">create_simulations</code><span class="sig-paren">(</span><em>dataset</em>, <em>properties</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#create_simulations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.eval_model.create_simulations" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.calculate_error_function">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">calculate_error_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignition_delays_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignition_delays_sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_dev</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#calculate_error_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.calculate_error_function" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the error and deviation functions for a dataset.</p>
+<p>Cases that did not ignite—indicated by a simulated ignition delay of zero or
+a non-finite value—are excluded from the averages, so that a single
+non-ignition does not drive the whole dataset’s error to infinity (see
+issues #1 and #18).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ignition_delays_exp</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Experimental ignition delays</p></li>
+<li><p><strong>ignition_delays_sim</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a>) – Simulated ignition delays (zero or non-finite where no ignition occurred)</p></li>
+<li><p><strong>standard_dev</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Standard deviation of the experimental data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>error_func</strong> (<em>float</em>) – Mean squared logarithmic error over the igniting cases (<code class="docutils literal notranslate"><span class="pre">nan</span></code> if none
+of the cases ignited)</p></li>
+<li><p><strong>dev_func</strong> (<em>float</em>) – Mean logarithmic deviation over the igniting cases (<code class="docutils literal notranslate"><span class="pre">nan</span></code> if none of
+the cases ignited)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.create_simulations">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">create_simulations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#create_simulations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.create_simulations" title="Link to this definition">¶</a></dt>
 <dd><p>Set up individual simulations for each ignition delay value.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> – </p></li>
-<li><p><strong>properties</strong> (<em>pyked.chemked.ChemKED</em>) – ChemKED object with full set of experimental properties</p></li>
+<li><p><strong>dataset</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of dataset file</p></li>
+<li><p><strong>properties</strong> (<a class="reference external" href="https://pr-omethe-us.github.io/PyKED/chemked.html#pyked.chemked.ChemKED" title="(in PyKED v0)"><em>pyked.chemked.ChemKED</em></a>) – ChemKED object with full set of experimental properties</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>simulations</strong> – List of <code class="xref py py-class docutils literal notranslate"><span class="pre">Simulation</span></code> objects for each simulation</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>simulations</strong> – List of simulation cases (<code class="docutils literal notranslate"><span class="pre">BaseSimulation</span></code> subclass instances), one
+per datapoint</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference internal" href="simulation.html#pyteck.simulation.BaseSimulation" title="pyteck.simulation.BaseSimulation">BaseSimulation</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="pyteck.eval_model.estimate_std_dev">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">estimate_std_dev</code><span class="sig-paren">(</span><em>indep_variable</em>, <em>dep_variable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#estimate_std_dev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.eval_model.estimate_std_dev" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.estimate_std_dev">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">estimate_std_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indep_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dep_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#estimate_std_dev"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.estimate_std_dev" title="Link to this definition">¶</a></dt>
+<dd><p>Estimate standard deviation of experimental data via a spline fit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>indep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – Independent variable (e.g., temperature, pressure)</p></li>
-<li><p><strong>dep_variable</strong> (<em>ndarray</em><em>, </em><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a><em>)</em>) – Dependent variable (e.g., ignition delay)</p></li>
+<li><p><strong>indep_variable</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Independent variable (e.g., temperature, pressure)</p></li>
+<li><p><strong>dep_variable</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Dependent variable (e.g., ignition delay)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>standard_dev</strong> – Standard deviation of difference between data and best-fit line</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)">float</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="pyteck.eval_model.evaluate_model">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">evaluate_model</code><span class="sig-paren">(</span><em>model_name</em>, <em>spec_keys_file</em>, <em>dataset_file</em>, <em>data_path='data'</em>, <em>model_path='models'</em>, <em>results_path='results'</em>, <em>model_variant_file=None</em>, <em>num_threads=None</em>, <em>print_results=False</em>, <em>restart=False</em>, <em>skip_validation=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#evaluate_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.eval_model.evaluate_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Evaluates the ignition delay error of a model for a given dataset.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.evaluate_model">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">evaluate_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec_keys_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'models'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'results'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_variant_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#evaluate_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.evaluate_model" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the ignition delay error of a model for a given dataset.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Chemical kinetic model filename</p></li>
-<li><p><strong>spec_keys_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of YAML file identifying important species</p></li>
-<li><p><strong>dataset_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of file with list of data files</p></li>
-<li><p><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for data files. Optional; default = ‘data’</p></li>
-<li><p><strong>model_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for model file. Optional; default = ‘models’</p></li>
-<li><p><strong>results_path</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Local path for creating results files. Optional; default = ‘results’</p></li>
-<li><p><strong>model_variant_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Name of YAML file identifying ranges of conditions for variants of the
-kinetic model. Optional; default = <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><strong>num_threads</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of CPU threads to use for performing simulations in parallel.
-Optional; default = <code class="docutils literal notranslate"><span class="pre">None</span></code>, in which case the available number of
-cores minus one is used.</p></li>
-<li><p><strong>print_results</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, print results of the model evaluation to screen.</p></li>
-<li><p><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, process saved results. Mainly intended for testing/development.</p></li>
-<li><p><strong>skip_validation</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skips validation of ChemKED files.</p></li>
+<li><p><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Chemical kinetic model filename</p></li>
+<li><p><strong>spec_keys_file</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of YAML file identifying important species</p></li>
+<li><p><strong>dataset_file</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of file with list of data files</p></li>
+<li><p><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Local path for data files (default: <code class="docutils literal notranslate"><span class="pre">&quot;data&quot;</span></code>)</p></li>
+<li><p><strong>model_path</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Local path for the model file (default: <code class="docutils literal notranslate"><span class="pre">&quot;models&quot;</span></code>)</p></li>
+<li><p><strong>results_path</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Local path for creating results files (default: <code class="docutils literal notranslate"><span class="pre">&quot;results&quot;</span></code>)</p></li>
+<li><p><strong>model_variant_file</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Name of YAML file identifying ranges of conditions for variants of the
+kinetic model (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>num_threads</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Number of CPU threads to use for running simulations in parallel. The
+default (<code class="docutils literal notranslate"><span class="pre">None</span></code>) uses the number of available cores minus one.</p></li>
+<li><p><strong>print_results</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, print results of the model evaluation to screen
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>restart</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, reuse existing results files and only compute new cases
+(default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
+<li><p><strong>skip_validation</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip validation of ChemKED files (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>output</strong> – Dictionary with all information about model evaluation results.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>output</strong> – Dictionary with all information about model evaluation results</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)">dict</a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="pyteck.eval_model.get_changing_variable">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">get_changing_variable</code><span class="sig-paren">(</span><em>cases</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#get_changing_variable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.eval_model.get_changing_variable" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.get_changing_variable">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">get_changing_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cases</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#get_changing_variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.get_changing_variable" title="Link to this definition">¶</a></dt>
 <dd><p>Identify variable changing across multiple cases.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cases</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>(</em><em>pyked.chemked.DataPoint</em><em>)</em>) – List of DataPoint with experimental case data.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cases</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://pr-omethe-us.github.io/PyKED/chemked.html#pyked.chemked.DataPoint" title="(in PyKED v0)"><em>pyked.chemked.DataPoint</em></a>) – List of DataPoint with experimental case data</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>variable</strong> – List of floats representing changing experimental variable.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>variable</strong> – Values of the changing experimental variable</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a>(<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)">float</a>)</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="data">
-<dt id="pyteck.eval_model.min_deviation">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">min_deviation</code><em class="property"> = 0.1</em><a class="headerlink" href="#pyteck.eval_model.min_deviation" title="Permalink to this definition">¶</a></dt>
+<dl class="py data">
+<dt class="sig sig-object py" id="pyteck.eval_model.min_deviation">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">min_deviation</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></span><a class="headerlink" href="#pyteck.eval_model.min_deviation" title="Link to this definition">¶</a></dt>
 <dd><p>minimum allowable standard deviation for experimental data</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#float" title="(in Python v3.6)">float</a></p>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="pyteck.eval_model.simulation_worker">
-<code class="descclassname">pyteck.eval_model.</code><code class="descname">simulation_worker</code><span class="sig-paren">(</span><em>sim_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#simulation_worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.eval_model.simulation_worker" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.read_dataset_list">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">read_dataset_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#read_dataset_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.read_dataset_list" title="Link to this definition">¶</a></dt>
+<dd><p>Read the list of dataset files, skipping blank or whitespace-only lines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset_file</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3.14/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>pathlib.Path</em></a>) – Name of file listing dataset files, one per line</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Names of the dataset files, stripped of surrounding whitespace and with
+blank lines removed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.select_variant_suffix">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">select_variant_suffix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#select_variant_suffix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.select_variant_suffix" title="Link to this definition">¶</a></dt>
+<dd><p>Build the model-file suffix for a model variant from a case’s properties.</p>
+<p>Some models ship as several files that differ by bath gas and/or nominal
+pressure. The <code class="docutils literal notranslate"><span class="pre">model_variant</span></code> mapping records, for each such model, the
+filename suffix to use for each bath gas and pressure. This selects the
+suffix appropriate for a given experimental case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variant</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Model-variant entry, optionally with <code class="docutils literal notranslate"><span class="pre">&quot;bath</span> <span class="pre">gases&quot;</span></code> and/or
+<code class="docutils literal notranslate"><span class="pre">&quot;pressures&quot;</span></code> maps from a bath-gas name / pressure to a filename suffix</p></li>
+<li><p><strong>properties</strong> (<a class="reference external" href="https://pr-omethe-us.github.io/PyKED/chemked.html#pyked.chemked.DataPoint" title="(in PyKED v0)"><em>pyked.chemked.DataPoint</em></a>) – Experimental case properties (<code class="docutils literal notranslate"><span class="pre">composition</span></code> is a dict keyed by species
+name, and <code class="docutils literal notranslate"><span class="pre">pressure</span></code> is a pint quantity)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Suffix to append to the model filename (empty if no variant applies)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.eval_model.simulation_worker">
+<span class="sig-prename descclassname"><span class="pre">pyteck.eval_model.</span></span><span class="sig-name descname"><span class="pre">simulation_worker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/eval_model.html#simulation_worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.eval_model.simulation_worker" title="Link to this definition">¶</a></dt>
 <dd><p>Worker for multiprocessing of simulation cases.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>sim_tuple</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#tuple" title="(in Python v3.6)"><em>tuple</em></a>) – Contains Simulation object and other parameters needed to setup
-and run case.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim_tuple</strong> (<a class="reference external" href="https://docs.python.org/3.14/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Contains a <code class="docutils literal notranslate"><span class="pre">BaseSimulation</span></code> instance and the parameters needed to set
+up and run the case: <code class="docutils literal notranslate"><span class="pre">(sim,</span> <span class="pre">model_file,</span> <span class="pre">model_spec_key,</span> <span class="pre">path,</span> <span class="pre">restart)</span></code></p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>sim</strong> – Simulation case with calculated ignition delay.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sim</strong> – Simulation case with results ready for <code class="docutils literal notranslate"><span class="pre">process_results</span></code></p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">Simulation</span></code></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="simulation.html#pyteck.simulation.BaseSimulation" title="pyteck.simulation.BaseSimulation">BaseSimulation</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-</div>
+</section>
 
 
           </div>
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">PyTeCK</a></h1>
 
@@ -173,7 +250,7 @@ and run case.</p>
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=pr-omethe-us&repo=PyTeCK&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -181,34 +258,47 @@ and run case.</p>
 
 
 
-<h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example: hydrogen shock tube</a></li>
+</ul>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Evaluate Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">Detect Peaks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">eval_model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.calculate_error_function"><code class="docutils literal notranslate"><span class="pre">calculate_error_function()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.create_simulations"><code class="docutils literal notranslate"><span class="pre">create_simulations()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.estimate_std_dev"><code class="docutils literal notranslate"><span class="pre">estimate_std_dev()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.evaluate_model"><code class="docutils literal notranslate"><span class="pre">evaluate_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.get_changing_variable"><code class="docutils literal notranslate"><span class="pre">get_changing_variable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.min_deviation"><code class="docutils literal notranslate"><span class="pre">min_deviation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.read_dataset_list"><code class="docutils literal notranslate"><span class="pre">read_dataset_list()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.select_variant_suffix"><code class="docutils literal notranslate"><span class="pre">select_variant_suffix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.eval_model.simulation_worker"><code class="docutils literal notranslate"><span class="pre">simulation_worker()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">detect_peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to PyTeCK’s documentation!</a></li>
-      <li>Next: <a href="detect_peaks.html" title="next chapter">Detect Peaks</a></li>
+      <li>Previous: <a href="example.html" title="previous chapter">Example: hydrogen shock tube</a></li>
+      <li>Next: <a href="simulation.html" title="next chapter">simulation</a></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -222,11 +312,11 @@ and run case.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, Kyle E. Niemeyer.
+      &#169;2026, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="_sources/eval_model.rst.txt"
@@ -234,8 +324,8 @@ and run case.</p>
     </div>
 
     
-    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
-        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    <a href="https://github.com/pr-omethe-us/PyTeCK" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     
 

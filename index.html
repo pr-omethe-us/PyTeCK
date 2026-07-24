@@ -1,26 +1,27 @@
-
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <title>Welcome to PyTeCK’s documentation! &#8212; PyTeCK 0.2.5a11 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PyTeCK &#8212; PyTeCK 0.2.5a11 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=39dd3580"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Evaluate Model" href="eval_model.html" />
+    <link rel="next" title="Installation" href="installation.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -32,33 +33,130 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-pyteck-s-documentation">
-<h1>Welcome to PyTeCK’s documentation!<a class="headerlink" href="#welcome-to-pyteck-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <section id="pyteck">
+<h1>PyTeCK<a class="headerlink" href="#pyteck" title="Link to this heading">¶</a></h1>
+<p><strong>PyTeCK</strong> (Python-based Testing of Chemical Kinetics) automatically evaluates
+the performance of chemical kinetic models against experimental data. It reads
+experimental ignition-delay measurements in the <a class="reference external" href="https://pr-omethe-us.github.io/PyKED/">ChemKED</a> YAML format, simulates the
+corresponding cases with <a class="reference external" href="https://cantera.org">Cantera</a>, and reports how well
+a chemical kinetic model reproduces the measurements.</p>
+<p>PyTeCK is released under the <a class="reference external" href="https://github.com/pr-omethe-us/PyTeCK/blob/main/LICENSE">MIT license</a> and developed openly
+on <a class="reference external" href="https://github.com/pr-omethe-us/PyTeCK">GitHub</a>.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Evaluate a kinetic model against whole datasets of experimental ignition-delay
+data described with <a class="reference external" href="https://pr-omethe-us.github.io/PyKED/">ChemKED</a>.</p></li>
+<li><p>Support for shock tube and rapid compression machine (RCM) experiments,
+including non-ideal effects such as pressure rise and volume-time histories.</p></li>
+<li><p>Automatic, per-case parallel execution of simulations.</p></li>
+<li><p>A quantitative error function summarizing model performance across a dataset.</p></li>
+</ul>
+</section>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
+<p>Install from PyPI (see <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> for conda and development installs):</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>pyteck
+</pre></div>
+</div>
+<p>Run an evaluation from the command line:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pyteck<span class="w"> </span>--model<span class="w"> </span>mech.yaml<span class="w"> </span>--model-keys<span class="w"> </span>spec_keys.yaml<span class="w"> </span>--dataset<span class="w"> </span>dataset_file.txt
+</pre></div>
+</div>
+<p>or from Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyteck.eval_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_model</span>
+
+<span class="n">output</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;mech.yaml&quot;</span><span class="p">,</span>
+    <span class="n">spec_keys_file</span><span class="o">=</span><span class="s2">&quot;spec_keys.yaml&quot;</span><span class="p">,</span>
+    <span class="n">dataset_file</span><span class="o">=</span><span class="s2">&quot;dataset_file.txt&quot;</span><span class="p">,</span>
+    <span class="n">data_path</span><span class="o">=</span><span class="s2">&quot;data&quot;</span><span class="p">,</span>
+    <span class="n">model_path</span><span class="o">=</span><span class="s2">&quot;models&quot;</span><span class="p">,</span>
+    <span class="n">results_path</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="s2">&quot;average error function&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="example.html"><span class="doc">Example: hydrogen shock tube</span></a> page walks through a complete, runnable hydrogen shock-tube
+case. The full list of command-line options is available with <code class="docutils literal notranslate"><span class="pre">pyteck</span> <span class="pre">--help</span></code>.</p>
+</section>
+<section id="user-guide">
+<h2>User guide<a class="headerlink" href="#user-guide" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="eval_model.html">Evaluate Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">Detect Peaks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installing-a-released-version">Installing a released version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installing-from-source">Installing from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#use-a-virtual-environment">Use a virtual environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#developer-installation">Developer installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example: hydrogen shock tube</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="example.html#Run-the-evaluation">Run the evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="example.html#Compare-experimental-and-simulated-ignition-delays">Compare experimental and simulated ignition delays</a></li>
+</ul>
+</li>
 </ul>
 </div>
+</section>
+<section id="api-reference">
+<h2>API reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eval_model.html">eval_model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.calculate_error_function"><code class="docutils literal notranslate"><span class="pre">calculate_error_function()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.create_simulations"><code class="docutils literal notranslate"><span class="pre">create_simulations()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.estimate_std_dev"><code class="docutils literal notranslate"><span class="pre">estimate_std_dev()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.evaluate_model"><code class="docutils literal notranslate"><span class="pre">evaluate_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.get_changing_variable"><code class="docutils literal notranslate"><span class="pre">get_changing_variable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.min_deviation"><code class="docutils literal notranslate"><span class="pre">min_deviation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.read_dataset_list"><code class="docutils literal notranslate"><span class="pre">read_dataset_list()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.select_variant_suffix"><code class="docutils literal notranslate"><span class="pre">select_variant_suffix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="eval_model.html#pyteck.eval_model.simulation_worker"><code class="docutils literal notranslate"><span class="pre">simulation_worker()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.BaseSimulation"><code class="docutils literal notranslate"><span class="pre">BaseSimulation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.FlameSimulation"><code class="docutils literal notranslate"><span class="pre">FlameSimulation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.HomogeneousReactorSimulation"><code class="docutils literal notranslate"><span class="pre">HomogeneousReactorSimulation</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.PressureRiseProfile"><code class="docutils literal notranslate"><span class="pre">PressureRiseProfile</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.VolumeProfile"><code class="docutils literal notranslate"><span class="pre">VolumeProfile</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#pyteck.simulation.create_simulation"><code class="docutils literal notranslate"><span class="pre">create_simulation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">detect_peaks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detect_peaks.html#pyteck.detect_peaks.detect_peaks"><code class="docutils literal notranslate"><span class="pre">detect_peaks()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#pyteck.utils.print_species_names"><code class="docutils literal notranslate"><span class="pre">print_species_names()</span></code></a></li>
+</ul>
+</li>
+</ul>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading">¶</a></h2>
+<p>If you use PyTeCK in a scholarly publication, please cite it as described in
+<a class="reference external" href="https://github.com/pr-omethe-us/PyTeCK/blob/main/CITATION.md">CITATION.md</a>.</p>
+</section>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
+</section>
 
 
           </div>
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="#">PyTeCK</a></h1>
 
@@ -68,7 +166,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=pr-omethe-us&repo=PyTeCK&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -76,33 +174,35 @@
 
 
 
-<h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="eval_model.html">Evaluate Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">Detect Peaks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example: hydrogen shock tube</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="eval_model.html">eval_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">detect_peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="eval_model.html" title="next chapter">Evaluate Model</a></li>
+      <li>Next: <a href="installation.html" title="next chapter">Installation</a></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -116,11 +216,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, Kyle E. Niemeyer.
+      &#169;2026, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="_sources/index.rst.txt"
@@ -128,8 +228,8 @@
     </div>
 
     
-    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
-        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    <a href="https://github.com/pr-omethe-us/PyTeCK" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     
 

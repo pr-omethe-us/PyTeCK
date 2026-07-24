@@ -1,5 +1,5 @@
 ==========
-Simulation
+simulation
 ==========
 
 .. automodule:: pyteck.simulation

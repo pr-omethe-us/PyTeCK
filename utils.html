@@ -1,26 +1,27 @@
-
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <title>Utilities &#8212; PyTeCK 0.2.5a11 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>utils &#8212; PyTeCK 0.2.5a11 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=39dd3580"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Simulation" href="simulation.html" />
+    <link rel="prev" title="detect_peaks" href="detect_peaks.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -32,26 +33,27 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-pyteck.utils">
-<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-pyteck.utils" title="Permalink to this headline">¶</a></h1>
+  <section id="module-pyteck.utils">
+<span id="utils"></span><h1>utils<a class="headerlink" href="#module-pyteck.utils" title="Link to this heading">¶</a></h1>
+<p>Shared utilities: unit registry and species name/InChI lookup tables.</p>
 <dl class="field-list simple">
-<dt class="field-odd">members</dt>
+<dt class="field-odd">members<span class="colon">:</span></dt>
 <dd class="field-odd"><p></p></dd>
 </dl>
-<dl class="function">
-<dt id="pyteck.utils.print_species_names">
-<code class="descclassname">pyteck.utils.</code><code class="descname">print_species_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/utils.html#print_species_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyteck.utils.print_species_names" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyteck.utils.print_species_names">
+<span class="sig-prename descclassname"><span class="pre">pyteck.utils.</span></span><span class="sig-name descname"><span class="pre">print_species_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyteck/utils.html#print_species_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyteck.utils.print_species_names" title="Link to this definition">¶</a></dt>
 <dd><p>Print species names, internal short name, and InChI identifiers.</p>
 </dd></dl>
 
-</div>
+</section>
 
 
           </div>
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="index.html">PyTeCK</a></h1>
 
@@ -61,7 +63,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=kyleniemeyer&repo=PyTeCK&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=pr-omethe-us&repo=PyTeCK&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -69,33 +71,38 @@
 
 
 
-<h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example: hydrogen shock tube</a></li>
+</ul>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="eval_model.html">Evaluate Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">Detect Peaks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eval_model.html">eval_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detect_peaks.html">detect_peaks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pyteck.utils.print_species_names"><code class="docutils literal notranslate"><span class="pre">print_species_names()</span></code></a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="simulation.html" title="previous chapter">Simulation</a></li>
+      <li>Previous: <a href="detect_peaks.html" title="previous chapter">detect_peaks</a></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -109,11 +116,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, Kyle E. Niemeyer.
+      &#169;2026, Kyle E. Niemeyer.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="_sources/utils.rst.txt"
@@ -121,8 +128,8 @@
     </div>
 
     
-    <a href="https://github.com/kyleniemeyer/PyTeCK" class="github">
-        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    <a href="https://github.com/pr-omethe-us/PyTeCK" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     
 

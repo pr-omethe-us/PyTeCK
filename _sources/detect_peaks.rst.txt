@@ -1,5 +1,5 @@
 ============
-Detect Peaks
+detect_peaks
 ============
 
 .. automodule:: pyteck.detect_peaks
