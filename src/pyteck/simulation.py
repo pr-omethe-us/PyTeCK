@@ -1,0 +1,729 @@
+"""Simulation classes and helpers for evaluating kinetic models against data.
+
+.. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
+"""
+
+# Standard libraries
+import warnings
+from abc import ABC, abstractmethod
+from datetime import datetime
+from pathlib import Path
+
+# Related modules
+import cantera as ct
+import numpy as np
+import tables
+
+from .detect_peaks import detect_peaks
+
+# Local imports
+from .utils import units
+
+
+class VolumeProfile(object):
+    """Set the velocity of reactor moving wall via specified volume profile.
+
+    The initialization and calling of this class are handled by the
+    `Func1
+    <http://cantera.github.io/docs/sphinx/html/cython/zerodim.html#cantera.Func1>`_
+    interface of Cantera.
+
+    Based on ``VolumeProfile`` implemented in Bryan W. Weber's
+    `CanSen <http://bryanwweber.github.io/CanSen/>`
+    """
+
+    def __init__(self, volume_history):
+        """Set the initial values of the arrays from the input keywords.
+
+        The time and volume are read from the input file and stored in an
+        ``VolumeHistory`` object. The velocity is calculated by
+        assuming a unit area and using central differences. This function is
+        only called once when the class is initialized at the beginning of a
+        problem so it is efficient.
+
+        Parameters
+        ----------
+        volume_history : pyked.chemked.TimeHistory
+            Time and volume history for the case
+
+        """
+
+        # The time and volume are each stored as a ``np.array`` in the
+        # properties dictionary. The volume is normalized by the first volume
+        # element so that a unit area can be used to calculate the velocity.
+        self.times = volume_history.time.magnitude
+        volumes = volume_history.quantity.magnitude / volume_history.quantity.magnitude[0]
+
+        # The velocity is calculated by the second-order central differences.
+        self.velocity = np.gradient(volumes, self.times, edge_order=2)
+
+    def __call__(self, time):
+        """Return (interpolated) velocity when called during a time step.
+
+        Parameters
+        ----------
+        time : float
+            Current simulation time, in seconds
+
+        Returns
+        -------
+        float
+            Wall velocity, in meters per second
+
+        """
+        return np.interp(time, self.times, self.velocity, left=0.0, right=0.0)
+
+
+class PressureRiseProfile(VolumeProfile):
+    r"""Set the velocity of reactor moving wall via specified pressure rise.
+
+    The initialization and calling of this class are handled by the
+    `Func1 <http://cantera.github.io/docs/sphinx/html/cython/zerodim.html#cantera.Func1>`_
+    interface of Cantera.
+
+    The approach used here is based on that discussed by Chaos and Dryer,
+    "Chemical-kinetic modeling of ignition delay: Considerations in
+    interpreting shock tube data", *Int J Chem Kinet* 2010 42:143-150,
+    `doi:10.1002/kin.20471 <http://dx.doi.org/10.1002/kin.20471`.
+    A time-dependent polytropic state change is emulated by determining volume
+    as a function of time, via a constant linear pressure rise :math:`A`
+    (given as a percentage of the initial pressure):
+
+    .. math::
+       \frac{dv}{dt} &= -\frac{1}{\gamma} \frac{v(t)}{P(t)} \frac{dP}{dt} \\
+       v(t) &= \frac{1}{\rho} \left[ \frac{P(t)}{P_0} \right]^{-1 / \gamma}
+
+       \frac{dP}{dt} &= A P_0 \\
+       \therefore P(t) &= P_0 (A t + 1)
+
+       \frac{dv}{dt} = -A \frac{1}{\rho \gamma} (A t + 1)^{-1 / \gamma}
+
+    The expression for :math:`\frac{dv}{dt}` can then be used directly for
+    the ``Wall`` velocity.
+    """
+
+    def __init__(
+        self, mech_filename, initial_temp, initial_pres, reactants, pressure_rise, time_end
+    ):
+        """Set the initial values of properties needed for velocity.
+
+        Parameters
+        ----------
+        mech_filename : str or pathlib.Path
+            Cantera-format mechanism file
+        initial_temp : float
+            Initial temperature, in K
+        initial_pres : float
+            Initial pressure, in Pa
+        reactants : str
+            Reactants composition in mole fraction
+        pressure_rise : float
+            Pressure rise rate, in s^-1
+        time_end : float
+            End time of simulation, in s
+
+        """
+
+        self.times, volumes = HomogeneousReactorSimulation.create_volume_history(
+            mech_filename, initial_temp, initial_pres, reactants, pressure_rise, time_end
+        )
+
+        # Calculate velocity by second-order finite difference
+        self.velocity = np.gradient(volumes, self.times, edge_order=2)
+
+
+class BaseSimulation(ABC):
+    """Abstract base class for a single simulation case of a kinetic model.
+
+    Subclasses implement a specific simulation type, e.g. a homogeneous reactor
+    for autoignition delay or a one-dimensional flame for laminar burning
+    velocity.
+
+    Parameters
+    ----------
+    kind : str
+        Kind of experiment (e.g., 'ignition delay')
+    apparatus : str
+        Type of apparatus (e.g., 'shock tube')
+    meta : dict
+        Metadata for this case
+    properties : pyked.chemked.DataPoint
+        Set of properties for this case
+
+    """
+
+    def __init__(self, kind, apparatus, meta, properties):
+        """Initialize simulation case."""
+        self.kind = kind
+        self.apparatus = apparatus
+        self.meta = meta
+        self.properties = properties
+
+    def _setup_gas(self, model_file, species_key):
+        """Create the Cantera gas object and set its initial state.
+
+        Handles the model-agnostic part of case setup: loading the model,
+        converting temperature and pressure to Cantera units, mapping reactant
+        names via ``species_key``, and setting the initial composition.
+
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+
+        """
+        self.gas = ct.Solution(model_file)
+
+        # Initial temperature needed in Kelvin for Cantera
+        self.properties.temperature.ito("kelvin")
+
+        # Initial pressure needed in Pa for Cantera
+        self.properties.pressure.ito("pascal")
+
+        # convert reactant names to those needed for model
+        reactants = [
+            species_key[self.properties.composition[spec].species_name]
+            + ":"
+            + str(self.properties.composition[spec].amount.magnitude)
+            for spec in self.properties.composition
+        ]
+        reactants = ",".join(reactants)
+
+        # need to extract values from Quantity or Measurement object
+        if hasattr(self.properties.temperature, "value"):
+            temp = self.properties.temperature.value.magnitude
+        elif hasattr(self.properties.temperature, "nominal_value"):
+            temp = self.properties.temperature.nominal_value
+        else:
+            temp = self.properties.temperature.magnitude
+        if hasattr(self.properties.pressure, "value"):
+            pres = self.properties.pressure.value.magnitude
+        elif hasattr(self.properties.pressure, "nominal_value"):
+            pres = self.properties.pressure.nominal_value
+        else:
+            pres = self.properties.pressure.magnitude
+
+        # Reactants given in format for Cantera
+        if self.properties.composition_type in ["mole fraction", "mole percent"]:
+            self.gas.TPX = temp, pres, reactants
+        elif self.properties.composition_type == "mass fraction":
+            self.gas.TPY = temp, pres, reactants
+        else:
+            raise ValueError(
+                "composition type not supported: " + str(self.properties.composition_type)
+            )
+
+    def clean(self):
+        """Remove the intermediate results data file, if it exists."""
+        save_file = self.meta.get("save-file")
+        if save_file is not None:
+            Path(save_file).unlink(missing_ok=True)
+
+    @abstractmethod
+    def setup_case(self, model_file, species_key, path=""):
+        """Set up the simulation case to be run.
+
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+        path : str or pathlib.Path, optional
+            Directory in which to save any results data file. The default
+            (``""``) uses the current working directory.
+
+        """
+
+    @abstractmethod
+    def run_case(self, restart=False):
+        """Run the simulation case set up by ``setup_case``.
+
+        Parameters
+        ----------
+        restart : bool, optional
+            If ``True``, skip the case when its results file already exists
+            (default: ``False``).
+
+        """
+
+    @abstractmethod
+    def process_results(self):
+        """Process results to obtain the simulated metric."""
+
+
+class HomogeneousReactorSimulation(BaseSimulation):
+    """Homogeneous (0-D) reactor simulation for autoignition delay.
+
+    Models shock tube and rapid compression machine ignition-delay experiments
+    using a Cantera ``IdealGasReactor``.
+    """
+
+    @staticmethod
+    def sample_rising_pressure(time_end, init_pres, freq, pressure_rise_rate):
+        """Samples pressure for particular frequency assuming linear rise.
+
+        Parameters
+        ----------
+        time_end : float
+            End time of simulation, in seconds
+        init_pres : float
+            Initial pressure, in Pa
+        freq : float
+            Frequency of sampling, in Hz
+        pressure_rise_rate : float
+            Pressure rise rate, in s^-1
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Tuple of times and sampled pressures
+
+        """
+        times = np.arange(0.0, time_end + (1.0 / freq), (1.0 / freq))
+        pressures = init_pres * (pressure_rise_rate * times + 1.0)
+        return times, pressures
+
+    @staticmethod
+    def create_volume_history(mech, temp, pres, reactants, pres_rise, time_end):
+        """Construct a volume profile based on initial conditions and pressure rise.
+
+        Parameters
+        ----------
+        mech : str or pathlib.Path
+            Cantera-format mechanism file (``*.yaml``)
+        temp : float
+            Initial temperature, in K
+        pres : float
+            Initial pressure, in Pa
+        reactants : str
+            Reactants composition in mole fraction
+        pres_rise : float
+            Pressure rise rate, in s^-1
+        time_end : float
+            End time of simulation, in s
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Times and computed volumes
+
+        """
+        gas = ct.Solution(mech)
+        gas.TPX = temp, pres, reactants
+        initial_entropy = gas.entropy_mass
+        initial_density = gas.density
+
+        # Sample pressure at 20 kHz
+        freq = 2.0e4
+        times, pressures = HomogeneousReactorSimulation.sample_rising_pressure(
+            time_end, pres, freq, pres_rise
+        )
+
+        # Calculate volume profile based on pressure
+        volumes = np.zeros((len(pressures)))
+        for i, p in enumerate(pressures):
+            gas.SP = initial_entropy, p
+            volumes[i] = initial_density / gas.density
+
+        return times, volumes
+
+    @staticmethod
+    def get_ignition_delay(time, target, target_name, ignition_type):
+        """Identify ignition delay based on time, target, and type of detection.
+
+        Parameters
+        ----------
+        time : numpy.ndarray
+            Times in s
+        target : numpy.ndarray
+            Values of target quantity of interest (e.g., temperature, pressure, species amount)
+        target_name : str
+            Name of target quantity of interest (e.g., 'temperature', 'OH')
+        ignition_type : str
+            'max', 'd/dt max', '1/2 max', or 'd/dt max extrapolated'
+
+        Returns
+        -------
+        numpy.ndarray
+            One or more calculated ignition delay times, in s
+
+        """
+        no_ignition_delay = np.array([0.0])
+
+        if ignition_type == "max":
+            # Get indices of peaks
+            peak_inds = detect_peaks(target, edge=None, mph=1.0e-9 * np.max(target))
+
+            if peak_inds.size == 0:
+                return no_ignition_delay
+            else:
+                # ignition delay is the time of the largest peak
+                max_ind = peak_inds[np.argmax(target[peak_inds])]
+                ign_delays = np.array([time[max_ind]])
+
+        elif ignition_type == "d/dt max":
+            target = np.gradient(target, time, edge_order=2)
+            # Get indices of peaks. Set a minimum peak height of 1e-7% of the
+            # maximum value to avoid noise peaks.
+            peak_inds = detect_peaks(target, edge=None, mph=1.0e-9 * np.max(target))
+
+            if peak_inds.size == 0:
+                return no_ignition_delay
+            else:
+                # ignition delay is the time of the largest-derivative peak
+                max_ind = peak_inds[np.argmax(target[peak_inds])]
+                ign_delays = np.array([time[max_ind]])
+
+        elif ignition_type == "1/2 max":
+            # maximum value, and associated index
+            max_val = np.max(target)
+            peak_inds = detect_peaks(target, edge=None, mph=1.0e-9 * np.max(target))
+
+            if peak_inds.size == 0:
+                return no_ignition_delay
+            else:
+                max_ind = peak_inds[np.argmax(target[peak_inds])]
+                # TODO: interpolate for actual half-max value
+                # Find index associated with the 1/2 max value, but only consider
+                # points before the peak
+                half_idx = (np.abs(target[0:max_ind] - 0.5 * max_val)).argmin()
+                ign_delays = np.array([time[half_idx]])
+
+        elif ignition_type == "d/dt max extrapolated":
+            # First need to evaluate derivative of the target
+            target_derivative = np.gradient(target, time, edge_order=2)
+            max_derivative = np.max(target_derivative)
+
+            if not np.isfinite(max_derivative) or max_derivative <= 0.0:
+                return no_ignition_delay
+
+            # Get indices of peaks, and index of largest peak, which corresponds to
+            # the point of maximum derivative
+            peak_inds = detect_peaks(target_derivative, edge=None, mph=1.0e-9 * max_derivative)
+
+            if peak_inds.size == 0:
+                return no_ignition_delay
+            else:
+                max_ind = peak_inds[np.argmax(target_derivative[peak_inds])]
+                if target_derivative[max_ind] <= 0.0:
+                    return no_ignition_delay
+                # use slope to extrapolate to intercept with baseline value (0 by default)
+                ign_delays = np.array(
+                    [time[max_ind] - (target[max_ind] / target_derivative[max_ind])]
+                )
+
+            # TODO: handle target with nonzero baseline?
+        else:
+            warnings.warn(
+                "Unable to process ignition type "
+                + ignition_type
+                + ", setting result to 0 and continuing",
+                RuntimeWarning,
+            )
+            return np.array([0.0])
+
+        # something has gone wrong if there is still no peak. This shouldn't be necessary.
+        if ign_delays.size == 0:
+            filename = "target-data-" + str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")) + ".out"
+            warnings.warn(
+                "No peak found, dumping target data to " + filename + " and continuing",
+                RuntimeWarning,
+            )
+            np.savetxt(filename, np.c_[time, target], header=("time, target (" + target_name + ")"))
+            return np.array([0.0])
+
+        return ign_delays
+
+    def setup_case(self, model_file, species_key, path=""):
+        """Sets up the simulation case to be run.
+
+        Parameters
+        ----------
+        model_file : str or pathlib.Path
+            Filename for Cantera-format model
+        species_key : dict
+            Dictionary with species names for ``model_file``
+        path : str or pathlib.Path, optional
+            Directory in which to save the results data file. The default
+            (``""``) writes to the current working directory.
+
+        """
+        # Convert ignition delay to seconds
+        self.properties.ignition_delay.ito("second")
+
+        # Set end time of simulation to 100 times the experimental ignition delay
+        if hasattr(self.properties.ignition_delay, "value"):
+            self.time_end = 100.0 * self.properties.ignition_delay.value.magnitude
+        else:
+            self.time_end = 100.0 * self.properties.ignition_delay.magnitude
+
+        # Set up the gas object and its initial thermochemical state
+        self._setup_gas(model_file, species_key)
+
+        # Create non-interacting ``Reservoir`` on other side of ``Wall``
+        env = ct.Reservoir(ct.Solution("air.yaml"), clone=True)
+
+        # All reactors are ``IdealGasReactor`` objects
+        self.reac = ct.IdealGasReactor(self.gas, clone=True)
+        if self.apparatus == "shock tube" and self.properties.pressure_rise is None:
+            # Shock tube modeled by constant UV
+            self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
+
+        elif self.apparatus == "shock tube" and self.properties.pressure_rise is not None:
+            # Shock tube modeled by constant UV with isentropic compression
+
+            # Need to convert pressure rise units to seconds
+            self.properties.pressure_rise.ito("1 / second")
+            if hasattr(self.properties.pressure_rise, "value"):
+                pres_rise = self.properties.pressure_rise.value.magnitude
+            else:
+                pres_rise = self.properties.pressure_rise.magnitude
+
+            self.wall = ct.Wall(
+                self.reac,
+                env,
+                A=1.0,
+                velocity=PressureRiseProfile(
+                    model_file, self.gas.T, self.gas.P, self.gas.X, pres_rise, self.time_end
+                ),
+            )
+
+        elif (
+            self.apparatus == "rapid compression machine" and self.properties.volume_history is None
+        ):
+            # Rapid compression machine modeled by constant UV
+            self.wall = ct.Wall(self.reac, env, A=1.0, velocity=0)
+
+        elif (
+            self.apparatus == "rapid compression machine"
+            and self.properties.volume_history is not None
+        ):
+            # Rapid compression machine modeled with volume-time history
+
+            # First convert time units if necessary
+            self.properties.volume_history.time.ito("second")
+
+            self.wall = ct.Wall(
+                self.reac, env, A=1.0, velocity=VolumeProfile(self.properties.volume_history)
+            )
+
+        # Number of solution variables is number of species + mass,
+        # volume, temperature
+        self.n_vars = self.reac.phase.n_species + 3
+
+        # Create ``ReactorNet`` newtork
+        self.reac_net = ct.ReactorNet([self.reac])
+
+        # Set maximum time step based on volume-time history, if present
+        if self.properties.volume_history is not None:
+            # Minimum difference between volume profile times
+            min_time = np.min(np.diff(self.properties.volume_history.time.magnitude))
+            self.reac_net.max_time_step = min_time
+
+        # Check if species ignition target, that species is present.
+        if self.properties.ignition_type["target"] not in ["pressure", "temperature"]:
+            # Other targets are species
+            spec = self.properties.ignition_type["target"]
+
+            # Try finding species in upper- and lower-case
+            try_list = [spec, spec.lower(), spec.upper()]
+
+            # If excited radical, may need to fall back to nonexcited species
+            if spec[-1] == "*":
+                try_list += [spec[:-1], spec[:-1].lower(), spec[:-1].upper()]
+
+            ind = None
+            for sp in try_list:
+                try:
+                    ind = self.gas.species_index(sp)
+                    break
+                except ValueError:
+                    pass
+
+            # store index of target species
+            if ind:
+                self.properties.ignition_target = ind
+                self.properties.ignition_type = self.properties.ignition_type["type"]
+            else:
+                warnings.warn(
+                    spec + " not found in model; falling back on pressure.", RuntimeWarning
+                )
+                self.properties.ignition_target = "pressure"
+                self.properties.ignition_type = "d/dt max"
+        else:
+            self.properties.ignition_target = self.properties.ignition_type["target"]
+            self.properties.ignition_type = self.properties.ignition_type["type"]
+
+        # Set file for later data file
+        file_path = Path(path) / f"{self.meta['id']}.h5"
+        self.meta["save-file"] = file_path
+
+    def run_case(self, restart=False):
+        """Run simulation case set up by ``setup_case``.
+
+        Parameters
+        ----------
+        restart : bool, optional
+            If ``True``, skip the case when its results file already exists
+            (default: ``False``).
+
+        """
+
+        if restart and Path(self.meta["save-file"]).is_file():
+            print("Skipped existing case ", self.meta["id"])
+            return
+
+        # Save simulation results in hdf5 table format.
+        table_def = {
+            "time": tables.Float64Col(pos=0),
+            "temperature": tables.Float64Col(pos=1),
+            "pressure": tables.Float64Col(pos=2),
+            "volume": tables.Float64Col(pos=3),
+            "mass_fractions": tables.Float64Col(shape=(self.reac.phase.n_species), pos=4),
+        }
+
+        with tables.open_file(self.meta["save-file"], mode="w", title=self.meta["id"]) as h5file:
+            table = h5file.create_table(where=h5file.root, name="simulation", description=table_def)
+            # Row instance to save timestep information to
+            timestep = table.row
+            # Save initial conditions
+            timestep["time"] = self.reac_net.time
+            timestep["temperature"] = self.reac.T
+            timestep["pressure"] = self.reac.phase.P
+            timestep["volume"] = self.reac.volume
+            timestep["mass_fractions"] = self.reac.Y
+            # Add ``timestep`` to table
+            timestep.append()
+
+            # Main time integration loop; continue integration while time of
+            # the ``ReactorNet`` is less than specified end time.
+            while self.reac_net.time < self.time_end:
+                self.reac_net.step()
+
+                # Save new timestep information
+                timestep["time"] = self.reac_net.time
+                timestep["temperature"] = self.reac.T
+                timestep["pressure"] = self.reac.phase.P
+                timestep["volume"] = self.reac.volume
+                timestep["mass_fractions"] = self.reac.Y
+
+                # Add ``timestep`` to table
+                timestep.append()
+
+            # Write ``table`` to disk
+            table.flush()
+
+        print("Done with case ", self.meta["id"])
+
+    def process_results(self):
+        """Process integration results to obtain ignition delay."""
+
+        # Load saved integration results
+        with tables.open_file(self.meta["save-file"], "r") as h5file:
+            # Load Table with Group name simulation
+            table = h5file.root.simulation
+
+            time = table.col("time")
+            if self.properties.ignition_target == "pressure":
+                target = table.col("pressure")
+            elif self.properties.ignition_target == "temperature":
+                target = table.col("temperature")
+            else:
+                target = table.col("mass_fractions")[:, self.properties.ignition_target]
+            # store initial and maximum temperatures as a gate for whether the case ignited
+            init_temperature = table.col("temperature")[0]
+            max_temperature = np.max(table.col("temperature"))
+
+        # add units to time
+        time = time * units.second
+
+        # Will need to subtract compression time for RCM
+        time_comp = 0.0
+        if hasattr(self.properties.rcm_data, "compression_time"):
+            if hasattr(self.properties.rcm_data.compression_time, "value"):
+                time_comp = self.properties.rcm_data.compression_time.value
+            else:
+                time_comp = self.properties.rcm_data.compression_time
+
+        # First use basic check for ignition based on temperature increase of at least 50 K
+        if max_temperature >= init_temperature + 50.0:
+            ignition_delays = self.get_ignition_delay(
+                time.magnitude,
+                target,
+                self.properties.ignition_target,
+                self.properties.ignition_type,
+            )
+            self.meta["simulated-ignition-delay"] = (ignition_delays[0] - time_comp) * units.second
+        else:
+            warnings.warn(
+                "No ignition for case " + self.meta["id"] + ", setting value to 0.0 and continuing",
+                RuntimeWarning,
+            )
+            self.meta["simulated-ignition-delay"] = 0.0 * units.second
+
+        # TODO: detect two-stage ignition.
+        self.meta["simulated-first-stage-delay"] = np.nan * units.second
+
+
+class FlameSimulation(BaseSimulation):
+    """One-dimensional freely propagating laminar flame simulation.
+
+    Placeholder for laminar burning velocity measurements. The corresponding
+    PyKED schema is still in development (see PyKED PR #141), so this simulation
+    type is not yet implemented.
+    """
+
+    _NOT_IMPLEMENTED = (
+        "Laminar flame simulations are not yet supported; the PyKED laminar "
+        "burning velocity schema is still in development."
+    )
+
+    def setup_case(self, model_file, species_key, path=""):
+        raise NotImplementedError(self._NOT_IMPLEMENTED)
+
+    def run_case(self, restart=False):
+        raise NotImplementedError(self._NOT_IMPLEMENTED)
+
+    def process_results(self):
+        raise NotImplementedError(self._NOT_IMPLEMENTED)
+
+
+# Registry mapping experiment/measurement type to the Simulation subclass that
+# models it. New simulation types (e.g. laminar flame speed, speciation) can be
+# added here as their PyKED schemas are finalized.
+_SIMULATION_TYPES = {
+    "ignition delay": HomogeneousReactorSimulation,
+    # future: 'laminar burning velocity': FlameSimulation,
+}
+
+
+def create_simulation(kind, apparatus, meta, properties):
+    """Construct the appropriate :class:`BaseSimulation` subclass for a case.
+
+    Parameters
+    ----------
+    kind : str
+        Experiment/measurement type (e.g., 'ignition delay')
+    apparatus : str
+        Apparatus kind (e.g., 'shock tube')
+    meta : dict
+        Metadata for this case
+    properties : pyked.chemked.DataPoint
+        Object with full set of experimental properties for this case
+
+    Returns
+    -------
+    BaseSimulation
+        Simulation case of the appropriate subclass
+
+    """
+    try:
+        simulation_class = _SIMULATION_TYPES[kind]
+    except KeyError:
+        raise NotImplementedError(
+            "Simulations for experiment type '{}' are not yet supported.".format(kind)
+        )
+    return simulation_class(kind, apparatus, meta, properties)

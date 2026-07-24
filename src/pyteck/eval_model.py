@@ -1,0 +1,530 @@
+"""Evaluate chemical kinetic models against experimental ignition-delay data.
+
+.. moduleauthor:: Kyle Niemeyer <kyle.niemeyer@gmail.com>
+"""
+
+import multiprocessing
+import warnings
+from pathlib import Path
+
+import numpy
+import yaml
+from pyked.chemked import ChemKED
+from scipy.interpolate import UnivariateSpline
+
+from .simulation import create_simulation
+from .utils import units
+
+min_deviation = 0.10
+"""float: minimum allowable standard deviation for experimental data"""
+
+
+def create_simulations(dataset, properties):
+    """Set up individual simulations for each ignition delay value.
+
+    Parameters
+    ----------
+    dataset : str
+        Name of dataset file
+    properties : pyked.chemked.ChemKED
+        ChemKED object with full set of experimental properties
+
+    Returns
+    -------
+    simulations : list of BaseSimulation
+        List of simulation cases (``BaseSimulation`` subclass instances), one
+        per datapoint
+
+    """
+
+    simulations = []
+    for idx, case in enumerate(properties.datapoints):
+        sim_meta = {}
+        # Common metadata
+        sim_meta["data-file"] = dataset
+        sim_meta["id"] = Path(dataset).stem + "_" + str(idx)
+
+        simulations.append(
+            create_simulation(properties.experiment_type, properties.apparatus.kind, sim_meta, case)
+        )
+    return simulations
+
+
+def simulation_worker(sim_tuple):
+    """Worker for multiprocessing of simulation cases.
+
+    Parameters
+    ----------
+    sim_tuple : tuple
+        Contains a ``BaseSimulation`` instance and the parameters needed to set
+        up and run the case: ``(sim, model_file, model_spec_key, path, restart)``
+
+    Returns
+    -------
+    sim : BaseSimulation
+        Simulation case with results ready for ``process_results``
+
+    """
+    sim, model_file, model_spec_key, path, restart = sim_tuple
+
+    sim.setup_case(model_file, model_spec_key, path)
+    sim.run_case(restart)
+
+    sim = create_simulation(sim.kind, sim.apparatus, sim.meta, sim.properties)
+    return sim
+
+
+def estimate_std_dev(indep_variable, dep_variable):
+    """Estimate standard deviation of experimental data via a spline fit.
+
+    Parameters
+    ----------
+    indep_variable : numpy.ndarray or list of float
+        Independent variable (e.g., temperature, pressure)
+    dep_variable : numpy.ndarray or list of float
+        Dependent variable (e.g., ignition delay)
+
+    Returns
+    -------
+    standard_dev : float
+        Standard deviation of difference between data and best-fit line
+
+    """
+
+    assert len(indep_variable) == len(dep_variable), (
+        "independent and dependent variables not the same length"
+    )
+
+    # ensure no repetition of independent variable by taking average of associated dependent
+    # variables and removing duplicates
+    vals, count = numpy.unique(indep_variable, return_counts=True)
+    repeated = vals[count > 1]
+    for val in repeated:
+        (idx,) = numpy.where(indep_variable == val)
+        dep_variable[idx[0]] = numpy.mean(dep_variable[idx])
+        dep_variable = numpy.delete(dep_variable, idx[1:])
+        indep_variable = numpy.delete(indep_variable, idx[1:])
+
+    # ensure data sorted based on independent variable to avoid some problems
+    sorted_vars = sorted(zip(indep_variable, dep_variable))
+    indep_variable = [pt[0] for pt in sorted_vars]
+    dep_variable = [pt[1] for pt in sorted_vars]
+
+    # spline fit of the data
+    if len(indep_variable) == 1 or len(indep_variable) == 2:
+        # Fit of data will be perfect
+        return min_deviation
+    elif len(indep_variable) == 3:
+        spline = UnivariateSpline(indep_variable, dep_variable, k=2)
+    else:
+        spline = UnivariateSpline(indep_variable, dep_variable)
+
+    standard_dev = numpy.std(dep_variable - spline(indep_variable))
+
+    if standard_dev < min_deviation:
+        print(
+            "Standard deviation of {:.2f} too low, using {:.2f}".format(standard_dev, min_deviation)
+        )
+        standard_dev = min_deviation
+
+    return standard_dev
+
+
+def get_changing_variable(cases):
+    """Identify variable changing across multiple cases.
+
+    Parameters
+    ----------
+    cases : list of pyked.chemked.DataPoint
+        List of DataPoint with experimental case data
+
+    Returns
+    -------
+    variable : list of float
+        Values of the changing experimental variable
+
+    """
+    changing_var = None
+
+    for var_name in ["temperature", "pressure"]:
+        if var_name == "temperature":
+            variable = [case.temperature for case in cases]
+        elif var_name == "pressure":
+            variable = [case.pressure for case in cases]
+
+        if not all([x == variable[0] for x in variable]):
+            if not changing_var:
+                changing_var = var_name
+            else:
+                warnings.warn(
+                    "Warning: multiple changing variables. Using temperature.", RuntimeWarning
+                )
+                changing_var = "temperature"
+                break
+
+    # Temperature is default
+    if changing_var is None:
+        changing_var = "temperature"
+
+    if changing_var == "temperature":
+        variable = [
+            case.temperature.value.magnitude
+            if hasattr(case.temperature, "value")
+            else case.temperature.magnitude
+            for case in cases
+        ]
+    elif changing_var == "pressure":
+        variable = [
+            case.pressure.value.magnitude
+            if hasattr(case.pressure, "value")
+            else case.pressure.magnitude
+            for case in cases
+        ]
+    return variable
+
+
+def read_dataset_list(dataset_file):
+    """Read the list of dataset files, skipping blank or whitespace-only lines.
+
+    Parameters
+    ----------
+    dataset_file : str or pathlib.Path
+        Name of file listing dataset files, one per line
+
+    Returns
+    -------
+    list of str
+        Names of the dataset files, stripped of surrounding whitespace and with
+        blank lines removed
+
+    """
+    return [line.strip() for line in Path(dataset_file).read_text().splitlines() if line.strip()]
+
+
+def select_variant_suffix(variant, properties):
+    """Build the model-file suffix for a model variant from a case's properties.
+
+    Some models ship as several files that differ by bath gas and/or nominal
+    pressure. The ``model_variant`` mapping records, for each such model, the
+    filename suffix to use for each bath gas and pressure. This selects the
+    suffix appropriate for a given experimental case.
+
+    Parameters
+    ----------
+    variant : dict
+        Model-variant entry, optionally with ``"bath gases"`` and/or
+        ``"pressures"`` maps from a bath-gas name / pressure to a filename suffix
+    properties : pyked.chemked.DataPoint
+        Experimental case properties (``composition`` is a dict keyed by species
+        name, and ``pressure`` is a pint quantity)
+
+    Returns
+    -------
+    str
+        Suffix to append to the model filename (empty if no variant applies)
+
+    """
+    model_mod = ""
+
+    if "bath gases" in variant:
+        # find any designated bath gases present in the mixture
+        bath_gases = set(variant["bath gases"])
+        gases = bath_gases.intersection(set(properties.composition))
+
+        # If only one bath gas is present, use it. If several, use the
+        # predominant (most abundant) one. If none of the designated bath gases
+        # are present, just use any (shouldn't matter).
+        if len(gases) > 1:
+            max_mole = 0.0
+            sp = ""
+            for g in gases:
+                amount = float(properties.composition[g].amount.magnitude)
+                if amount > max_mole:
+                    max_mole = amount
+                    sp = g
+        elif len(gases) == 1:
+            sp = gases.pop()
+        else:
+            sp = bath_gases.pop()
+        model_mod += variant["bath gases"][sp]
+
+    if "pressures" in variant:
+        # choose the variant pressure closest to the experimental pressure
+        pres = properties.pressure.to("atm").magnitude
+        pressures = list(variant["pressures"])
+        i = numpy.argmin(numpy.abs(numpy.array([float(p) for p in pressures]) - pres))
+        model_mod += variant["pressures"][pressures[i]]
+
+    return model_mod
+
+
+def calculate_error_function(ignition_delays_exp, ignition_delays_sim, standard_dev):
+    """Calculate the error and deviation functions for a dataset.
+
+    Cases that did not ignite—indicated by a simulated ignition delay of zero or
+    a non-finite value—are excluded from the averages, so that a single
+    non-ignition does not drive the whole dataset's error to infinity (see
+    issues #1 and #18).
+
+    Parameters
+    ----------
+    ignition_delays_exp : numpy.ndarray
+        Experimental ignition delays
+    ignition_delays_sim : numpy.ndarray
+        Simulated ignition delays (zero or non-finite where no ignition occurred)
+    standard_dev : float
+        Standard deviation of the experimental data
+
+    Returns
+    -------
+    error_func : float
+        Mean squared logarithmic error over the igniting cases (``nan`` if none
+        of the cases ignited)
+    dev_func : float
+        Mean logarithmic deviation over the igniting cases (``nan`` if none of
+        the cases ignited)
+
+    """
+    ignition_delays_exp = numpy.asarray(ignition_delays_exp, dtype=float)
+    ignition_delays_sim = numpy.asarray(ignition_delays_sim, dtype=float)
+
+    with numpy.errstate(divide="ignore", invalid="ignore"):
+        log_ratio = (numpy.log(ignition_delays_sim) - numpy.log(ignition_delays_exp)) / standard_dev
+
+    # Non-igniting cases (zero or non-finite simulated delay) produce a
+    # non-finite log ratio; mark them nan so nanmean/nanstd ignore them.
+    log_ratio[~numpy.isfinite(log_ratio)] = numpy.nan
+
+    with warnings.catch_warnings():
+        # an all-nan dataset (nothing ignited) yields nan rather than a warning
+        warnings.simplefilter("ignore", RuntimeWarning)
+        error_func = numpy.nanmean(numpy.power(log_ratio, 2))
+        dev_func = numpy.nanmean(log_ratio)
+
+    return error_func, dev_func
+
+
+def evaluate_model(
+    model_name,
+    spec_keys_file,
+    dataset_file,
+    data_path="data",
+    model_path="models",
+    results_path="results",
+    model_variant_file=None,
+    num_threads=None,
+    print_results=False,
+    restart=False,
+    skip_validation=False,
+):
+    """Evaluate the ignition delay error of a model for a given dataset.
+
+    Parameters
+    ----------
+    model_name : str
+        Chemical kinetic model filename
+    spec_keys_file : str
+        Name of YAML file identifying important species
+    dataset_file : str
+        Name of file with list of data files
+    data_path : str, optional
+        Local path for data files (default: ``"data"``)
+    model_path : str, optional
+        Local path for the model file (default: ``"models"``)
+    results_path : str, optional
+        Local path for creating results files (default: ``"results"``)
+    model_variant_file : str, optional
+        Name of YAML file identifying ranges of conditions for variants of the
+        kinetic model (default: ``None``)
+    num_threads : int, optional
+        Number of CPU threads to use for running simulations in parallel. The
+        default (``None``) uses the number of available cores minus one.
+    print_results : bool, optional
+        If ``True``, print results of the model evaluation to screen
+        (default: ``False``).
+    restart : bool, optional
+        If ``True``, reuse existing results files and only compute new cases
+        (default: ``False``).
+    skip_validation : bool, optional
+        If ``True``, skip validation of ChemKED files (default: ``False``).
+
+    Returns
+    -------
+    output : dict
+        Dictionary with all information about model evaluation results
+
+    """
+    # Create results_path if it doesn't exist
+    Path(results_path).mkdir(parents=True, exist_ok=True)
+
+    # Dict to translate species names into those used by models
+    with Path(spec_keys_file).open("r") as f:
+        model_spec_key = yaml.safe_load(f)
+
+    # Fail fast with a clear message if the model has no species-key entry
+    # (e.g. a name/case mismatch) rather than a cryptic KeyError later on.
+    if model_name not in model_spec_key:
+        raise KeyError(
+            f"Model '{model_name}' not found in species-keys file '{spec_keys_file}'. "
+            f"Available entries: {sorted(model_spec_key)}"
+        )
+
+    # Keys for models with variants depending on pressure or bath gas
+    model_variant = None
+    if model_variant_file:
+        with Path(model_variant_file).open("r") as f:
+            model_variant = yaml.safe_load(f)
+
+    # Read dataset list, skipping any blank or whitespace-only lines
+    dataset_list = read_dataset_list(dataset_file)
+
+    error_func_sets = numpy.zeros(len(dataset_list))
+    dev_func_sets = numpy.zeros(len(dataset_list))
+
+    # Dictionary with all output data
+    output = {"model": model_name, "datasets": []}
+
+    # If number of threads not specified, use either max number of available
+    # cores minus 1, or use 1 if multiple cores not available.
+    if not num_threads:
+        num_threads = multiprocessing.cpu_count() - 1 or 1
+
+    # Loop through all datasets
+    for idx_set, dataset in enumerate(dataset_list):
+        dataset_meta = {"dataset": dataset, "dataset_id": idx_set}
+
+        # Create individual simulation cases for each datapoint in this set
+        properties = ChemKED(Path(data_path, dataset), skip_validation=skip_validation)
+        simulations = create_simulations(dataset, properties)
+
+        ignition_delays_exp = numpy.zeros(len(simulations))
+        ignition_delays_sim = numpy.zeros(len(simulations))
+
+        #############################################
+        # Determine standard deviation of the dataset
+        #############################################
+        ign_delay = [
+            case.ignition_delay.to("second").value.magnitude
+            if hasattr(case.ignition_delay, "value")
+            else case.ignition_delay.to("second").magnitude
+            for case in properties.datapoints
+        ]
+
+        # get variable that is changing across datapoints
+        variable = get_changing_variable(properties.datapoints)
+        # for ignition delay, use logarithm of values
+        standard_dev = estimate_std_dev(variable, numpy.log(ign_delay))
+        dataset_meta["standard deviation"] = float(standard_dev)
+
+        #######################################################
+        # Need to check if Ar or He in reactants but not model,
+        # and if so skip this dataset (for now).
+        #######################################################
+        if (
+            any(["Ar" in spec for case in properties.datapoints for spec in case.composition])
+            and "Ar" not in model_spec_key[model_name]
+        ) or (
+            any(["He" in spec for case in properties.datapoints for spec in case.composition])
+            and "He" not in model_spec_key[model_name]
+        ):
+            warnings.warn(
+                "Warning: Ar or He in dataset, but not in model. Skipping.", RuntimeWarning
+            )
+            error_func_sets[idx_set] = numpy.nan
+            continue
+
+        # Use available number of processors minus one,
+        # or one process if single core.
+        pool = multiprocessing.Pool(processes=num_threads)
+
+        # setup all cases
+        jobs = []
+        for idx, sim in enumerate(simulations):
+            # special treatment based on pressure for Princeton model (and others)
+
+            if model_variant and model_name in model_variant:
+                model_mod = select_variant_suffix(model_variant[model_name], sim.properties)
+                model_file = Path(model_path, model_name + model_mod)
+            else:
+                model_file = Path(model_path, model_name)
+
+            jobs.append([sim, model_file, model_spec_key[model_name], results_path, restart])
+
+        # run all cases
+        jobs = tuple(jobs)
+        results = pool.map(simulation_worker, jobs)
+
+        # not adding more proceses, and ensure all finished
+        pool.close()
+        pool.join()
+
+        dataset_meta["datapoints"] = []
+
+        for idx, sim in enumerate(results):
+            sim.process_results()
+
+            if hasattr(sim.properties.ignition_delay, "value"):
+                ignition_delay = sim.properties.ignition_delay.value
+            else:
+                ignition_delay = sim.properties.ignition_delay
+
+            if hasattr(ignition_delay, "nominal_value"):
+                ignition_delay = ignition_delay.nominal_value * units.second
+
+            dataset_meta["datapoints"].append(
+                {
+                    "experimental ignition delay": str(ignition_delay),
+                    "simulated ignition delay": str(sim.meta["simulated-ignition-delay"]),
+                    "temperature": str(sim.properties.temperature),
+                    "pressure": str(sim.properties.pressure),
+                    "composition": [
+                        {
+                            "InChI": sim.properties.composition[spec].InChI,
+                            "species-name": sim.properties.composition[spec].species_name,
+                            "amount": str(sim.properties.composition[spec].amount.magnitude),
+                        }
+                        for spec in sim.properties.composition
+                    ],
+                    "composition type": sim.properties.composition_type,
+                }
+            )
+
+            ignition_delays_exp[idx] = ignition_delay.magnitude
+            ignition_delays_sim[idx] = sim.meta["simulated-ignition-delay"].magnitude
+
+        # calculate error and deviation functions for this dataset, excluding
+        # any cases that did not ignite
+        error_func, dev_func = calculate_error_function(
+            ignition_delays_exp, ignition_delays_sim, standard_dev
+        )
+        error_func_sets[idx_set] = error_func
+        dataset_meta["error function"] = float(error_func)
+
+        dev_func_sets[idx_set] = dev_func
+        dataset_meta["absolute deviation"] = float(dev_func)
+
+        output["datasets"].append(dataset_meta)
+
+        if print_results:
+            print("Done with " + dataset)
+
+    # Overall error function
+    error_func = numpy.nanmean(error_func_sets)
+    if print_results:
+        print("overall error function: " + repr(error_func))
+        print("error standard deviation: " + repr(numpy.nanstd(error_func_sets)))
+
+    # Absolute deviation function
+    abs_dev_func = numpy.nanmean(dev_func_sets)
+    if print_results:
+        print("absolute deviation function: " + repr(abs_dev_func))
+
+    output["average error function"] = float(error_func)
+    output["error function standard deviation"] = float(numpy.nanstd(error_func_sets))
+    output["average deviation function"] = float(abs_dev_func)
+
+    # Write data to YAML file
+    with Path(f"{Path(model_name).stem}-results.yaml").open("w") as f:
+        yaml.dump(output, f)
+
+    return output

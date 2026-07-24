@@ -1,9 +1,9 @@
 ---
-h2o2.cti:
+h2o2.yaml:
     H2: "H2"
     O2: "O2"
     Ar: "AR"
-gri30.cti:
+gri30.yaml:
     H2: "H2"
     O2: "O2"
     N2: "N2"

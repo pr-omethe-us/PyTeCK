@@ -1,6 +1,6 @@
-=========
-Utilities
-=========
+=====
+utils
+=====
 
 .. automodule:: pyteck.utils
 

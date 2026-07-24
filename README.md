@@ -1,18 +1,18 @@
 # PyTeCK
 
 [![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
-[![Build Status](https://travis-ci.org/pr-omethe-us/PyTeCK.svg?branch=master)](https://travis-ci.org/pr-omethe-us/PyTeCK)
-[![Build Status](https://ci.appveyor.com/api/projects/status/a7a3prqgvfg8rr5f?svg=true)](https://ci.appveyor.com/project/pr-omethe-us/pyteck)
-[![codecov](https://codecov.io/gh/pr-omethe-us/PyTeCK/branch/master/graph/badge.svg)](https://codecov.io/gh/pr-omethe-us/PyTeCK)
-[![Dependency Status](https://dependencyci.com/github//pr-omethe-us/PyTeCK/badge)](https://dependencyci.com/github/pr-omethe-us/PyTeCK)
-[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-contributor%20covenant-green.svg)](http://contributor-covenant.org/version/1/4/)
+![CI](https://github.com/pr-omethe-us/PyTeCK/actions/workflows/ci.yml/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/pr-omethe-us/PyTeCK/badge.svg?branch=main)](https://coveralls.io/github/pr-omethe-us/PyTeCK)
+[![GitHub Release](https://img.shields.io/github/release/pr-omethe-us/PyTeCK.svg)](https://github.com/pr-omethe-us/PyTeCK/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Anaconda](https://anaconda.org/pr-omethe-us/pyteck/badges/version.svg)](https://anaconda.org/pr-omethe-us/pyteck)
 
 This software package automatically evaluates the performance of a chemical kinetic
 model using experimental data given in a specified YAML format.
 
 ## Installation
+
+[![PyPI](https://img.shields.io/pypi/v/pyteck)](https://pypi.org/project/pyteck/)
+[![Anaconda](https://anaconda.org/pr-omethe-us/pyteck/badges/version.svg)](https://anaconda.org/pr-omethe-us/pyteck)
 
 The easiest way to install PyTeCK is via `conda`. You can install to your environment with
 
@@ -25,15 +25,9 @@ PyPI with
 
 If you prefer to install manually, or want a particular version outside of the
 tagged releases distributed to those services, you can download the source files
-from this repository, navigate to the directory, and install using either `setuptools`
-
-    > python setup.py install
-
-or `pip`
+from this repository, navigate to the directory, and install using `pip`:
 
     > pip install .
-
-`pip` is recommended due to its easy uninstall option (`pip uninstall pyteck`).
 
 ## Usage
 

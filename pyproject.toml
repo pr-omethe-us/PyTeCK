@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "PyTeCK"
+dynamic = ["version"]
+description = "Evaluation of chemical kinetic models with experimental data"
+readme = "README.md"
+license = {text = "MIT License"}
+authors = [
+    {name = "Kyle E. Niemeyer", email = "kyle.niemeyer@oregonstate.edu"},
+]
+keywords = ["chemical_kinetics"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=5.1",
+    "pint>=0.20",
+    "numpy>=2.0.0",
+    "tables>=3.7",
+    "pyked>=0.5.0",
+    "scipy>=1.7",
+    "cantera>=3.0",
+]
+
+[dependency-groups]
+test = ["pytest", "pytest-cov",]
+lint = ["pre-commit", "ruff",]
+docs = ["sphinx", "nbsphinx", "ipython", "matplotlib",]
+all = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "docs"},
+]
+
+[project.urls]
+Homepage = "https://github.com/pr-omethe-us/PyTeCK"
+Repository = "https://github.com/pr-omethe-us/PyTeCK"
+Issues = "https://github.com/pr-omethe-us/PyTeCK/issues"
+
+[project.scripts]
+pyteck = "pyteck.__main__:main"
+
+[tool.hatch.version]
+path = "src/pyteck/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyteck"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/pyteck",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "CITATION.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+]
+
+# tools
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live_api: tests that call external APIs; run with 'pytest -m live_api'",
+]
+addopts = "-m 'not live_api'"
+filterwarnings = [
+    "ignore::pint.UnitStrippedWarning",
+]
+
+# https://github.com/charliermarsh/ruff
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "NPY", "PD"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "RUF012"]
+"docs/*.ipynb" = ["N803", "B007"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyteck"]
+
+[tool.coverage.run]
+source = ["src/pyteck"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "if __name__ == .__main__.:",
+]

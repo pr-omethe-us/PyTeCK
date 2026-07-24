@@ -1,8 +1,10 @@
-{% set data = load_setup_py_data() %}
+{% set version = load_file_regex(load_file="../src/pyteck/_version.py",
+                                 regex_pattern='__version__ = "(.+)"',
+                                 from_recipe_dir=True).group(1) %}
 
 package:
   name: pyteck
-  version: {{ data['version'] }}
+  version: {{ version }}
 
 source:
   path: ..
@@ -14,39 +16,37 @@ build:
 
 requirements:
   build:
-    - python >=3.7,<3.10
-    - setuptools
+    - python >=3.10
     - pip
+    - hatchling
 
   run:
-    - python >=3.7,<3.10
-    - pyyaml >=3.12,<4.0
-    - numpy >=1.13.1
-    - scipy >=1.0.0
-    - pint >=0.7.2,<0.9
-    - pytables
-    - cantera >=2.3.0
-    - pyked >=0.4.1
+    - python >=3.10
+    - pyyaml >=5.1
+    - numpy >=2.0.0
+    - scipy >=1.7
+    - pint >=0.20
+    - pytables >=3.7
+    - cantera >=3.0
+    # NOTE: pyked is distributed only on PyPI, not on a conda channel, so it
+    # cannot be a conda run dependency. Install it with pip alongside a conda
+    # install of this package:  pip install "pyked>=0.5.0"
 
 test:
-  imports:
-    - pyked
-    - cantera
-
   requires:
-    - pytest >=3.0.1
-    - pytest-cov >=2.3.1
+    - pip
 
   commands:
-    - pytest -vv --pyargs pyteck
+    # pyked is pip-only (see note above); install it before importing pyteck
+    - pip install "pyked>=0.5.0"
+    - python -c "import pyteck; print(pyteck.__version__)"
+    - pyteck --help
 
 about:
-  home: data['url']
+  home: https://github.com/pr-omethe-us/PyTeCK
   license: MIT
   license_file: LICENSE
   license_family: MIT
-
-  summary: data['description']
-  description: data['long_description']
+  summary: Evaluation of chemical kinetic models with experimental data
   doc_url: https://kyleniemeyer.github.io/PyTeCK
-  dev_url: data['url']
+  dev_url: https://github.com/pr-omethe-us/PyTeCK
