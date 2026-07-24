@@ -35,6 +35,6 @@ jobs:
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
         run: |
-          anaconda --token "$ANACONDA_TOKEN" upload \
+          conda run -n base anaconda --token "$ANACONDA_TOKEN" upload \
             --user pr-omethe-us \
             "${{ runner.temp }}"/conda-bld/noarch/pyteck-*.conda

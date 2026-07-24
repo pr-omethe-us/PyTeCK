@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [0.2.6] - 2026-07-24
 ### Added
 - GitHub Actions for continuous integration (multi-OS, Python 3.10+) and trusted PyPI publishing, replacing Travis CI and AppVeyor
 - `pre-commit` configuration with `ruff` linting and formatting
@@ -87,10 +89,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - First published version of PyTeCK.
 - Supports validation using both shock tube and RCM experimental data in ChemKED format, but RCM not fully functional.
 
- [Unreleased]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.4...HEAD
- [0.2.4]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.3...0.2.4
- [0.2.3]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.2...0.2.3
- [0.2.2]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.1...0.2.2
- [0.2.1]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.2.0...0.2.1
- [0.2.0]: https://github.com/kyleniemeyer/PyTeCK/compare/v0.1...0.2.0
- [0.1.0]: https://github.com/kyleniemeyer/PyTeCK/compare/e99f757b7ea644065a0ee65ce86dbfb8f404be60...v0.1
+ [Unreleased]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.6...HEAD
+ [0.2.6]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.4...0.2.6
+ [0.2.4]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.3...0.2.4
+ [0.2.3]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.2...0.2.3
+ [0.2.2]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.1...0.2.2
+ [0.2.1]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.2.0...0.2.1
+ [0.2.0]: https://github.com/pr-omethe-us/PyTeCK/compare/v0.1...0.2.0
+ [0.1.0]: https://github.com/pr-omethe-us/PyTeCK/compare/e99f757b7ea644065a0ee65ce86dbfb8f404be60...v0.1
