@@ -8,9 +8,9 @@ authors:
     given-names: Kyle E.
     orcid: https://orcid.org/0000-0003-4425-7097
 identifiers:
-  - description: This is the archived snapshot of version 0.2.2 of PyTeCK
+  - description: This is the archived snapshot of version 0.2.6 of PyTeCK
     type: doi
-    value: 10.5281/zenodo.883591
+    value: 10.5281/zenodo.21542021
   - description: This represents all archived versions of PyTeCK
     type: doi
     value: 10.5281/zenodo.596724
