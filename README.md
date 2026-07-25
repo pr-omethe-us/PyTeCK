@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
 ![CI](https://github.com/pr-omethe-us/PyTeCK/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/pr-omethe-us/PyTeCK/badge.svg?branch=main)](https://coveralls.io/github/pr-omethe-us/PyTeCK)
-[![GitHub Release](https://img.shields.io/github/release/pr-omethe-us/PyTeCK.svg)](https://github.com/pr-omethe-us/PyTeCK/releases)
+[![GitHub Release](https://img.shields.io/github/release/pr-omethe-us/PyTeCK.svg)](https://github.com/pr-omethe-us/PyTeCK/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 This software package automatically evaluates the performance of a chemical kinetic
