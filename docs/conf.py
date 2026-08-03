@@ -156,6 +156,17 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# The mark shown at the top of the sidebar on every page. This is the light cut
+# on purpose: alabaster's pages stay light whatever the reader's system theme
+# is, so the theme-following "-auto" cut would turn its outline cream on a white
+# page and disappear. Both files are copies of logo/ - refresh them if the marks
+# are regenerated.
+html_logo = "_static/pyteck-model-data-square.svg"
+
+# Multi-size icon (16/32/48); the marks themselves cannot be resampled this
+# small, so this is a sprite drawn on its own 16-cell grid.
+html_favicon = "_static/pyteck-favicon.ico"
+
 
 # -- Options for HTMLHelp output ------------------------------------------
 
