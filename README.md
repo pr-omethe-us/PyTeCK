@@ -1,11 +1,11 @@
+# PyTeCK
+
 <picture>
   <source media="(prefers-color-scheme: dark)"
           srcset="https://raw.githubusercontent.com/pr-omethe-us/PyTeCK/main/logo/pyteck-model-data-square-dark.png">
   <img src="https://raw.githubusercontent.com/pr-omethe-us/PyTeCK/main/logo/pyteck-model-data-square.png"
        align="right" width="170" alt="PyTeCK logo: a snake climbing through experimental data points" />
 </picture>
-
-# PyTeCK
 
 [![DOI](https://zenodo.org/badge/53542212.svg)](https://zenodo.org/badge/latestdoi/53542212)
 ![CI](https://github.com/pr-omethe-us/PyTeCK/actions/workflows/ci.yml/badge.svg)
